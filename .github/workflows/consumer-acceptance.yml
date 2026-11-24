@@ -47,7 +47,6 @@ jobs:
             profile: execution.communication
     env:
       INSTALL_MODE: ${{ matrix.mode }}
-      COMPOSER_NO_DEV: ${{ matrix.mode == 'no-dev' && '1' || '0' }}
       PROFILE: ${{ matrix.profile }}
       COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
     steps:
@@ -62,6 +61,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          unset COMPOSER_NO_DEV
           project="$RUNNER_TEMP/infbyte-app"
           args=(--prefer-dist --no-interaction --no-progress)
           if [[ "$INSTALL_MODE" == no-dev ]]; then args+=(--no-dev); fi
@@ -90,6 +90,7 @@ jobs:
             if (($manifest["require"]["infocyph/foundation"] ?? null)!=="^4.0"
                 || isset($manifest["repositories"])
                 || preg_match("/^4\.[0-9]+\.[0-9]+\.[0-9]+$/D",$version)!==1
+                || version_compare($version,"4.0.1.0","<")
                 || (fileperms(".env") & 0777)!==0600
                 || !preg_match("/^AUTH_TOKEN_SECRET=[a-f0-9]{64}$/m",$env)
                 || (require "config/modules.php")!==["features"=>[]]
@@ -108,6 +109,12 @@ jobs:
             test ! -d vendor/infocyph/phpforge
             test ! -e vendor/bin/pest
           fi
+          php -r '
+            require "vendor/autoload.php";
+            $version=Composer\InstalledVersions::getVersion("infocyph/foundation") ?? "";
+            $metadata=json_decode(file_get_contents("vendor/composer/installed.json"),true,flags:JSON_THROW_ON_ERROR);
+            if (version_compare($version,"4.0.1.0","<") || ($metadata["dev"] ?? null)!==($argv[1]==="default")) exit(1);
+          ' "$INSTALL_MODE"
           composer check-platform-reqs
           php infbyte --version
           before="$(sha256sum .env)"
@@ -125,6 +132,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          unset COMPOSER_NO_DEV
           cd "$RUNNER_TEMP/infbyte-app"
           features=()
           case "$PROFILE" in
@@ -145,6 +153,12 @@ jobs:
               test ! -d vendor/infocyph/phpforge
               test ! -e vendor/bin/pest
             fi
+            php -r '
+              require "vendor/autoload.php";
+              $version=Composer\InstalledVersions::getVersion("infocyph/foundation") ?? "";
+              $metadata=json_decode(file_get_contents("vendor/composer/installed.json"),true,flags:JSON_THROW_ON_ERROR);
+              if (version_compare($version,"4.0.1.0","<") || ($metadata["dev"] ?? null)!==($argv[1]==="default")) exit(1);
+            ' "$INSTALL_MODE"
             php infbyte module:enable "$feature" --json=1
             php infbyte module:show "$feature" --json=1 > "$RUNNER_TEMP/show-$feature.json"
             php -r '
@@ -179,6 +193,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          unset COMPOSER_NO_DEV
           cd "$RUNNER_TEMP/infbyte-app"
           composer ic:test:code
 
@@ -187,6 +202,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          unset COMPOSER_NO_DEV
           cd "$RUNNER_TEMP/infbyte-app"
           test ! -d vendor/infocyph/phpforge
           test ! -e vendor/bin/pest
@@ -200,6 +216,7 @@ jobs:
           APP_CAPABILITIES: ""
         run: |
           set -euo pipefail
+          unset COMPOSER_NO_DEV
           cd "$RUNNER_TEMP/infbyte-app"
           php infbyte config:validate --production
           php infbyte optimize --json=1 > "$RUNNER_TEMP/release.json"
@@ -215,6 +232,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          unset COMPOSER_NO_DEV
           cd "$RUNNER_TEMP/infbyte-app"
           release_root="$(php -r '$r=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); echo $r["release_root"];' "$RUNNER_TEMP/release.json")"
           trusted="$(php -r '$r=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); echo $r["manifest_sha256"];' "$RUNNER_TEMP/release.json")"
@@ -266,6 +284,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          unset COMPOSER_NO_DEV
           cd "$RUNNER_TEMP/infbyte-app"
           php infbyte optimize:clear
           mapfile -t features < "$RUNNER_TEMP/selected-features.txt"
@@ -277,6 +296,12 @@ jobs:
               test ! -d vendor/infocyph/phpforge
               test ! -e vendor/bin/pest
             fi
+            php -r '
+              require "vendor/autoload.php";
+              $version=Composer\InstalledVersions::getVersion("infocyph/foundation") ?? "";
+              $metadata=json_decode(file_get_contents("vendor/composer/installed.json"),true,flags:JSON_THROW_ON_ERROR);
+              if (version_compare($version,"4.0.1.0","<") || ($metadata["dev"] ?? null)!==($argv[1]==="default")) exit(1);
+            ' "$INSTALL_MODE"
           done
           php -r '
             $selected=array_filter((require "config/modules.php")["features"],static fn($v)=>$v===true);
