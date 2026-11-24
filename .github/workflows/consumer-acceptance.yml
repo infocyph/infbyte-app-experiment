@@ -47,6 +47,7 @@ jobs:
             profile: execution.communication
     env:
       INSTALL_MODE: ${{ matrix.mode }}
+      COMPOSER_NO_DEV: ${{ matrix.mode == 'no-dev' && '1' || '0' }}
       PROFILE: ${{ matrix.profile }}
       COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
     steps:
@@ -103,6 +104,10 @@ jobs:
             echo "Foundation version: ",$version,PHP_EOL;
             echo "Foundation source: ",Composer\InstalledVersions::getReference("infocyph/foundation"),PHP_EOL;
           '
+          if [[ "$INSTALL_MODE" == no-dev ]]; then
+            test ! -d vendor/infocyph/phpforge
+            test ! -e vendor/bin/pest
+          fi
           composer check-platform-reqs
           php infbyte --version
           before="$(sha256sum .env)"
@@ -136,6 +141,10 @@ jobs:
               if (($v["schema_version"] ?? null)!==2 || ($v["status"] ?? null)!=="complete"
                   || ($selection["features"][$argv[2]] ?? false)===true) exit(1);
             ' "$RUNNER_TEMP/install-$feature.json" "$feature"
+            if [[ "$INSTALL_MODE" == no-dev ]]; then
+              test ! -d vendor/infocyph/phpforge
+              test ! -e vendor/bin/pest
+            fi
             php infbyte module:enable "$feature" --json=1
             php infbyte module:show "$feature" --json=1 > "$RUNNER_TEMP/show-$feature.json"
             php -r '
@@ -264,6 +273,10 @@ jobs:
             feature="${features[i]}"
             php infbyte module:disable "$feature" --json=1
             php infbyte module:remove "$feature" --json=1
+            if [[ "$INSTALL_MODE" == no-dev ]]; then
+              test ! -d vendor/infocyph/phpforge
+              test ! -e vendor/bin/pest
+            fi
           done
           php -r '
             $selected=array_filter((require "config/modules.php")["features"],static fn($v)=>$v===true);
