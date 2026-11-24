@@ -1,0 +1,297 @@
+name: Published Infbyte consumer acceptance
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  consumer:
+    name: PHP ${{ matrix.php }} / ${{ matrix.mode }} / ${{ matrix.profile }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        php: ["8.4", "8.5", "8.6"]
+        mode: [default, no-dev]
+        profile: [core, all]
+        include:
+          - php: "8.6"
+            mode: no-dev
+            profile: data.database
+          - php: "8.6"
+            mode: no-dev
+            profile: data.filesystem
+          - php: "8.6"
+            mode: no-dev
+            profile: security.crypto
+          - php: "8.6"
+            mode: no-dev
+            profile: security.validation
+          - php: "8.6"
+            mode: no-dev
+            profile: security.mfa
+          - php: "8.6"
+            mode: no-dev
+            profile: security.passkey
+          - php: "8.6"
+            mode: no-dev
+            profile: execution.messaging
+          - php: "8.6"
+            mode: no-dev
+            profile: execution.communication
+    env:
+      INSTALL_MODE: ${{ matrix.mode }}
+      PROFILE: ${{ matrix.profile }}
+      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
+    steps:
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pcntl, pdo_sqlite, fileinfo, mbstring, ctype, sodium, intl, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Download released Infbyte through normal Composer resolution
+        shell: bash
+        run: |
+          set -euo pipefail
+          project="$RUNNER_TEMP/infbyte-app"
+          args=(--prefer-dist --no-interaction --no-progress)
+          if [[ "$INSTALL_MODE" == no-dev ]]; then args+=(--no-dev); fi
+          composer create-project "${args[@]}" infocyph/infbyte "$project" '^4.0' 2>&1 | tee "$RUNNER_TEMP/create-project.log"
+          grep -E 'Installing infocyph/infbyte \(v?4\.[0-9]+(\.[0-9]+)?\)' "$RUNNER_TEMP/create-project.log"
+          cd "$project"
+          for file in composer.json composer.lock README.md .env .env.example .gitignore public/index.php public/.htaccess bootstrap/app.php bootstrap/providers.php config/modules.php app/Http/Controllers/SystemController.php tests/Pest.php tests/Feature/ExampleTest.php tests/Unit/ExampleTest.php; do
+            test -f "$file"
+          done
+          test -x infbyte
+          test -x deploy.sh
+          for excluded in .gitattributes .github docs graphify-out tests/Support tests/ci bootstrap/cache/config composer.lock.example CODE_OF_CONDUCT.md CONTRIBUTING.md SECURITY.md; do
+            test ! -e "$excluded"
+          done
+          expected="$(printf '%s\n' Feature/ExampleTest.php Pest.php Unit/ExampleTest.php)"
+          actual="$(find tests -type f -printf '%P\n' | LC_ALL=C sort)"
+          [[ "$actual" == "$expected" ]]
+          for directory in bootstrap/cache storage/cache storage/logs storage/releases storage/sessions storage/uploads; do
+            test -f "$directory/.gitignore"
+          done
+          php -r '
+            require "vendor/autoload.php";
+            $manifest=json_decode(file_get_contents("composer.json"),true,flags:JSON_THROW_ON_ERROR);
+            $version=Composer\InstalledVersions::getVersion("infocyph/foundation") ?? "";
+            $env=file_get_contents(".env");
+            if (($manifest["require"]["infocyph/foundation"] ?? null)!=="^4.0"
+                || isset($manifest["repositories"])
+                || preg_match("/^4\.[0-9]+\.[0-9]+\.[0-9]+$/D",$version)!==1
+                || (fileperms(".env") & 0777)!==0600
+                || !preg_match("/^AUTH_TOKEN_SECRET=[a-f0-9]{64}$/m",$env)
+                || (require "config/modules.php")!==["features"=>[]]
+            ) exit(1);
+            foreach (new Infocyph\Foundation\Module\ModuleArchitectureCatalog()->all() as $module) {
+                foreach ($module["features"] as $feature) {
+                    foreach ($feature["packages"] as $package => $constraint) {
+                        if (isset($manifest["require"][$package])) exit(1);
+                    }
+                }
+            }
+            echo "Foundation version: ",$version,PHP_EOL;
+            echo "Foundation source: ",Composer\InstalledVersions::getReference("infocyph/foundation"),PHP_EOL;
+          '
+          composer check-platform-reqs
+          php infbyte --version
+          before="$(sha256sum .env)"
+          php infbyte app:install
+          [[ "$(sha256sum .env)" == "$before" ]]
+          php infbyte module:list --json=1 > "$RUNNER_TEMP/modules.json"
+          php -r '
+            $catalog=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);
+            if (($catalog["schema_version"] ?? null)!==2) exit(1);
+            $modules=array_column($catalog["modules"],"features","name");
+            if (count($modules)!==3 || count(array_merge(...array_values($modules)))!==8) exit(1);
+          ' "$RUNNER_TEMP/modules.json"
+
+      - name: Verify selected optional package installation and explicit activation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/infbyte-app"
+          features=()
+          case "$PROFILE" in
+            core) ;;
+            all) features=(data.database data.filesystem security.crypto security.validation security.mfa security.passkey execution.messaging execution.communication) ;;
+            *) features=("$PROFILE") ;;
+          esac
+          printf '%s\n' "${features[@]}" > "$RUNNER_TEMP/selected-features.txt"
+          for feature in "${features[@]}"; do
+            php infbyte module:install "$feature" --json=1 > "$RUNNER_TEMP/install-$feature.json"
+            php -r '
+              $v=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);
+              $selection=require "config/modules.php";
+              if (($v["schema_version"] ?? null)!==2 || ($v["status"] ?? null)!=="complete"
+                  || ($selection["features"][$argv[2]] ?? false)===true) exit(1);
+            ' "$RUNNER_TEMP/install-$feature.json" "$feature"
+            php infbyte module:enable "$feature" --json=1
+            php infbyte module:show "$feature" --json=1 > "$RUNNER_TEMP/show-$feature.json"
+            php -r '
+              $v=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);
+              if (($v["schema_version"] ?? null)!==2) exit(1);
+            ' "$RUNNER_TEMP/show-$feature.json"
+          done
+          php -r '
+            require "vendor/autoload.php";
+            $selected=array_keys(array_filter((require "config/modules.php")["features"],static fn($v)=>$v===true));
+            $expected=array_slice($argv,1);
+            sort($selected);
+            sort($expected);
+            if ($selected!==$expected) exit(1);
+            $catalog=new Infocyph\Foundation\Module\ModuleArchitectureCatalog();
+            $root=json_decode(file_get_contents("composer.json"),true,flags:JSON_THROW_ON_ERROR);
+            foreach ($expected as $id) {
+                $feature=$catalog->resolve($id)["definition"];
+                foreach ($feature["packages"] as $package=>$constraint) {
+                    if (!isset($root["require"][$package]) || !Composer\InstalledVersions::isInstalled($package)) exit(1);
+                }
+                foreach ($feature["config"] as $file) {
+                    if (!is_file("config/".$file)) exit(1);
+                }
+            }
+            echo "Verified enabled features: ",implode(", ",$selected),PHP_EOL;
+          ' "${features[@]}"
+          composer check-platform-reqs
+
+      - name: Run installed application tests through PHPForge
+        if: matrix.mode == 'default'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/infbyte-app"
+          composer ic:test:code
+
+      - name: Verify production dependency isolation
+        if: matrix.mode == 'no-dev'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/infbyte-app"
+          test ! -d vendor/infocyph/phpforge
+          test ! -e vendor/bin/pest
+          composer check-platform-reqs --no-dev
+
+      - name: Compile and validate production deployment
+        shell: bash
+        env:
+          APP_ENV: production
+          APP_DEBUG: "false"
+          APP_CAPABILITIES: ""
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/infbyte-app"
+          php infbyte config:validate --production
+          php infbyte optimize --json=1 > "$RUNNER_TEMP/release.json"
+          php infbyte app:ready
+          php -r '
+            $r=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);
+            if (!is_string($r["manifest"] ?? null) || !is_file($r["manifest"])
+                || !is_string($r["manifest_sha256"] ?? null)
+                || !hash_equals($r["manifest_sha256"],hash_file("sha256",$r["manifest"]))) exit(1);
+          ' "$RUNNER_TEMP/release.json"
+
+      - name: Serve installed application and verify release trust
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/infbyte-app"
+          release_root="$(php -r '$r=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); echo $r["release_root"];' "$RUNNER_TEMP/release.json")"
+          trusted="$(php -r '$r=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); echo $r["manifest_sha256"];' "$RUNNER_TEMP/release.json")"
+          pid=""
+          cleanup() {
+            if [[ -n "$pid" ]]; then
+              kill "$pid" 2>/dev/null || true
+              wait "$pid" 2>/dev/null || true
+              pid=""
+            fi
+          }
+          trap cleanup EXIT
+          wait_health() {
+            for attempt in $(seq 1 30); do
+              if [[ "$(curl --silent --fail --max-time 2 "$1/api/health" || true)" == '{"status":"ok"}' ]]; then return 0; fi
+              sleep 1
+            done
+            cat "$2" >&2
+            return 1
+          }
+          INFOCYPH_FOUNDATION_RELEASE_ROOT="$release_root" INFOCYPH_FOUNDATION_RELEASE_MANIFEST_SHA256="$trusted" \
+            php -S 127.0.0.1:18778 -t public public/index.php > "$RUNNER_TEMP/direct.log" 2>&1 &
+          pid=$!
+          wait_health http://127.0.0.1:18778 "$RUNNER_TEMP/direct.log"
+          curl --silent --fail http://127.0.0.1:18778/json | php -r '$v=json_decode(stream_get_contents(STDIN),true,flags:JSON_THROW_ON_ERROR); if (!is_int($v["memory"] ?? null)) exit(1);'
+          cleanup
+          INFOCYPH_FOUNDATION_RELEASE_ROOT="$release_root" INFOCYPH_FOUNDATION_RELEASE_MANIFEST_SHA256="$(printf '%064d' 0)" \
+            php -S 127.0.0.1:18779 -t public public/index.php > "$RUNNER_TEMP/badtrust.log" 2>&1 &
+          pid=$!
+          code=""
+          for attempt in $(seq 1 20); do
+            code="$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://127.0.0.1:18779/api/health || true)"
+            if [[ "$code" == 500 ]]; then break; fi
+            sleep 1
+          done
+          [[ "$code" == 500 ]]
+          cleanup
+          php infbyte serve --runtime=native --workers=1 --host=127.0.0.1 --port=18780 > "$RUNNER_TEMP/native.log" 2>&1 &
+          pid=$!
+          wait_health http://127.0.0.1:18780 "$RUNNER_TEMP/native.log"
+          seq 1 120 | xargs -P 8 -I '{}' bash -c '[[ "$(curl --silent --show-error --fail --max-time 5 http://127.0.0.1:18780/api/health)" == "{\"status\":\"ok\"}" ]]'
+          [[ "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18780/unknown-consumer-route)" == 404 ]]
+          wait_health http://127.0.0.1:18780 "$RUNNER_TEMP/native.log"
+          cleanup
+          echo "PASS: trusted direct PHP, rejected invalid trust, native Runwire 120 health responses and 404 recovery"
+
+      - name: Disable and remove selected optional features
+        if: matrix.profile != 'core'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/infbyte-app"
+          php infbyte optimize:clear
+          mapfile -t features < "$RUNNER_TEMP/selected-features.txt"
+          for ((i=${#features[@]}-1; i>=0; i--)); do
+            feature="${features[i]}"
+            php infbyte module:disable "$feature" --json=1
+            php infbyte module:remove "$feature" --json=1
+          done
+          php -r '
+            $selected=array_filter((require "config/modules.php")["features"],static fn($v)=>$v===true);
+            if ($selected!==[]) exit(1);
+          '
+          composer check-platform-reqs
+          APP_ENV=production APP_DEBUG=false APP_CAPABILITIES= php infbyte config:validate --production
+          APP_ENV=production APP_DEBUG=false APP_CAPABILITIES= php infbyte optimize --json=1
+          APP_ENV=production APP_DEBUG=false APP_CAPABILITIES= php infbyte app:ready
+
+      - name: Record package inventory
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "$RUNNER_TEMP/infbyte-app/composer.lock" ]]; then
+            cd "$RUNNER_TEMP/infbyte-app"
+            composer show --format=json > "$RUNNER_TEMP/installed-packages.json"
+          fi
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: consumer-php${{ matrix.php }}-${{ matrix.mode }}-${{ matrix.profile }}
+          path: |
+            ${{ runner.temp }}/create-project.log
+            ${{ runner.temp }}/modules.json
+            ${{ runner.temp }}/selected-features.txt
+            ${{ runner.temp }}/install-*.json
+            ${{ runner.temp }}/show-*.json
+            ${{ runner.temp }}/installed-packages.json
+          if-no-files-found: ignore
+          retention-days: 14
