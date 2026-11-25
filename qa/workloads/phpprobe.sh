@@ -81,6 +81,105 @@ comments)
     printf '%s\n' '<?php final class CommentFixture {}' > src/CommentFixture.php
     expect_exit 0 comments-clean.json comments --json --fail-on=info src
     ;;
+changed-only)
+    git init -q
+    git config user.email playground@example.invalid
+    git config user.name Playground
+    printf '%s\n' '<?php final class Historical { ' > src/Historical.php
+    printf '%s\n' '<?php final class Committed {}' > src/Committed.php
+    printf '%s\n' '<?php final class Working {}' > src/Working.php
+    printf '%s\n' '<?php final class Removed {}' > src/Removed.php
+    git add src
+    git commit -qm baseline
+    base="$(git rev-parse HEAD)"
+    printf '%s\n' '<?php final class Committed { public const VALUE = 1; }' > src/Committed.php
+    git rm -q src/Removed.php
+    git add src/Committed.php
+    git commit -qm committed
+    printf '%s\n' '<?php final class Working { public const VALUE = 2; }' > src/Working.php
+    printf '%s\n' '<?php final class Untracked {}' > src/Untracked.php
+    mkdir src/excluded
+    printf '%s\n' '<?php final class Excluded {' > src/excluded/Excluded.php
+    expect_exit 0 changed-valid.json syntax --json --changed-only --changed-base="$base" --exclude=src/excluded src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); if($a["files_checked"]!==3) exit(1);' "$evidence/changed-valid.json"
+    printf '%s\n' '<?php final class Working {' > src/Working.php
+    expect_exit 1 changed-invalid.json syntax --json --changed-only --changed-base="$base" --exclude=src/excluded src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); if($a["files_checked"]!==3 || $a["groups"][0]["failures"]!==1) exit(1);' "$evidence/changed-invalid.json"
+    expect_exit 1 full-invalid.json syntax --json src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); if($a["groups"][0]["failures"]!==3) exit(1);' "$evidence/full-invalid.json"
+    ;;
+graph-api)
+    cat > src/Contract.php <<'PHP'
+<?php
+namespace Lab;
+interface Contract {}
+trait Logging { protected function log(): void {} }
+class BaseService {}
+function helper(): void {}
+PHP
+    cat > src/Service.php <<'PHP'
+<?php
+namespace Lab;
+use DateTimeImmutable;
+final class Service extends BaseService implements Contract
+{
+    use Logging;
+    public function run(object $client): DateTimeImmutable
+    {
+        $this->log();
+        helper();
+        $client->execute();
+        unresolved_lab_function();
+        return new DateTimeImmutable();
+    }
+}
+throw new \RuntimeException('Analyzed source must never execute.');
+PHP
+    cat > graph-contract.php <<'PHP'
+<?php
+declare(strict_types=1);
+require __DIR__ . '/vendor/autoload.php';
+use Infocyph\PHPProbe\Graph\CodeGraphExtractor;
+function requireContract(bool $condition, string $message): void
+{
+    if (!$condition) {
+        throw new RuntimeException($message);
+    }
+}
+$extractor = new CodeGraphExtractor();
+$a = __DIR__ . '/src/Contract.php';
+$b = __DIR__ . '/src/Service.php';
+$graph = $extractor->extract([$a, $b], __DIR__);
+requireContract($graph === $extractor->extract([$b, $a, $b], __DIR__), 'Graph changed with input order or duplicates.');
+requireContract($graph['schema'] === 'phpprobe.code-graph' && $graph['schema_version'] === 1 && $graph['root'] === '.' && $graph['files_scanned'] === 2, 'Graph contract changed.');
+$nodes = array_column($graph['nodes'], null, 'id');
+requireContract(count($nodes) === count($graph['nodes']), 'Duplicate graph IDs.');
+requireContract($nodes['class-like:Lab\\Service']['defined'] && $nodes['class-like:Lab\\Service']['file'] === 'src/Service.php', 'Declaration provenance missing.');
+requireContract($nodes['class-like:DateTimeImmutable']['defined'] === false, 'External reference marked as declaration.');
+$edges = [];
+$resolutions = [];
+foreach ($graph['edges'] as $edge) {
+    requireContract(isset($nodes[$edge['source']], $nodes[$edge['target']]), 'Dangling graph edge.');
+    requireContract($edge['certainty'] === 'extracted' && $edge['line'] > 0, 'Invalid edge provenance.');
+    $edges[] = implode('|', [$edge['source'], $edge['relation'], $edge['target'], $edge['resolution']]);
+    $resolutions[] = $edge['resolution'];
+}
+foreach ([
+    'class-like:Lab\\Service|extends|class-like:Lab\\BaseService|exact',
+    'class-like:Lab\\Service|implements|class-like:Lab\\Contract|exact',
+    'class-like:Lab\\Service|uses|class-like:Lab\\Logging|exact',
+    'method:Lab\\Service::run|calls|function:Lab\\helper|exact',
+    'method:Lab\\Service::run|instantiates|class-like:DateTimeImmutable|exact',
+] as $expected) {
+    requireContract(in_array($expected, $edges, true), 'Missing edge: ' . $expected);
+}
+requireContract(in_array('dynamic', $resolutions, true) && in_array('namespace_fallback', $resolutions, true), 'Uncertain calls were falsely resolved.');
+echo json_encode($graph, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT), PHP_EOL;
+PHP
+    php graph-contract.php > "$evidence/graph-api.json"
+    expect_exit 0 graph-cli.json graph --root="$root" src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); $b=json_decode(file_get_contents($argv[2]),true,flags:JSON_THROW_ON_ERROR); if($a!==$b) exit(1);' "$evidence/graph-api.json" "$evidence/graph-cli.json"
+    ;;
 config-check)
     expect_exit 0 presets.txt presets
     expect_exit 0 preset.json preset standard

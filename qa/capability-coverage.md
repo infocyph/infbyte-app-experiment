@@ -243,3 +243,7 @@ I: actual socket lane sets a 4 KiB write budget, 4 KiB high watermark and 16 KiB
 ## B81 — InterMix factory recipes and finalized graph
 
 I: independent published-package lane tests constructor/static recipes, detached reference-containing literal snapshots, graph metadata/freeze, strict compilation and digest, alias/tag identity, all three declarative and dynamic lifetimes, invalid recipes and strict opaque-factory rejection. Generate and parse preload artifact and verify builder finalization; actual OPcache startup and class coverage remain open. 288 routine rows; hosted verification pending.
+
+## B82 — Git-aware PHPProbe scope and graph API semantics
+
+I: two independent engineering-only modes. Real disposable Git repository proves committed, working-tree and untracked PHP selection, deleted file omission, exclusions, and unchanged invalid file isolation against full-scan failures. Programmatic graph extraction checks input-order/duplicate stability, provenance, external reference distinction, relationship edges, unresolved call semantics, and exact CLI/API agreement without executing source. Seven engineering jobs; 288 routine production scenarios unchanged. Hosted verification pending; no upstream changes.
