@@ -42,7 +42,7 @@ function auditMatrix(string $repository, string $workloads): array
     $dimensions = ['backend' => [], 'host' => [], 'matcher' => [], 'php' => []];
     foreach ($matches as $match) {
         $scenario = trim($match[1]);
-        $row = ['scenario' => $scenario, 'backend' => '', 'host' => 'worker', 'matcher' => 'fused', 'php' => '8.6'];
+        $row = ['scenario' => $scenario, 'backend' => '', 'host' => 'worker', 'matcher' => 'fused', 'php' => '8.5'];
         $fields = ['scenario' => true];
         foreach (explode(',', ltrim($match[2], ',')) as $part) {
             auditAssert(str_contains($part, ':'), 'Malformed matrix field: ' . $scenario);
@@ -54,10 +54,7 @@ function auditMatrix(string $repository, string $workloads): array
         auditAssert(in_array($row['backend'], ['pgsql', 'mysql', 'mariadb', 'sqlite', 'mssql'], true)
             && in_array($row['host'], ['worker', 'native', 'fpm', 'frankenphp', 'roadrunner', 'swoole', 'openswoole'], true)
             && in_array($row['matcher'], ['fused', 'sharded'], true)
-            && in_array($row['php'], ['8.4', '8.5', '8.6'], true), 'Invalid matrix dimension: ' . $scenario);
-        if ($scenario === 'ecosystem-mongodb' || str_starts_with($scenario, 'ecosystem-cache-mongodb-') || str_starts_with($scenario, 'ecosystem-gridfs')) {
-            auditAssert($row['php'] === '8.4', 'MongoDB extension provisioning uses PHP 8.4: ' . $scenario);
-        }
+            && $row['php'] === '8.5', 'Invalid matrix dimension: ' . $scenario);
         foreach ($dimensions as $dimension => &$counts) {
             $value = $row[$dimension];
             $counts[$value] = ($counts[$value] ?? 0) + 1;
@@ -90,19 +87,26 @@ function auditMatrix(string $repository, string $workloads): array
             auditAssert(is_file($workloads . '/' . $script), 'Dispatcher script not found: ' . $script);
         }
     }
-    preg_match_all('/^\h{2}(database|database-expansion|ecosystem|ecosystem-extra|ecosystem-residual|ecosystem-expansion|ecosystem-closure|ecosystem-final|ecosystem-specialist|application):\h*\n(.*?)(?=^ {2}\S|\z)/ms', $workflow, $shards, PREG_SET_ORDER);
+    preg_match_all('/^\h{2}(database|database-expansion|ecosystem|ecosystem-extra|ecosystem-residual|ecosystem-expansion|ecosystem-closure|ecosystem-final|ecosystem-specialist|application-business|application-http|application-operations):\h*\n(.*?)(?=^ {2}\S|\z)/ms', $workflow, $shards, PREG_SET_ORDER);
     $shardCounts = [];
     foreach ($shards as $shard) {
         preg_match_all('/^\h*-\h*\{scenario:\h*([^,}]+)/m', $shard[2], $entries);
         auditAssert($entries[1] !== [] && count($entries[1]) <= 256, 'Invalid matrix shard size: ' . $shard[1]);
         foreach ($entries[1] as $name) {
             $name = trim($name);
-            $expected = str_starts_with($name, 'db-') ? 'database' : (str_starts_with($name, 'ecosystem-') ? 'ecosystem' : 'application');
-            auditAssert($expected === $shard[1] || ($expected === 'database' && $shard[1] === 'database-expansion') || ($expected === 'ecosystem' && in_array($shard[1], ['ecosystem-extra', 'ecosystem-residual', 'ecosystem-expansion', 'ecosystem-closure', 'ecosystem-final', 'ecosystem-specialist'], true)), 'Scenario assigned to wrong shard: ' . $name);
+            $expected = match (true) {
+                str_starts_with($name, 'db-') => 'database',
+                str_starts_with($name, 'ecosystem-') => 'ecosystem',
+                $name === 'operations' => 'operations',
+                $name === 'http', $name === 'oauth-http', str_starts_with($name, 'browser'), str_starts_with($name, 'transfer') => 'http',
+                default => 'business',
+            };
+            auditAssert(str_contains($shard[2], './.github/workflows/production-worker-' . $expected . '.yml'), 'Wrong worker for scenario: ' . $name);
+            auditAssert($expected === $shard[1] || ($expected === 'database' && $shard[1] === 'database-expansion') || $shard[1] === 'application-' . $expected || ($expected === 'ecosystem' && in_array($shard[1], ['ecosystem-extra', 'ecosystem-residual', 'ecosystem-expansion', 'ecosystem-closure', 'ecosystem-final', 'ecosystem-specialist'], true)), 'Scenario assigned to wrong shard: ' . $name);
         }
         $shardCounts[$shard[1]] = count($entries[1]);
     }
-    auditAssert(count($shardCounts) === 10 && array_sum($shardCounts) === count($rows), 'Incomplete matrix shard inventory.');
+    auditAssert(count($shardCounts) === 12 && array_sum($shardCounts) === count($rows), 'Incomplete matrix shard inventory.');
     ksort($scenarios);
     ksort($routes);
     foreach ($dimensions as &$counts) {
@@ -112,7 +116,7 @@ function auditMatrix(string $repository, string $workloads): array
     unset($counts);
 
     $engineering = auditRead($repository . '/.github/workflows/phpprobe-acceptance.yml');
-    auditAssert(preg_match('/^\h+mode:\h*\[([^\]]+)\]/m', $engineering, $modes) === 1, 'Missing PHPProbe mode matrix.');
+    auditAssert(preg_match('/^\h+options:\h*\[all,\h*([^\]]+)\]/m', $engineering, $modes) === 1, 'Missing PHPProbe mode matrix.');
     $probeModes = array_map('trim', explode(',', $modes[1]));
     auditAssert(count(array_unique($probeModes)) === count($probeModes), 'Duplicate PHPProbe mode.');
     $probe = auditRead($workloads . '/phpprobe.sh');

@@ -1,4 +1,4 @@
-FROM php:8.4-fpm
+FROM php:8.5-fpm
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev $PHPIZE_DEPS \
     && docker-php-ext-install -j2 pdo_pgsql pdo_mysql \

@@ -1,0 +1,103 @@
+name: Production worker - native gRPC
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Native gRPC workload
+        type: choice
+        required: true
+        default: unary
+        options: [unary, streaming-tls]
+  workflow_call:
+    inputs:
+      mode:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  execute:
+    name: Native gRPC / PHP 8.5 / ${{ inputs.mode }}
+    concurrency:
+      group: production-worker-grpc-${{ github.ref }}-${{ inputs.mode }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: none, grpc, curl, mbstring, intl, sodium, pdo, pdo_sqlite, dom, simplexml, xml, xmlreader, xmlwriter, tokenizer, ctype, fileinfo, iconv, phar, openssl, session, sockets, pcntl, posix, zip
+          tools: composer:v2
+          coverage: none
+      - name: Isolate native extension configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$(mktemp -d "$RUNNER_TEMP/grpc-ini.XXXXXXXX")"
+          mkdir "$root/scan"
+          module_dir="$(php -r 'echo ini_get("extension_dir");')"
+          printf 'extension_dir="%s"\ndate.timezone=UTC\nmemory_limit=512M\nopcache.enable=0\nopcache.enable_cli=0\nopcache.jit_buffer_size=0\n' "$module_dir" > "$root/php.ini"
+          for extension in libxml ctype fileinfo iconv openssl phar tokenizer pdo pdo_sqlite dom simplexml xml xmlreader xmlwriter curl mbstring intl sodium session sockets pcntl posix zip grpc; do
+            if php -n -r 'exit(extension_loaded($argv[1]) ? 0 : 1);' -- "$extension"; then continue; fi
+            test -f "$module_dir/$extension.so"
+            printf 'extension=%s.so\n' "$extension" >> "$root/php.ini"
+          done
+          printf 'PHPRC=%s\nPHP_INI_SCAN_DIR=%s\nPROJECT=%s/grpc-app\nEVIDENCE=%s/grpc-evidence\n' "$root/php.ini" "$root/scan" "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Install published communication feature
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset COMPOSER_NO_DEV
+          mkdir -p "$EVIDENCE"
+          php --ri grpc
+          composer create-project --no-dev --prefer-dist --no-interaction --no-progress infocyph/infbyte "$PROJECT" '^4.0'
+          cd "$PROJECT"
+          php infbyte module:install execution.communication
+          php infbyte module:enable execution.communication
+          test ! -d vendor/infocyph/phpforge
+          composer check-platform-reqs --no-dev
+          composer show --format=json > "$EVIDENCE/packages.json"
+          php --ini > "$EVIDENCE/ini.txt"
+      - name: Concurrent real unary calls and error status
+        if: inputs.mode == 'unary'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m venv "$RUNNER_TEMP/grpc-peer-venv"
+          python="$RUNNER_TEMP/grpc-peer-venv/bin/python"
+          "$python" -m pip install 'grpcio>=1.76,<2'
+          "$python" qa/workloads/grpc-peer.py "$RUNNER_TEMP/grpc-ready.json" > "$EVIDENCE/peer.log" 2>&1 &
+          peer=$!
+          trap 'kill "$peer" 2>/dev/null || :; wait "$peer" 2>/dev/null || :' EXIT
+          for attempt in $(seq 1 100); do
+            if [[ -f "$RUNNER_TEMP/grpc-ready.json" ]]; then break; fi
+            kill -0 "$peer"
+            sleep 0.1
+          done
+          export GRPC_TEST_PORT="$(php -r 'echo json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR)["port"];' "$RUNNER_TEMP/grpc-ready.json")"
+          for concurrency in 1 4 8; do
+            start="$(php -r 'echo intdiv(hrtime(true), 1000000);')"
+            pids=()
+            for worker in $(seq 1 "$concurrency"); do
+              php qa/workloads/grpc-client.php "$concurrency-$worker" 100 > "$EVIDENCE/results-$concurrency-$worker.jsonl" 2> "$EVIDENCE/errors-$concurrency-$worker.log" &
+              pids+=("$!")
+            done
+            failed=0
+            for pid in "${pids[@]}"; do if ! wait "$pid"; then failed=1; fi; done
+            if (( failed )); then cat "$EVIDENCE"/errors-"$concurrency"-*.log >&2; exit 1; fi
+            php qa/workloads/report.php "$((concurrency * 100))" "$(( $(php -r 'echo intdiv(hrtime(true), 1000000);') - start ))" "$concurrency" "$EVIDENCE"/results-"$concurrency"-*.jsonl | tee "$EVIDENCE/summary-$concurrency.json"
+          done
+      - name: Real native streaming, TLS, deadline and cancellation
+        if: inputs.mode == 'streaming-tls'
+        shell: bash
+        run: bash qa/workloads/grpc-stream.sh
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: native-grpc-evidence-${{ inputs.mode }}
+          path: ${{ runner.temp }}/grpc-evidence/
+          if-no-files-found: error

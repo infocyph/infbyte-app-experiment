@@ -21,32 +21,32 @@ jobs:
       fail-fast: false
       max-parallel: 6
       matrix:
-        php: ["8.4", "8.5", "8.6"]
+        php: ["8.5"]
         mode: [default, no-dev]
         profile: [core, all]
         include:
-          - php: "8.6"
+          - php: "8.5"
             mode: no-dev
             profile: data.database
-          - php: "8.6"
+          - php: "8.5"
             mode: no-dev
             profile: data.filesystem
-          - php: "8.6"
+          - php: "8.5"
             mode: no-dev
             profile: security.crypto
-          - php: "8.6"
+          - php: "8.5"
             mode: no-dev
             profile: security.validation
-          - php: "8.6"
+          - php: "8.5"
             mode: no-dev
             profile: security.mfa
-          - php: "8.6"
+          - php: "8.5"
             mode: no-dev
             profile: security.passkey
-          - php: "8.6"
+          - php: "8.5"
             mode: no-dev
             profile: execution.messaging
-          - php: "8.6"
+          - php: "8.5"
             mode: no-dev
             profile: execution.communication
     env:

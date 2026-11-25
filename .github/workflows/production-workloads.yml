@@ -16,7 +16,7 @@ concurrency:
 jobs:
   database:
     if: inputs.group == 'all' || inputs.group == 'database'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
       matrix:
@@ -94,61 +94,61 @@ jobs:
           - {scenario: db-derived-query, backend: mysql}
           - {scenario: db-derived-query, backend: mariadb}
           - {scenario: db-derived-query, backend: sqlite}
-          - {scenario: db-derived-query, backend: mssql, php: '8.4'}
+          - {scenario: db-derived-query, backend: mssql}
           - {scenario: db-result-projections, backend: pgsql}
           - {scenario: db-result-projections, backend: mysql}
           - {scenario: db-result-projections, backend: mariadb}
           - {scenario: db-result-projections, backend: sqlite}
-          - {scenario: db-result-projections, backend: mssql, php: '8.4'}
+          - {scenario: db-result-projections, backend: mssql}
           - {scenario: db-repository-hooks, backend: pgsql}
           - {scenario: db-repository-hooks, backend: mysql}
           - {scenario: db-repository-hooks, backend: mariadb}
           - {scenario: db-repository-hooks, backend: sqlite}
-          - {scenario: db-repository-hooks, backend: mssql, php: '8.4'}
+          - {scenario: db-repository-hooks, backend: mssql}
           - {scenario: db-schema-prefix, backend: pgsql}
           - {scenario: db-schema-prefix, backend: mysql}
           - {scenario: db-schema-prefix, backend: mariadb}
           - {scenario: db-schema-prefix, backend: sqlite}
-          - {scenario: db-schema-prefix, backend: mssql, php: '8.4'}
+          - {scenario: db-schema-prefix, backend: mssql}
           - {scenario: db-execution-plan, backend: pgsql}
           - {scenario: db-execution-plan, backend: mysql}
           - {scenario: db-execution-plan, backend: mariadb}
           - {scenario: db-execution-plan, backend: sqlite}
-          - {scenario: db-execution-plan, backend: mssql, php: '8.4'}
+          - {scenario: db-execution-plan, backend: mssql}
           - {scenario: db-predicate-contracts, backend: mysql}
           - {scenario: db-predicate-contracts, backend: mariadb}
           - {scenario: db-predicate-contracts, backend: pgsql}
           - {scenario: db-predicate-contracts, backend: sqlite}
-          - {scenario: db-predicate-contracts, backend: mssql, php: '8.4'}
+          - {scenario: db-predicate-contracts, backend: mssql}
           - {scenario: db-pagination-contracts, backend: mysql}
           - {scenario: db-pagination-contracts, backend: mariadb}
           - {scenario: db-pagination-contracts, backend: pgsql}
           - {scenario: db-pagination-contracts, backend: sqlite}
-          - {scenario: db-pagination-contracts, backend: mssql, php: '8.4'}
+          - {scenario: db-pagination-contracts, backend: mssql}
           - {scenario: db-chunk-checkpoint, backend: mysql}
           - {scenario: db-chunk-checkpoint, backend: mariadb}
           - {scenario: db-chunk-checkpoint, backend: pgsql}
           - {scenario: db-chunk-checkpoint, backend: sqlite}
-          - {scenario: db-chunk-checkpoint, backend: mssql, php: '8.4'}
+          - {scenario: db-chunk-checkpoint, backend: mssql}
           - {scenario: db-connection-reuse, backend: mysql}
           - {scenario: db-connection-reuse, backend: mariadb}
           - {scenario: db-connection-reuse, backend: pgsql}
           - {scenario: db-connection-reuse, backend: sqlite}
-          - {scenario: db-connection-reuse, backend: mssql, php: '8.4'}
+          - {scenario: db-connection-reuse, backend: mssql}
           - {scenario: db-batch-boundaries, backend: mysql}
           - {scenario: db-batch-boundaries, backend: mariadb}
           - {scenario: db-batch-boundaries, backend: pgsql}
           - {scenario: db-batch-boundaries, backend: sqlite}
-          - {scenario: db-batch-boundaries, backend: mssql, php: '8.4'}
+          - {scenario: db-batch-boundaries, backend: mssql}
           - {scenario: db-commit-uncertain, backend: pgsql}
           - {scenario: db-commit-uncertain, backend: mysql}
           - {scenario: db-commit-uncertain, backend: mariadb}
-          - {scenario: db-commit-uncertain, backend: mssql, php: '8.4'}
+          - {scenario: db-commit-uncertain, backend: mssql}
           - {scenario: db-tls, backend: pgsql}
           - {scenario: db-mysql-family-tls, backend: mysql}
           - {scenario: db-mysql-family-tls, backend: mariadb}
-          - {scenario: db-sqlserver-tls, backend: mssql, php: '8.4'}
-          - {scenario: db-sqlserver-ag, backend: mssql, php: '8.4'}
+          - {scenario: db-sqlserver-tls, backend: mssql}
+          - {scenario: db-sqlserver-ag, backend: mssql}
           - {scenario: db-migration-fault, backend: mysql}
           - {scenario: db-migration-fault, backend: mariadb}
           - {scenario: db-migration-fault, backend: pgsql}
@@ -169,14 +169,14 @@ jobs:
           - {scenario: db-lock-modes, backend: mysql}
           - {scenario: db-lock-modes, backend: mariadb}
           - {scenario: db-lock-modes, backend: pgsql}
-          - {scenario: db-sqlserver-lock-modes, backend: mssql, php: '8.4'}
+          - {scenario: db-sqlserver-lock-modes, backend: mssql}
           - {scenario: db-native-owner, backend: mysql}
-          - {scenario: db-native-owner, backend: mssql, php: '8.4'}
+          - {scenario: db-native-owner, backend: mssql}
           - {scenario: db-native-owner, backend: mariadb}
           - {scenario: db-native-owner, backend: pgsql}
           - {scenario: db-native-owner, backend: sqlite}
           - {scenario: db-callback-failure, backend: mysql}
-          - {scenario: db-callback-failure, backend: mssql, php: '8.4'}
+          - {scenario: db-callback-failure, backend: mssql}
           - {scenario: db-callback-failure, backend: mariadb}
           - {scenario: db-callback-failure, backend: pgsql}
           - {scenario: db-callback-failure, backend: sqlite}
@@ -184,9 +184,9 @@ jobs:
           - {scenario: db-driver, backend: pgsql}
           - {scenario: db-driver, backend: sqlite}
           - {scenario: db-driver, backend: mariadb}
-          - {scenario: db-driver, backend: mssql, php: '8.4'}
+          - {scenario: db-driver, backend: mssql}
           - {scenario: db-relations, backend: mysql}
-          - {scenario: db-relations, backend: mssql, php: '8.4'}
+          - {scenario: db-relations, backend: mssql}
           - {scenario: db-relations, backend: mariadb}
           - {scenario: db-relations, backend: pgsql}
           - {scenario: db-relations, backend: sqlite}
@@ -194,12 +194,12 @@ jobs:
           - {scenario: db-relations-advanced, backend: pgsql}
           - {scenario: db-relations-advanced, backend: sqlite}
           - {scenario: db-relations-advanced, backend: mariadb}
-          - {scenario: db-relations-advanced, backend: mssql, php: '8.4'}
+          - {scenario: db-relations-advanced, backend: mssql}
           - {scenario: db-lock-wait, backend: mysql}
           - {scenario: db-lock-wait, backend: mariadb}
           - {scenario: db-lock-wait, backend: pgsql}
           - {scenario: db-pool-lifecycle, backend: mysql}
-          - {scenario: db-pool-lifecycle, backend: mssql, php: '8.4'}
+          - {scenario: db-pool-lifecycle, backend: mssql}
           - {scenario: db-pool-lifecycle, backend: mariadb}
           - {scenario: db-pool-lifecycle, backend: pgsql}
           - {scenario: db-budgets, backend: mysql}
@@ -218,9 +218,9 @@ jobs:
           - {scenario: db-portable-backup, backend: mysql}
           - {scenario: db-portable-backup, backend: mariadb}
           - {scenario: db-portable-backup, backend: sqlite}
-          - {scenario: db-portable-backup, backend: mssql, php: '8.4'}
+          - {scenario: db-portable-backup, backend: mssql}
           - {scenario: db-schema, backend: mysql}
-          - {scenario: db-schema, backend: mssql, php: '8.4'}
+          - {scenario: db-schema, backend: mssql}
           - {scenario: db-schema, backend: mariadb}
           - {scenario: db-schema, backend: pgsql}
           - {scenario: db-schema, backend: sqlite}
@@ -229,58 +229,57 @@ jobs:
           - {scenario: db-query, backend: pgsql}
           - {scenario: db-query, backend: sqlite}
           - {scenario: db-repository, backend: mysql}
-          - {scenario: db-repository, backend: mssql, php: '8.4'}
+          - {scenario: db-repository, backend: mssql}
           - {scenario: db-repository, backend: mariadb}
           - {scenario: db-repository, backend: pgsql}
           - {scenario: db-repository, backend: sqlite}
           - {scenario: db-query-cache, backend: mysql}
-          - {scenario: db-query-cache, backend: mssql, php: '8.4'}
+          - {scenario: db-query-cache, backend: mssql}
           - {scenario: db-query-cache, backend: mariadb}
           - {scenario: db-query-cache, backend: pgsql}
           - {scenario: db-query-cache, backend: sqlite}
           - {scenario: db-query-cache-race, backend: mysql}
-          - {scenario: db-query-cache-race, backend: mssql, php: '8.4'}
+          - {scenario: db-query-cache-race, backend: mssql}
           - {scenario: db-query-cache-race, backend: mariadb}
           - {scenario: db-query-cache-race, backend: pgsql}
           - {scenario: db-query-cache-overlap, backend: pgsql}
           - {scenario: db-query-cache-overlap, backend: mysql}
           - {scenario: db-query-cache-overlap, backend: mariadb}
           - {scenario: db-query-cache-overlap, backend: sqlite}
-          - {scenario: db-query-cache-overlap, backend: mssql, php: '8.4'}
+          - {scenario: db-query-cache-overlap, backend: mssql}
           - {scenario: db-query-cache-race, backend: sqlite}
           - {scenario: db-stream, backend: mysql}
-          - {scenario: db-stream, backend: mssql, php: '8.4'}
+          - {scenario: db-stream, backend: mssql}
           - {scenario: db-stream, backend: mariadb}
           - {scenario: db-stream, backend: pgsql}
           - {scenario: db-stream, backend: sqlite}
           - {scenario: db-security, backend: mysql}
-          - {scenario: db-security, backend: mssql, php: '8.4'}
+          - {scenario: db-security, backend: mssql}
           - {scenario: db-security, backend: mariadb}
           - {scenario: db-security, backend: pgsql}
           - {scenario: db-security, backend: sqlite}
           - {scenario: db-transactions, backend: mysql}
-          - {scenario: db-transactions, backend: mssql, php: '8.4'}
+          - {scenario: db-transactions, backend: mssql}
           - {scenario: db-transactions, backend: mariadb}
           - {scenario: db-transactions, backend: pgsql}
           - {scenario: db-locking, backend: mysql}
           - {scenario: db-locking, backend: mariadb}
           - {scenario: db-locking, backend: pgsql}
           - {scenario: db-pool, backend: mysql}
-          - {scenario: db-pool, backend: mssql, php: '8.4'}
+          - {scenario: db-pool, backend: mssql}
           - {scenario: db-pool, backend: mariadb}
           - {scenario: db-pool, backend: pgsql}
           - {scenario: db-replicas, backend: pgsql}
-    uses: ./.github/workflows/production-worker.yml
+    uses: ./.github/workflows/production-worker-database.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
-      php: ${{ matrix.php || '8.6' }}
 
   database-expansion:
     if: inputs.group == 'all' || inputs.group == 'database-expansion'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
       matrix:
@@ -289,22 +288,22 @@ jobs:
           - {scenario: db-right-outer-join, backend: mysql}
           - {scenario: db-right-outer-join, backend: mariadb}
           - {scenario: db-right-outer-join, backend: sqlite}
-          - {scenario: db-right-outer-join, backend: mssql, php: '8.4'}
+          - {scenario: db-right-outer-join, backend: mssql}
           - {scenario: db-chained-cte, backend: pgsql}
           - {scenario: db-chained-cte, backend: mysql}
           - {scenario: db-chained-cte, backend: mariadb}
           - {scenario: db-chained-cte, backend: sqlite}
-          - {scenario: db-chained-cte, backend: mssql, php: '8.4'}
+          - {scenario: db-chained-cte, backend: mssql}
           - {scenario: db-bidirectional-cursor, backend: pgsql}
           - {scenario: db-bidirectional-cursor, backend: mysql}
           - {scenario: db-bidirectional-cursor, backend: mariadb}
           - {scenario: db-bidirectional-cursor, backend: sqlite}
-          - {scenario: db-bidirectional-cursor, backend: mssql, php: '8.4'}
+          - {scenario: db-bidirectional-cursor, backend: mssql}
           - {scenario: db-bounded-pruner, backend: pgsql}
           - {scenario: db-bounded-pruner, backend: mysql}
           - {scenario: db-bounded-pruner, backend: mariadb}
           - {scenario: db-bounded-pruner, backend: sqlite}
-          - {scenario: db-bounded-pruner, backend: mssql, php: '8.4'}
+          - {scenario: db-bounded-pruner, backend: mssql}
           - {scenario: db-schema-evolution-column, backend: pgsql}
           - {scenario: db-schema-evolution-column, backend: mysql}
           - {scenario: db-schema-evolution-column, backend: mariadb}
@@ -370,24 +369,23 @@ jobs:
           - {scenario: db-composite-foreign, backend: mariadb}
           - {scenario: db-composite-foreign, backend: sqlite}
           - {scenario: db-composite-foreign, backend: mssql}
-    uses: ./.github/workflows/production-worker.yml
+    uses: ./.github/workflows/production-worker-database.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
-      php: ${{ matrix.php || '8.6' }}
 
   ecosystem:
     if: inputs.group == 'all' || inputs.group == 'ecosystem'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {scenario: ecosystem-cache-mongodb-tls-trust, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-mongodb-tls-atomic, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-mongodb-tls-restart, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-tls-trust, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-tls-atomic, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-tls-restart, backend: pgsql}
           - {scenario: ecosystem-sqs-tls-contracts, backend: pgsql}
           - {scenario: ecosystem-sqs-tls-contracts, backend: mysql}
           - {scenario: ecosystem-sqs-tls-contracts, backend: mariadb}
@@ -423,20 +421,20 @@ jobs:
           - {scenario: ecosystem-auth-lifecycle, backend: pgsql}
           - {scenario: ecosystem-amqp-ack-uncertain, backend: mysql}
           - {scenario: ecosystem-amqp-ack-uncertain, backend: sqlite}
-          - {scenario: ecosystem-amqp-ack-uncertain, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-amqp-ack-uncertain, backend: mssql}
           - {scenario: ecosystem-amqp-wire-ack, backend: mysql}
           - {scenario: ecosystem-amqp-wire-ack, backend: sqlite}
-          - {scenario: ecosystem-amqp-wire-ack, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-amqp-wire-ack, backend: mssql}
           - {scenario: ecosystem-sqs-ack-uncertain, backend: mysql}
           - {scenario: ecosystem-sqs-ack-uncertain, backend: sqlite}
-          - {scenario: ecosystem-sqs-ack-uncertain, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sqs-ack-uncertain, backend: mssql}
           - {scenario: ecosystem-sqs-wire-ack, backend: mysql}
           - {scenario: ecosystem-sqs-wire-ack, backend: sqlite}
-          - {scenario: ecosystem-sqs-wire-ack, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sqs-wire-ack, backend: mssql}
           - {scenario: ecosystem-amqp-consumer-failures, backend: sqlite}
-          - {scenario: ecosystem-amqp-consumer-failures, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-amqp-consumer-failures, backend: mssql}
           - {scenario: ecosystem-sqs-consumer-failures, backend: sqlite}
-          - {scenario: ecosystem-sqs-consumer-failures, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sqs-consumer-failures, backend: mssql}
           - {scenario: ecosystem-consent-scope-policy, backend: pgsql}
           - {scenario: ecosystem-consent-scope-policy, backend: mysql}
           - {scenario: ecosystem-consent-scope-policy, backend: mariadb}
@@ -641,17 +639,16 @@ jobs:
           - {scenario: ecosystem-validation-database, backend: mysql}
           - {scenario: ecosystem-validation-database, backend: pgsql}
           - {scenario: ecosystem-validation-database, backend: sqlite}
-    uses: ./.github/workflows/production-worker.yml
+    uses: ./.github/workflows/production-worker-ecosystem.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
-      php: ${{ matrix.php || '8.6' }}
 
   ecosystem-extra:
     if: inputs.group == 'all' || inputs.group == 'ecosystem-extra'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
       matrix:
@@ -665,22 +662,22 @@ jobs:
           - {scenario: ecosystem-business-cache-queue, backend: mysql}
           - {scenario: ecosystem-business-cache-queue, backend: mariadb}
           - {scenario: ecosystem-business-cache-queue, backend: sqlite}
-          - {scenario: ecosystem-business-cache-queue, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-business-cache-queue, backend: mssql}
           - {scenario: ecosystem-business-receipt-redelivery, backend: pgsql}
           - {scenario: ecosystem-business-receipt-redelivery, backend: mysql}
           - {scenario: ecosystem-business-receipt-redelivery, backend: mariadb}
           - {scenario: ecosystem-business-receipt-redelivery, backend: sqlite}
-          - {scenario: ecosystem-business-receipt-redelivery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-business-receipt-redelivery, backend: mssql}
           - {scenario: ecosystem-business-poison-queue, backend: pgsql}
           - {scenario: ecosystem-business-poison-queue, backend: mysql}
           - {scenario: ecosystem-business-poison-queue, backend: mariadb}
           - {scenario: ecosystem-business-poison-queue, backend: sqlite}
-          - {scenario: ecosystem-business-poison-queue, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-business-poison-queue, backend: mssql}
           - {scenario: ecosystem-business-failure-recovery, backend: pgsql}
           - {scenario: ecosystem-business-failure-recovery, backend: mysql}
           - {scenario: ecosystem-business-failure-recovery, backend: mariadb}
           - {scenario: ecosystem-business-failure-recovery, backend: sqlite}
-          - {scenario: ecosystem-business-failure-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-business-failure-recovery, backend: mssql}
           - {scenario: ecosystem-di-cache-parity-valkey, backend: pgsql}
           - {scenario: ecosystem-di-cache-parity-memcached, backend: pgsql}
           - {scenario: ecosystem-di-cache-parity-file, backend: pgsql}
@@ -727,17 +724,17 @@ jobs:
           - {scenario: ecosystem-omnibus-failure-replay, backend: mysql}
           - {scenario: ecosystem-omnibus-failure-replay, backend: mariadb}
           - {scenario: ecosystem-omnibus-failure-replay, backend: sqlite}
-          - {scenario: ecosystem-omnibus-failure-replay, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-failure-replay, backend: mssql}
           - {scenario: ecosystem-omnibus-failure-rejection, backend: pgsql}
           - {scenario: ecosystem-omnibus-failure-rejection, backend: mysql}
           - {scenario: ecosystem-omnibus-failure-rejection, backend: mariadb}
           - {scenario: ecosystem-omnibus-failure-rejection, backend: sqlite}
-          - {scenario: ecosystem-omnibus-failure-rejection, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-failure-rejection, backend: mssql}
           - {scenario: ecosystem-omnibus-transaction-enqueue, backend: pgsql}
           - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mysql}
           - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mariadb}
           - {scenario: ecosystem-omnibus-transaction-enqueue, backend: sqlite}
-          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mssql}
           - {scenario: ecosystem-file-binary-contracts, backend: pgsql}
           - {scenario: ecosystem-file-csv-contracts, backend: pgsql}
           - {scenario: ecosystem-file-jsonl-contracts, backend: pgsql}
@@ -781,12 +778,12 @@ jobs:
           - {scenario: ecosystem-wire-http3-flow, backend: pgsql}
           - {scenario: ecosystem-wire-http3-admission, backend: pgsql}
           - {scenario: ecosystem-wire-mtls, backend: pgsql}
-          - {scenario: ecosystem-scylla, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-scylla, backend: pgsql}
           - {scenario: ecosystem-redis-failover, backend: pgsql}
           - {scenario: ecosystem-storage-local-modes, backend: pgsql}
           - {scenario: ecosystem-ftp, backend: pgsql}
           - {scenario: ecosystem-webdav, backend: pgsql}
-          - {scenario: ecosystem-gridfs, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs, backend: pgsql}
           - {scenario: ecosystem-sftp2, backend: pgsql}
           - {scenario: ecosystem-async-s3, backend: pgsql}
           - {scenario: ecosystem-azure, backend: pgsql}
@@ -825,10 +822,10 @@ jobs:
           - {scenario: ecosystem-middleware-policies, backend: pgsql}
           - {scenario: ecosystem-vary-linter, backend: pgsql}
           - {scenario: ecosystem-telemetry-risk, backend: pgsql}
-          - {scenario: ecosystem-risk-edge, backend: pgsql, host: fpm, php: '8.4', matcher: fused}
-          - {scenario: ecosystem-risk-edge, backend: pgsql, host: fpm, php: '8.4', matcher: sharded}
-          - {scenario: ecosystem-risk-ja4, backend: pgsql, host: fpm, php: '8.4', matcher: fused}
-          - {scenario: ecosystem-risk-ja4, backend: pgsql, host: fpm, php: '8.4', matcher: sharded}
+          - {scenario: ecosystem-risk-edge, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: ecosystem-risk-edge, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: ecosystem-risk-ja4, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: ecosystem-risk-ja4, backend: pgsql, host: fpm, matcher: sharded}
           - {scenario: ecosystem-telemetry-otel, backend: pgsql}
           - {scenario: ecosystem-response-cache, backend: pgsql}
           - {scenario: ecosystem-throttle, backend: pgsql}
@@ -843,7 +840,7 @@ jobs:
           - {scenario: ecosystem-endurance, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-http-policy, backend: pgsql}
           - {scenario: ecosystem-redis-cluster, backend: pgsql}
-          - {scenario: ecosystem-mongodb, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-mongodb, backend: pgsql}
           - {scenario: ecosystem-s3, backend: pgsql}
           - {scenario: ecosystem-sftp, backend: pgsql}
           - {scenario: ecosystem-connected, backend: mysql, matcher: fused}
@@ -867,31 +864,31 @@ jobs:
           - {scenario: ecosystem-omnibus-middleware, backend: mysql}
           - {scenario: ecosystem-omnibus-middleware, backend: mariadb}
           - {scenario: ecosystem-omnibus-middleware, backend: sqlite}
-          - {scenario: ecosystem-omnibus-middleware, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-middleware, backend: mssql}
           - {scenario: ecosystem-omnibus-events, backend: pgsql}
           - {scenario: ecosystem-omnibus-events, backend: mysql}
           - {scenario: ecosystem-omnibus-events, backend: mariadb}
           - {scenario: ecosystem-omnibus-events, backend: sqlite}
-          - {scenario: ecosystem-omnibus-events, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-events, backend: mssql}
           - {scenario: ecosystem-omnibus-workflow, backend: mysql}
           - {scenario: ecosystem-omnibus-workflow, backend: mariadb}
           - {scenario: ecosystem-omnibus-workflow, backend: sqlite}
-          - {scenario: ecosystem-omnibus-workflow, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-workflow, backend: mssql}
           - {scenario: ecosystem-omnibus-failure-claims, backend: pgsql}
           - {scenario: ecosystem-omnibus-failure-claims, backend: mysql}
           - {scenario: ecosystem-omnibus-failure-claims, backend: mariadb}
           - {scenario: ecosystem-omnibus-failure-claims, backend: sqlite}
-          - {scenario: ecosystem-omnibus-failure-claims, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-failure-claims, backend: mssql}
           - {scenario: ecosystem-omnibus-reservation-ownership, backend: pgsql}
           - {scenario: ecosystem-omnibus-reservation-ownership, backend: mysql}
           - {scenario: ecosystem-omnibus-reservation-ownership, backend: mariadb}
           - {scenario: ecosystem-omnibus-reservation-ownership, backend: sqlite}
-          - {scenario: ecosystem-omnibus-reservation-ownership, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-reservation-ownership, backend: mssql}
           - {scenario: ecosystem-omnibus-redis, backend: pgsql}
           - {scenario: ecosystem-omnibus-redis, backend: mysql}
           - {scenario: ecosystem-omnibus-redis, backend: mariadb}
           - {scenario: ecosystem-omnibus-redis, backend: sqlite}
-          - {scenario: ecosystem-omnibus-redis, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-redis, backend: mssql}
           - {scenario: ecosystem-cache-tier, backend: pgsql}
           - {scenario: ecosystem-cache-local, backend: pgsql}
           - {scenario: ecosystem-cache-integrity, backend: pgsql}
@@ -912,17 +909,16 @@ jobs:
           - {scenario: ecosystem-sqs-consumer-failures, backend: pgsql}
           - {scenario: ecosystem-sqs-consumer-failures, backend: mysql}
           - {scenario: ecosystem-sqs-consumer-failures, backend: mariadb}
-    uses: ./.github/workflows/production-worker.yml
+    uses: ./.github/workflows/production-worker-ecosystem.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
-      php: ${{ matrix.php || '8.6' }}
 
   ecosystem-residual:
     if: inputs.group == 'all' || inputs.group == 'ecosystem-residual'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
       matrix:
@@ -1019,18 +1015,18 @@ jobs:
           - {scenario: ecosystem-foundation-paths-explicit, backend: pgsql}
           - {scenario: ecosystem-foundation-notifications-templates, backend: pgsql}
           - {scenario: ecosystem-foundation-notifications-spool, backend: pgsql}
-          - {scenario: ecosystem-gridfs-publication-before, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-publication-after, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-publication-before, backend: pgsql}
+          - {scenario: ecosystem-gridfs-publication-after, backend: pgsql}
           - {scenario: ecosystem-ftp-rename-before, backend: pgsql}
           - {scenario: ecosystem-ftp-rename-after, backend: pgsql}
           - {scenario: ecosystem-ftp-interrupted-upload, backend: pgsql}
           - {scenario: ecosystem-sftp2-rename-before, backend: pgsql}
           - {scenario: ecosystem-sftp2-rename-after, backend: pgsql}
           - {scenario: ecosystem-sftp2-interrupted-upload, backend: pgsql}
-          - {scenario: ecosystem-cache-mongodb-outage-closed, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-mongodb-outage-open, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-scylla-outage-closed, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-scylla-outage-open, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-outage-closed, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-outage-open, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-outage-closed, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-outage-open, backend: pgsql}
           - {scenario: ecosystem-webdav-http-publication-before, backend: pgsql}
           - {scenario: ecosystem-webdav-http-publication-after, backend: pgsql}
           - {scenario: ecosystem-async-s3-http-publication-before, backend: pgsql}
@@ -1099,21 +1095,21 @@ jobs:
           - {scenario: ecosystem-cache-redis-cluster-ttl-forms, backend: pgsql}
           - {scenario: ecosystem-cache-redis-cluster-mixed-atomic, backend: pgsql}
           - {scenario: ecosystem-cache-redis-cluster-payload-policy, backend: pgsql}
-          - {scenario: ecosystem-cache-mongodb-bulk, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-mongodb-tags, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-mongodb-remember, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-mongodb-metrics, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-mongodb-remote-capabilities, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-mongodb-atomic, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-mongodb-ttl-forms, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-mongodb-mixed-atomic, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-mongodb-payload-policy, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-scylla-bulk, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-scylla-tags, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-scylla-remember, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-scylla-metrics, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-scylla-remote-capabilities, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-scylla-payload-contracts, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-bulk, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-tags, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-remember, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-metrics, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-remote-capabilities, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-atomic, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-ttl-forms, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-mixed-atomic, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-payload-policy, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-bulk, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-tags, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-remember, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-metrics, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-remote-capabilities, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-payload-contracts, backend: pgsql}
           - {scenario: ecosystem-invalidation-sql, backend: mariadb}
           - {scenario: ecosystem-ftp-outage, backend: pgsql}
           - {scenario: ecosystem-ftp-copy-contracts, backend: pgsql}
@@ -1121,9 +1117,9 @@ jobs:
           - {scenario: ecosystem-webdav-outage, backend: pgsql}
           - {scenario: ecosystem-webdav-copy-contracts, backend: pgsql}
           - {scenario: ecosystem-webdav-staged-contracts, backend: pgsql}
-          - {scenario: ecosystem-gridfs-outage, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-copy-contracts, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-staged-contracts, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-outage, backend: pgsql}
+          - {scenario: ecosystem-gridfs-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-gridfs-staged-contracts, backend: pgsql}
           - {scenario: ecosystem-sftp2-outage, backend: pgsql}
           - {scenario: ecosystem-sftp2-copy-contracts, backend: pgsql}
           - {scenario: ecosystem-sftp2-staged-contracts, backend: pgsql}
@@ -1183,17 +1179,16 @@ jobs:
           - {scenario: ecosystem-foundation-risk-outage-redis, backend: pgsql}
           - {scenario: ecosystem-foundation-risk-outage-valkey, backend: pgsql}
           - {scenario: ecosystem-foundation-risk-outage-memcached, backend: pgsql}
-    uses: ./.github/workflows/production-worker.yml
+    uses: ./.github/workflows/production-worker-ecosystem.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
-      php: ${{ matrix.php || '8.6' }}
 
   ecosystem-expansion:
     if: inputs.group == 'all' || inputs.group == 'ecosystem-expansion'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
       matrix:
@@ -1321,10 +1316,10 @@ jobs:
           - {scenario: ecosystem-webdav-archive-collision, backend: pgsql}
           - {scenario: ecosystem-webdav-archive-encrypted, backend: pgsql}
           - {scenario: ecosystem-webdav-archive-traversal, backend: pgsql}
-          - {scenario: ecosystem-gridfs-archive-selection, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-archive-collision, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-archive-encrypted, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-archive-traversal, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-archive-selection, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-collision, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-encrypted, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-traversal, backend: pgsql}
           - {scenario: ecosystem-sftp2-archive-selection, backend: pgsql}
           - {scenario: ecosystem-sftp2-archive-collision, backend: pgsql}
           - {scenario: ecosystem-sftp2-archive-encrypted, backend: pgsql}
@@ -1421,10 +1416,10 @@ jobs:
           - {scenario: ecosystem-wire-http3-aggregate-drain, backend: pgsql}
           - {scenario: ecosystem-wire-http3-aggregate-reset, backend: pgsql}
           - {scenario: ecosystem-wire-http3-aggregate-isolation, backend: pgsql}
-          - {scenario: ecosystem-cache-scylla-tls-trust, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-scylla-tls-identity, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-scylla-tls-payload, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-cache-scylla-tls-restart, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-tls-trust, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-tls-identity, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-tls-payload, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-tls-restart, backend: pgsql}
           - {scenario: ecosystem-cache-redis-cluster-tls-trust, backend: pgsql}
           - {scenario: ecosystem-cache-redis-cluster-tls-bulk, backend: pgsql}
           - {scenario: ecosystem-cache-redis-cluster-tls-atomic, backend: pgsql}
@@ -1440,44 +1435,43 @@ jobs:
           - {scenario: ecosystem-http-redirect-308-patch, backend: pgsql}
           - {scenario: ecosystem-http-redirect-308-delete, backend: pgsql}
           - {scenario: ecosystem-http-redirect-308-options, backend: pgsql}
-    uses: ./.github/workflows/production-worker.yml
+    uses: ./.github/workflows/production-worker-ecosystem.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
-      php: ${{ matrix.php || '8.6' }}
 
   ecosystem-closure:
     if: inputs.group == 'all' || inputs.group == 'ecosystem-closure'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
       matrix:
         include:
           - {scenario: ecosystem-s3-remote-order-recovery, backend: mysql}
           - {scenario: ecosystem-s3-remote-order-recovery, backend: mariadb}
-          - {scenario: ecosystem-s3-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-s3-remote-order-recovery, backend: mssql}
           - {scenario: ecosystem-sftp-remote-order-recovery, backend: pgsql}
           - {scenario: ecosystem-sftp-remote-order-recovery, backend: mysql}
           - {scenario: ecosystem-sftp-remote-order-recovery, backend: mariadb}
-          - {scenario: ecosystem-sftp-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sftp-remote-order-recovery, backend: mssql}
           - {scenario: ecosystem-ftp-remote-order-recovery, backend: pgsql}
           - {scenario: ecosystem-ftp-remote-order-recovery, backend: mysql}
           - {scenario: ecosystem-ftp-remote-order-recovery, backend: mariadb}
-          - {scenario: ecosystem-ftp-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-ftp-remote-order-recovery, backend: mssql}
           - {scenario: ecosystem-webdav-remote-order-recovery, backend: pgsql}
           - {scenario: ecosystem-webdav-remote-order-recovery, backend: mysql}
           - {scenario: ecosystem-webdav-remote-order-recovery, backend: mariadb}
-          - {scenario: ecosystem-webdav-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-webdav-remote-order-recovery, backend: mssql}
           - {scenario: ecosystem-azure-remote-order-recovery, backend: pgsql}
           - {scenario: ecosystem-azure-remote-order-recovery, backend: mysql}
           - {scenario: ecosystem-azure-remote-order-recovery, backend: mariadb}
-          - {scenario: ecosystem-azure-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-azure-remote-order-recovery, backend: mssql}
           - {scenario: ecosystem-gcs-remote-order-recovery, backend: pgsql}
           - {scenario: ecosystem-gcs-remote-order-recovery, backend: mysql}
           - {scenario: ecosystem-gcs-remote-order-recovery, backend: mariadb}
-          - {scenario: ecosystem-gcs-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-gcs-remote-order-recovery, backend: mssql}
           - {scenario: ecosystem-otp-cluster-redis-generic, backend: pgsql}
           - {scenario: ecosystem-otp-cluster-redis-hotp, backend: pgsql}
           - {scenario: ecosystem-otp-cluster-redis-totp, backend: pgsql}
@@ -1524,42 +1518,42 @@ jobs:
           - {scenario: ecosystem-webdav-order-http-publication-before, backend: mysql}
           - {scenario: ecosystem-webdav-order-http-publication-before, backend: mariadb}
           - {scenario: ecosystem-webdav-order-http-publication-before, backend: sqlite}
-          - {scenario: ecosystem-webdav-order-http-publication-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-webdav-order-http-publication-before, backend: mssql}
           - {scenario: ecosystem-webdav-order-http-publication-after, backend: pgsql}
           - {scenario: ecosystem-webdav-order-http-publication-after, backend: mysql}
           - {scenario: ecosystem-webdav-order-http-publication-after, backend: mariadb}
           - {scenario: ecosystem-webdav-order-http-publication-after, backend: sqlite}
-          - {scenario: ecosystem-webdav-order-http-publication-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-webdav-order-http-publication-after, backend: mssql}
           - {scenario: ecosystem-async-s3-order-http-publication-before, backend: pgsql}
           - {scenario: ecosystem-async-s3-order-http-publication-before, backend: mysql}
           - {scenario: ecosystem-async-s3-order-http-publication-before, backend: mariadb}
           - {scenario: ecosystem-async-s3-order-http-publication-before, backend: sqlite}
-          - {scenario: ecosystem-async-s3-order-http-publication-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-async-s3-order-http-publication-before, backend: mssql}
           - {scenario: ecosystem-async-s3-order-http-publication-after, backend: pgsql}
           - {scenario: ecosystem-async-s3-order-http-publication-after, backend: mysql}
           - {scenario: ecosystem-async-s3-order-http-publication-after, backend: mariadb}
           - {scenario: ecosystem-async-s3-order-http-publication-after, backend: sqlite}
-          - {scenario: ecosystem-async-s3-order-http-publication-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-async-s3-order-http-publication-after, backend: mssql}
           - {scenario: ecosystem-azure-order-http-publication-before, backend: pgsql}
           - {scenario: ecosystem-azure-order-http-publication-before, backend: mysql}
           - {scenario: ecosystem-azure-order-http-publication-before, backend: mariadb}
           - {scenario: ecosystem-azure-order-http-publication-before, backend: sqlite}
-          - {scenario: ecosystem-azure-order-http-publication-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-azure-order-http-publication-before, backend: mssql}
           - {scenario: ecosystem-azure-order-http-publication-after, backend: pgsql}
           - {scenario: ecosystem-azure-order-http-publication-after, backend: mysql}
           - {scenario: ecosystem-azure-order-http-publication-after, backend: mariadb}
           - {scenario: ecosystem-azure-order-http-publication-after, backend: sqlite}
-          - {scenario: ecosystem-azure-order-http-publication-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-azure-order-http-publication-after, backend: mssql}
           - {scenario: ecosystem-gcs-order-http-publication-before, backend: pgsql}
           - {scenario: ecosystem-gcs-order-http-publication-before, backend: mysql}
           - {scenario: ecosystem-gcs-order-http-publication-before, backend: mariadb}
           - {scenario: ecosystem-gcs-order-http-publication-before, backend: sqlite}
-          - {scenario: ecosystem-gcs-order-http-publication-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-gcs-order-http-publication-before, backend: mssql}
           - {scenario: ecosystem-gcs-order-http-publication-after, backend: pgsql}
           - {scenario: ecosystem-gcs-order-http-publication-after, backend: mysql}
           - {scenario: ecosystem-gcs-order-http-publication-after, backend: mariadb}
           - {scenario: ecosystem-gcs-order-http-publication-after, backend: sqlite}
-          - {scenario: ecosystem-gcs-order-http-publication-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-gcs-order-http-publication-after, backend: mssql}
           - {scenario: ecosystem-closure-boundary-exact-bound, backend: pgsql}
           - {scenario: ecosystem-closure-boundary-prefix, backend: pgsql}
           - {scenario: ecosystem-closure-boundary-encoding, backend: pgsql}
@@ -1621,9 +1615,9 @@ jobs:
           - {scenario: ecosystem-webdav-archive-outage-source, backend: pgsql}
           - {scenario: ecosystem-webdav-archive-outage-save, backend: pgsql}
           - {scenario: ecosystem-webdav-archive-outage-extract, backend: pgsql}
-          - {scenario: ecosystem-gridfs-archive-outage-source, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-archive-outage-save, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-archive-outage-extract, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-archive-outage-source, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-outage-save, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-outage-extract, backend: pgsql}
           - {scenario: ecosystem-async-s3-archive-outage-source, backend: pgsql}
           - {scenario: ecosystem-async-s3-archive-outage-save, backend: pgsql}
           - {scenario: ecosystem-async-s3-archive-outage-extract, backend: pgsql}
@@ -1669,31 +1663,31 @@ jobs:
           - {scenario: ecosystem-http-retry-matrix-transport-post-keyed, backend: pgsql}
           - {scenario: ecosystem-http-retry-matrix-cancel-preflight, backend: pgsql}
           - {scenario: ecosystem-http-retry-matrix-cancel-during-wait, backend: pgsql}
-          - {scenario: ecosystem-host-budget-request, backend: pgsql, host: fpm, php: '8.4'}
+          - {scenario: ecosystem-host-budget-request, backend: pgsql, host: fpm}
           - {scenario: ecosystem-host-budget-request, backend: pgsql, host: frankenphp}
           - {scenario: ecosystem-host-budget-request, backend: pgsql, host: roadrunner}
-          - {scenario: ecosystem-host-budget-request, backend: pgsql, host: swoole, php: '8.5'}
-          - {scenario: ecosystem-host-budget-request, backend: pgsql, host: openswoole, php: '8.6'}
-          - {scenario: ecosystem-host-budget-single, backend: pgsql, host: fpm, php: '8.4'}
+          - {scenario: ecosystem-host-budget-request, backend: pgsql, host: swoole}
+          - {scenario: ecosystem-host-budget-request, backend: pgsql, host: openswoole}
+          - {scenario: ecosystem-host-budget-single, backend: pgsql, host: fpm}
           - {scenario: ecosystem-host-budget-single, backend: pgsql, host: frankenphp}
           - {scenario: ecosystem-host-budget-single, backend: pgsql, host: roadrunner}
-          - {scenario: ecosystem-host-budget-single, backend: pgsql, host: swoole, php: '8.5'}
-          - {scenario: ecosystem-host-budget-single, backend: pgsql, host: openswoole, php: '8.6'}
-          - {scenario: ecosystem-host-budget-split, backend: pgsql, host: fpm, php: '8.4'}
+          - {scenario: ecosystem-host-budget-single, backend: pgsql, host: swoole}
+          - {scenario: ecosystem-host-budget-single, backend: pgsql, host: openswoole}
+          - {scenario: ecosystem-host-budget-split, backend: pgsql, host: fpm}
           - {scenario: ecosystem-host-budget-split, backend: pgsql, host: frankenphp}
           - {scenario: ecosystem-host-budget-split, backend: pgsql, host: roadrunner}
-          - {scenario: ecosystem-host-budget-split, backend: pgsql, host: swoole, php: '8.5'}
-          - {scenario: ecosystem-host-budget-split, backend: pgsql, host: openswoole, php: '8.6'}
-          - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: fpm, php: '8.4'}
+          - {scenario: ecosystem-host-budget-split, backend: pgsql, host: swoole}
+          - {scenario: ecosystem-host-budget-split, backend: pgsql, host: openswoole}
+          - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: fpm}
           - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: frankenphp}
           - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: roadrunner}
-          - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: swoole, php: '8.5'}
-          - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: openswoole, php: '8.6'}
-          - {scenario: ecosystem-host-budget-head, backend: pgsql, host: fpm, php: '8.4'}
+          - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: swoole}
+          - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: openswoole}
+          - {scenario: ecosystem-host-budget-head, backend: pgsql, host: fpm}
           - {scenario: ecosystem-host-budget-head, backend: pgsql, host: frankenphp}
           - {scenario: ecosystem-host-budget-head, backend: pgsql, host: roadrunner}
-          - {scenario: ecosystem-host-budget-head, backend: pgsql, host: swoole, php: '8.5'}
-          - {scenario: ecosystem-host-budget-head, backend: pgsql, host: openswoole, php: '8.6'}
+          - {scenario: ecosystem-host-budget-head, backend: pgsql, host: swoole}
+          - {scenario: ecosystem-host-budget-head, backend: pgsql, host: openswoole}
           - {scenario: ecosystem-http-redirect-301-get, backend: pgsql}
           - {scenario: ecosystem-http-redirect-301-patch, backend: pgsql}
           - {scenario: ecosystem-http-redirect-301-delete, backend: pgsql}
@@ -1710,17 +1704,16 @@ jobs:
           - {scenario: ecosystem-http-redirect-307-patch, backend: pgsql}
           - {scenario: ecosystem-http-redirect-307-delete, backend: pgsql}
           - {scenario: ecosystem-http-redirect-307-options, backend: pgsql}
-    uses: ./.github/workflows/production-worker.yml
+    uses: ./.github/workflows/production-worker-ecosystem.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
-      php: ${{ matrix.php || '8.6' }}
 
   ecosystem-final:
     if: inputs.group == 'all' || inputs.group == 'ecosystem-final'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
       matrix:
@@ -1729,17 +1722,17 @@ jobs:
           - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mysql}
           - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mariadb}
           - {scenario: ecosystem-sftp2-remote-order-recovery, backend: sqlite}
-          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mssql}
           - {scenario: ecosystem-async-s3-remote-order-recovery, backend: pgsql}
           - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mysql}
           - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mariadb}
           - {scenario: ecosystem-async-s3-remote-order-recovery, backend: sqlite}
-          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mssql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mysql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mariadb, php: '8.4'}
-          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: sqlite, php: '8.4'}
-          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mssql}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mssql}
           - {scenario: ecosystem-s3-remote-order-recovery, backend: sqlite}
           - {scenario: ecosystem-sftp-remote-order-recovery, backend: sqlite}
           - {scenario: ecosystem-ftp-remote-order-recovery, backend: sqlite}
@@ -1887,52 +1880,52 @@ jobs:
           - {scenario: ecosystem-s3-order-http-publication-before, backend: mysql}
           - {scenario: ecosystem-s3-order-http-publication-before, backend: mariadb}
           - {scenario: ecosystem-s3-order-http-publication-before, backend: sqlite}
-          - {scenario: ecosystem-s3-order-http-publication-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-s3-order-http-publication-before, backend: mssql}
           - {scenario: ecosystem-s3-order-http-publication-after, backend: pgsql}
           - {scenario: ecosystem-s3-order-http-publication-after, backend: mysql}
           - {scenario: ecosystem-s3-order-http-publication-after, backend: mariadb}
           - {scenario: ecosystem-s3-order-http-publication-after, backend: sqlite}
-          - {scenario: ecosystem-s3-order-http-publication-after, backend: mssql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-order-publication-before, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-order-publication-before, backend: mysql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-order-publication-before, backend: mariadb, php: '8.4'}
-          - {scenario: ecosystem-gridfs-order-publication-before, backend: sqlite, php: '8.4'}
-          - {scenario: ecosystem-gridfs-order-publication-before, backend: mssql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-order-publication-after, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-order-publication-after, backend: mysql, php: '8.4'}
-          - {scenario: ecosystem-gridfs-order-publication-after, backend: mariadb, php: '8.4'}
-          - {scenario: ecosystem-gridfs-order-publication-after, backend: sqlite, php: '8.4'}
-          - {scenario: ecosystem-gridfs-order-publication-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-s3-order-http-publication-after, backend: mssql}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: pgsql}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: mysql}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: mariadb}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: sqlite}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: mssql}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: pgsql}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: mysql}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: mariadb}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: sqlite}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: mssql}
           - {scenario: ecosystem-ftp-order-rename-before, backend: pgsql}
           - {scenario: ecosystem-ftp-order-rename-before, backend: mysql}
           - {scenario: ecosystem-ftp-order-rename-before, backend: mariadb}
           - {scenario: ecosystem-ftp-order-rename-before, backend: sqlite}
-          - {scenario: ecosystem-ftp-order-rename-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-ftp-order-rename-before, backend: mssql}
           - {scenario: ecosystem-ftp-order-rename-after, backend: pgsql}
           - {scenario: ecosystem-ftp-order-rename-after, backend: mysql}
           - {scenario: ecosystem-ftp-order-rename-after, backend: mariadb}
           - {scenario: ecosystem-ftp-order-rename-after, backend: sqlite}
-          - {scenario: ecosystem-ftp-order-rename-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-ftp-order-rename-after, backend: mssql}
           - {scenario: ecosystem-sftp-order-rename-before, backend: pgsql}
           - {scenario: ecosystem-sftp-order-rename-before, backend: mysql}
           - {scenario: ecosystem-sftp-order-rename-before, backend: mariadb}
           - {scenario: ecosystem-sftp-order-rename-before, backend: sqlite}
-          - {scenario: ecosystem-sftp-order-rename-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sftp-order-rename-before, backend: mssql}
           - {scenario: ecosystem-sftp-order-rename-after, backend: pgsql}
           - {scenario: ecosystem-sftp-order-rename-after, backend: mysql}
           - {scenario: ecosystem-sftp-order-rename-after, backend: mariadb}
           - {scenario: ecosystem-sftp-order-rename-after, backend: sqlite}
-          - {scenario: ecosystem-sftp-order-rename-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sftp-order-rename-after, backend: mssql}
           - {scenario: ecosystem-sftp2-order-rename-before, backend: pgsql}
           - {scenario: ecosystem-sftp2-order-rename-before, backend: mysql}
           - {scenario: ecosystem-sftp2-order-rename-before, backend: mariadb}
           - {scenario: ecosystem-sftp2-order-rename-before, backend: sqlite}
-          - {scenario: ecosystem-sftp2-order-rename-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sftp2-order-rename-before, backend: mssql}
           - {scenario: ecosystem-sftp2-order-rename-after, backend: pgsql}
           - {scenario: ecosystem-sftp2-order-rename-after, backend: mysql}
           - {scenario: ecosystem-sftp2-order-rename-after, backend: mariadb}
           - {scenario: ecosystem-sftp2-order-rename-after, backend: sqlite}
-          - {scenario: ecosystem-sftp2-order-rename-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sftp2-order-rename-after, backend: mssql}
           - {scenario: ecosystem-runwire-outbound-h1-get, backend: pgsql}
           - {scenario: ecosystem-runwire-outbound-h1-head, backend: pgsql}
           - {scenario: ecosystem-runwire-outbound-h1-binary, backend: pgsql}
@@ -1979,17 +1972,16 @@ jobs:
           - {scenario: ecosystem-runwire-h1-policy-retry-exhausted, backend: pgsql}
           - {scenario: ecosystem-runwire-h1-policy-retry-post, backend: pgsql}
           - {scenario: ecosystem-runwire-h1-policy-retry-after-head, backend: pgsql}
-    uses: ./.github/workflows/production-worker.yml
+    uses: ./.github/workflows/production-worker-ecosystem.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
-      php: ${{ matrix.php || '8.6' }}
 
   ecosystem-specialist:
     if: inputs.group == 'all' || inputs.group == 'ecosystem-specialist'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
       matrix:
@@ -2077,12 +2069,12 @@ jobs:
           - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mysql}
           - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mariadb}
           - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: sqlite}
-          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mssql}
           - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: pgsql}
           - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mysql}
           - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mariadb}
           - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: sqlite}
-          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mssql}
           - {scenario: ecosystem-runwire-multiplex-ping-2, backend: pgsql}
           - {scenario: ecosystem-runwire-multiplex-ping-4, backend: pgsql}
           - {scenario: ecosystem-runwire-multiplex-ping-8, backend: pgsql}
@@ -2122,125 +2114,21 @@ jobs:
           - {scenario: ecosystem-intermix-remix-callback-false-result, backend: pgsql}
           - {scenario: ecosystem-intermix-remix-callback-predicate-once, backend: pgsql}
           - {scenario: ecosystem-intermix-remix-callback-tap-exception, backend: pgsql}
-    uses: ./.github/workflows/production-worker.yml
+    uses: ./.github/workflows/production-worker-ecosystem.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
-      php: ${{ matrix.php || '8.6' }}
 
-  application:
+
+  application-business:
     if: inputs.group == 'all' || inputs.group == 'application'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {scenario: browser-policy-trace, backend: pgsql, host: native, matcher: fused}
-          - {scenario: browser-policy-trace, backend: pgsql, host: native, matcher: sharded}
-          - {scenario: browser-policy-trace, backend: pgsql, host: fpm, matcher: fused, php: '8.4'}
-          - {scenario: browser-policy-trace, backend: pgsql, host: fpm, matcher: sharded, php: '8.4'}
-          - {scenario: browser-policy-trace, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: browser-policy-trace, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: browser-policy-trace, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: browser-policy-trace, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: browser-policy-trace, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: browser-policy-trace, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: browser-policy-trace, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: browser-policy-trace, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: browser-policy-errors, backend: pgsql, host: native, matcher: fused}
-          - {scenario: browser-policy-errors, backend: pgsql, host: native, matcher: sharded}
-          - {scenario: browser-policy-errors, backend: pgsql, host: fpm, matcher: fused, php: '8.4'}
-          - {scenario: browser-policy-errors, backend: pgsql, host: fpm, matcher: sharded, php: '8.4'}
-          - {scenario: browser-policy-errors, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: browser-policy-errors, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: browser-policy-errors, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: browser-policy-errors, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: browser-policy-errors, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: browser-policy-errors, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: browser-policy-errors, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: browser-policy-errors, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: browser-policy-cors, backend: pgsql, host: native, matcher: fused}
-          - {scenario: browser-policy-cors, backend: pgsql, host: native, matcher: sharded}
-          - {scenario: browser-policy-cors, backend: pgsql, host: fpm, matcher: fused, php: '8.4'}
-          - {scenario: browser-policy-cors, backend: pgsql, host: fpm, matcher: sharded, php: '8.4'}
-          - {scenario: browser-policy-cors, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: browser-policy-cors, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: browser-policy-cors, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: browser-policy-cors, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: browser-policy-cors, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: browser-policy-cors, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: browser-policy-cors, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: browser-policy-cors, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: browser-policy-representation, backend: pgsql, host: native, matcher: fused}
-          - {scenario: browser-policy-representation, backend: pgsql, host: native, matcher: sharded}
-          - {scenario: browser-policy-representation, backend: pgsql, host: fpm, matcher: fused, php: '8.4'}
-          - {scenario: browser-policy-representation, backend: pgsql, host: fpm, matcher: sharded, php: '8.4'}
-          - {scenario: browser-policy-representation, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: browser-policy-representation, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: browser-policy-representation, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: browser-policy-representation, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: browser-policy-representation, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: browser-policy-representation, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: browser-policy-representation, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: browser-policy-representation, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: browser-file, backend: pgsql, host: native, matcher: fused}
-          - {scenario: browser-file, backend: pgsql, host: native, matcher: sharded}
-          - {scenario: browser-file, backend: pgsql, host: fpm, matcher: fused, php: '8.4'}
-          - {scenario: browser-file, backend: pgsql, host: fpm, matcher: sharded, php: '8.4'}
-          - {scenario: browser-file, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: browser-file, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: browser-file, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: browser-file, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: browser-file, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: browser-file, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: browser-file, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: browser-file, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: browser-database, backend: pgsql, host: native, matcher: fused}
-          - {scenario: browser-database, backend: pgsql, host: native, matcher: sharded}
-          - {scenario: browser-database, backend: pgsql, host: fpm, matcher: fused, php: '8.4'}
-          - {scenario: browser-database, backend: pgsql, host: fpm, matcher: sharded, php: '8.4'}
-          - {scenario: browser-database, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: browser-database, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: browser-database, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: browser-database, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: browser-database, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: browser-database, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: browser-database, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: browser-database, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: browser-database, backend: mysql, host: native, matcher: fused}
-          - {scenario: browser-database, backend: mysql, host: native, matcher: sharded}
-          - {scenario: browser-database, backend: mysql, host: fpm, matcher: fused, php: '8.4'}
-          - {scenario: browser-database, backend: mysql, host: fpm, matcher: sharded, php: '8.4'}
-          - {scenario: browser-database, backend: mysql, host: roadrunner, matcher: fused}
-          - {scenario: browser-database, backend: mysql, host: roadrunner, matcher: sharded}
-          - {scenario: browser-database, backend: mysql, host: frankenphp, matcher: fused}
-          - {scenario: browser-database, backend: mysql, host: frankenphp, matcher: sharded}
-          - {scenario: browser-database, backend: mysql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: browser-database, backend: mysql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: browser-database, backend: mysql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: browser-database, backend: mysql, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: browser-database, backend: mariadb, host: native, matcher: fused}
-          - {scenario: browser-database, backend: mariadb, host: native, matcher: sharded}
-          - {scenario: browser-database, backend: mariadb, host: fpm, matcher: fused, php: '8.4'}
-          - {scenario: browser-database, backend: mariadb, host: fpm, matcher: sharded, php: '8.4'}
-          - {scenario: browser-database, backend: mariadb, host: roadrunner, matcher: fused}
-          - {scenario: browser-database, backend: mariadb, host: roadrunner, matcher: sharded}
-          - {scenario: browser-database, backend: mariadb, host: frankenphp, matcher: fused}
-          - {scenario: browser-database, backend: mariadb, host: frankenphp, matcher: sharded}
-          - {scenario: browser-database, backend: mariadb, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: browser-database, backend: mariadb, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: browser-database, backend: mariadb, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: browser-database, backend: mariadb, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: browser, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: browser, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: browser, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: browser, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: browser, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: browser, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: browser, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: browser, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
           - {scenario: cache-file, backend: pgsql}
           - {scenario: cache-phpfiles, backend: pgsql}
           - {scenario: cache-sqlite, backend: pgsql}
@@ -2258,10 +2146,6 @@ jobs:
           - {scenario: pat, backend: pgsql}
           - {scenario: risk, backend: mysql}
           - {scenario: risk, backend: pgsql}
-          - {scenario: browser, backend: pgsql, host: native, matcher: fused}
-          - {scenario: browser, backend: pgsql, host: native, matcher: sharded}
-          - {scenario: browser, backend: pgsql, host: fpm, php: '8.4', matcher: fused}
-          - {scenario: browser, backend: pgsql, host: fpm, php: '8.4', matcher: sharded}
           - {scenario: import, backend: mysql}
           - {scenario: import, backend: pgsql}
           - {scenario: native-otp, backend: pgsql}
@@ -2278,153 +2162,211 @@ jobs:
           - {scenario: queue, backend: mysql}
           - {scenario: passkey, backend: pgsql}
           - {scenario: passkey, backend: mysql}
-          - {scenario: oauth-http, backend: pgsql, host: native, matcher: fused}
-          - {scenario: oauth-http, backend: pgsql, host: native, matcher: sharded}
-          - {scenario: oauth-http, backend: mysql, host: fpm, php: '8.4', matcher: fused}
-          - {scenario: oauth-http, backend: mysql, host: fpm, php: '8.4', matcher: sharded}
-          - {scenario: oauth-http, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: oauth-http, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: oauth-http, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: oauth-http, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: oauth-http, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: oauth-http, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: oauth-http, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: oauth-http, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: transfer, backend: pgsql, host: native, matcher: fused}
-          - {scenario: transfer, backend: pgsql, host: native, matcher: sharded}
-          - {scenario: transfer, backend: pgsql, host: fpm, php: '8.4', matcher: fused}
-          - {scenario: transfer, backend: pgsql, host: fpm, php: '8.4', matcher: sharded}
-          - {scenario: transfer, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: transfer, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: transfer, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: transfer, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: transfer, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: transfer, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: transfer, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: transfer, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: transfer-cleanup, backend: pgsql, host: native, matcher: fused}
-          - {scenario: transfer-cleanup, backend: pgsql, host: native, matcher: sharded}
-          - {scenario: transfer-cleanup, backend: pgsql, host: fpm, php: '8.4', matcher: fused}
-          - {scenario: transfer-cleanup, backend: pgsql, host: fpm, php: '8.4', matcher: sharded}
-          - {scenario: transfer-cleanup, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: transfer-cleanup, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: transfer-cleanup, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: transfer-cleanup, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: transfer-cleanup, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: transfer-cleanup, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: transfer-cleanup, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: transfer-cleanup, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: http, backend: pgsql, host: native, matcher: fused}
-          - {scenario: http, backend: pgsql, host: native, matcher: sharded}
-          - {scenario: http, backend: mysql, host: native, matcher: fused}
-          - {scenario: http, backend: mysql, host: native, matcher: sharded}
-          - {scenario: http, backend: pgsql, host: fpm, php: '8.4', matcher: fused}
-          - {scenario: http, backend: pgsql, host: fpm, php: '8.4', matcher: sharded}
-          - {scenario: http, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: http, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: http, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: http, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: http, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: http, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: http, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: http, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
           - {scenario: protocols, backend: pgsql}
-          - {scenario: operations, backend: pgsql}
           - {scenario: storage, backend: pgsql}
           - {scenario: oauth, backend: mysql}
           - {scenario: oauth, backend: pgsql}
-    uses: ./.github/workflows/production-worker.yml
+    uses: ./.github/workflows/production-worker-business.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
-      php: ${{ matrix.php || '8.6' }}
+
+  application-http:
+    if: inputs.group == 'all' || inputs.group == 'application'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: browser-policy-trace, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser-policy-trace, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser-policy-trace, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: browser-policy-trace, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: browser-policy-trace, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser-policy-trace, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-policy-trace, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser-policy-trace, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-policy-trace, backend: pgsql, host: swoole, matcher: fused}
+          - {scenario: browser-policy-trace, backend: pgsql, host: swoole, matcher: sharded}
+          - {scenario: browser-policy-trace, backend: pgsql, host: openswoole, matcher: fused}
+          - {scenario: browser-policy-trace, backend: pgsql, host: openswoole, matcher: sharded}
+          - {scenario: browser-policy-errors, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser-policy-errors, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser-policy-errors, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: browser-policy-errors, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: browser-policy-errors, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser-policy-errors, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-policy-errors, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser-policy-errors, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-policy-errors, backend: pgsql, host: swoole, matcher: fused}
+          - {scenario: browser-policy-errors, backend: pgsql, host: swoole, matcher: sharded}
+          - {scenario: browser-policy-errors, backend: pgsql, host: openswoole, matcher: fused}
+          - {scenario: browser-policy-errors, backend: pgsql, host: openswoole, matcher: sharded}
+          - {scenario: browser-policy-cors, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser-policy-cors, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser-policy-cors, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: browser-policy-cors, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: browser-policy-cors, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser-policy-cors, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-policy-cors, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser-policy-cors, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-policy-cors, backend: pgsql, host: swoole, matcher: fused}
+          - {scenario: browser-policy-cors, backend: pgsql, host: swoole, matcher: sharded}
+          - {scenario: browser-policy-cors, backend: pgsql, host: openswoole, matcher: fused}
+          - {scenario: browser-policy-cors, backend: pgsql, host: openswoole, matcher: sharded}
+          - {scenario: browser-policy-representation, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser-policy-representation, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser-policy-representation, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: browser-policy-representation, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: browser-policy-representation, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser-policy-representation, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-policy-representation, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser-policy-representation, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-policy-representation, backend: pgsql, host: swoole, matcher: fused}
+          - {scenario: browser-policy-representation, backend: pgsql, host: swoole, matcher: sharded}
+          - {scenario: browser-policy-representation, backend: pgsql, host: openswoole, matcher: fused}
+          - {scenario: browser-policy-representation, backend: pgsql, host: openswoole, matcher: sharded}
+          - {scenario: browser-file, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser-file, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser-file, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: browser-file, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: browser-file, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser-file, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-file, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser-file, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-file, backend: pgsql, host: swoole, matcher: fused}
+          - {scenario: browser-file, backend: pgsql, host: swoole, matcher: sharded}
+          - {scenario: browser-file, backend: pgsql, host: openswoole, matcher: fused}
+          - {scenario: browser-file, backend: pgsql, host: openswoole, matcher: sharded}
+          - {scenario: browser-database, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser-database, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser-database, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: browser-database, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: browser-database, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser-database, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-database, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser-database, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-database, backend: pgsql, host: swoole, matcher: fused}
+          - {scenario: browser-database, backend: pgsql, host: swoole, matcher: sharded}
+          - {scenario: browser-database, backend: pgsql, host: openswoole, matcher: fused}
+          - {scenario: browser-database, backend: pgsql, host: openswoole, matcher: sharded}
+          - {scenario: browser-database, backend: mysql, host: native, matcher: fused}
+          - {scenario: browser-database, backend: mysql, host: native, matcher: sharded}
+          - {scenario: browser-database, backend: mysql, host: fpm, matcher: fused}
+          - {scenario: browser-database, backend: mysql, host: fpm, matcher: sharded}
+          - {scenario: browser-database, backend: mysql, host: roadrunner, matcher: fused}
+          - {scenario: browser-database, backend: mysql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-database, backend: mysql, host: frankenphp, matcher: fused}
+          - {scenario: browser-database, backend: mysql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-database, backend: mysql, host: swoole, matcher: fused}
+          - {scenario: browser-database, backend: mysql, host: swoole, matcher: sharded}
+          - {scenario: browser-database, backend: mysql, host: openswoole, matcher: fused}
+          - {scenario: browser-database, backend: mysql, host: openswoole, matcher: sharded}
+          - {scenario: browser-database, backend: mariadb, host: native, matcher: fused}
+          - {scenario: browser-database, backend: mariadb, host: native, matcher: sharded}
+          - {scenario: browser-database, backend: mariadb, host: fpm, matcher: fused}
+          - {scenario: browser-database, backend: mariadb, host: fpm, matcher: sharded}
+          - {scenario: browser-database, backend: mariadb, host: roadrunner, matcher: fused}
+          - {scenario: browser-database, backend: mariadb, host: roadrunner, matcher: sharded}
+          - {scenario: browser-database, backend: mariadb, host: frankenphp, matcher: fused}
+          - {scenario: browser-database, backend: mariadb, host: frankenphp, matcher: sharded}
+          - {scenario: browser-database, backend: mariadb, host: swoole, matcher: fused}
+          - {scenario: browser-database, backend: mariadb, host: swoole, matcher: sharded}
+          - {scenario: browser-database, backend: mariadb, host: openswoole, matcher: fused}
+          - {scenario: browser-database, backend: mariadb, host: openswoole, matcher: sharded}
+          - {scenario: browser, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser, backend: pgsql, host: swoole, matcher: fused}
+          - {scenario: browser, backend: pgsql, host: swoole, matcher: sharded}
+          - {scenario: browser, backend: pgsql, host: openswoole, matcher: fused}
+          - {scenario: browser, backend: pgsql, host: openswoole, matcher: sharded}
+          - {scenario: browser, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: browser, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: oauth-http, backend: pgsql, host: native, matcher: fused}
+          - {scenario: oauth-http, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: oauth-http, backend: mysql, host: fpm, matcher: fused}
+          - {scenario: oauth-http, backend: mysql, host: fpm, matcher: sharded}
+          - {scenario: oauth-http, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: oauth-http, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: oauth-http, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: oauth-http, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: oauth-http, backend: pgsql, host: swoole, matcher: fused}
+          - {scenario: oauth-http, backend: pgsql, host: swoole, matcher: sharded}
+          - {scenario: oauth-http, backend: pgsql, host: openswoole, matcher: fused}
+          - {scenario: oauth-http, backend: pgsql, host: openswoole, matcher: sharded}
+          - {scenario: transfer, backend: pgsql, host: native, matcher: fused}
+          - {scenario: transfer, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: transfer, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: transfer, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: transfer, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: transfer, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: transfer, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: transfer, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: transfer, backend: pgsql, host: swoole, matcher: fused}
+          - {scenario: transfer, backend: pgsql, host: swoole, matcher: sharded}
+          - {scenario: transfer, backend: pgsql, host: openswoole, matcher: fused}
+          - {scenario: transfer, backend: pgsql, host: openswoole, matcher: sharded}
+          - {scenario: transfer-cleanup, backend: pgsql, host: native, matcher: fused}
+          - {scenario: transfer-cleanup, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: transfer-cleanup, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: transfer-cleanup, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: transfer-cleanup, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: transfer-cleanup, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: transfer-cleanup, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: transfer-cleanup, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: transfer-cleanup, backend: pgsql, host: swoole, matcher: fused}
+          - {scenario: transfer-cleanup, backend: pgsql, host: swoole, matcher: sharded}
+          - {scenario: transfer-cleanup, backend: pgsql, host: openswoole, matcher: fused}
+          - {scenario: transfer-cleanup, backend: pgsql, host: openswoole, matcher: sharded}
+          - {scenario: http, backend: pgsql, host: native, matcher: fused}
+          - {scenario: http, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: http, backend: mysql, host: native, matcher: fused}
+          - {scenario: http, backend: mysql, host: native, matcher: sharded}
+          - {scenario: http, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: http, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: http, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: http, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: http, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: http, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: http, backend: pgsql, host: swoole, matcher: fused}
+          - {scenario: http, backend: pgsql, host: swoole, matcher: sharded}
+          - {scenario: http, backend: pgsql, host: openswoole, matcher: fused}
+          - {scenario: http, backend: pgsql, host: openswoole, matcher: sharded}
+    uses: ./.github/workflows/production-worker-http.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  application-operations:
+    if: inputs.group == 'all' || inputs.group == 'application'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: operations, backend: pgsql}
+    uses: ./.github/workflows/production-worker-operations.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
 
   grpc:
     if: inputs.group == 'all' || inputs.group == 'grpc'
-    name: Native gRPC / PHP 8.6 / ${{ matrix.mode }}
+    name: Native gRPC / PHP 8.5 / ${{ matrix.mode }}
     strategy:
       fail-fast: false
       matrix:
         mode: [unary, streaming-tls]
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.6'
-          extensions: none, grpc, curl, mbstring, intl, sodium, pdo, pdo_sqlite, dom, simplexml, xml, xmlreader, xmlwriter, tokenizer, ctype, fileinfo, iconv, phar, openssl, session, sockets, pcntl, posix, zip
-          tools: composer:v2
-          coverage: none
-      - name: Isolate native extension configuration
-        shell: bash
-        run: |
-          set -euo pipefail
-          root="$(mktemp -d "$RUNNER_TEMP/grpc-ini.XXXXXXXX")"
-          mkdir "$root/scan"
-          module_dir="$(php -r 'echo ini_get("extension_dir");')"
-          printf 'extension_dir="%s"\ndate.timezone=UTC\nmemory_limit=512M\nopcache.enable=0\nopcache.enable_cli=0\nopcache.jit_buffer_size=0\n' "$module_dir" > "$root/php.ini"
-          for extension in libxml ctype fileinfo iconv openssl phar tokenizer pdo pdo_sqlite dom simplexml xml xmlreader xmlwriter curl mbstring intl sodium session sockets pcntl posix zip grpc; do
-            if php -n -r 'exit(extension_loaded($argv[1]) ? 0 : 1);' -- "$extension"; then continue; fi
-            test -f "$module_dir/$extension.so"
-            printf 'extension=%s.so\n' "$extension" >> "$root/php.ini"
-          done
-          printf 'PHPRC=%s\nPHP_INI_SCAN_DIR=%s\nPROJECT=%s/grpc-app\nEVIDENCE=%s/grpc-evidence\n' "$root/php.ini" "$root/scan" "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
-      - name: Install published communication feature
-        shell: bash
-        run: |
-          set -euo pipefail
-          unset COMPOSER_NO_DEV
-          mkdir -p "$EVIDENCE"
-          php --ri grpc
-          composer create-project --no-dev --prefer-dist --no-interaction --no-progress infocyph/infbyte "$PROJECT" '^4.0'
-          cd "$PROJECT"
-          php infbyte module:install execution.communication
-          php infbyte module:enable execution.communication
-          test ! -d vendor/infocyph/phpforge
-          composer check-platform-reqs --no-dev
-          composer show --format=json > "$EVIDENCE/packages.json"
-          php --ini > "$EVIDENCE/ini.txt"
-      - name: Concurrent real unary calls and error status
-        if: matrix.mode == 'unary'
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          python3 -m venv "$RUNNER_TEMP/grpc-peer-venv"
-          python="$RUNNER_TEMP/grpc-peer-venv/bin/python"
-          "$python" -m pip install 'grpcio>=1.76,<2'
-          "$python" qa/workloads/grpc-peer.py "$RUNNER_TEMP/grpc-ready.json" > "$EVIDENCE/peer.log" 2>&1 &
-          peer=$!
-          trap 'kill "$peer" 2>/dev/null || :; wait "$peer" 2>/dev/null || :' EXIT
-          for attempt in $(seq 1 100); do
-            if [[ -f "$RUNNER_TEMP/grpc-ready.json" ]]; then break; fi
-            kill -0 "$peer"
-            sleep 0.1
-          done
-          export GRPC_TEST_PORT="$(php -r 'echo json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR)["port"];' "$RUNNER_TEMP/grpc-ready.json")"
-          for concurrency in 1 4 8; do
-            start="$(php -r 'echo intdiv(hrtime(true), 1000000);')"
-            pids=()
-            for worker in $(seq 1 "$concurrency"); do
-              php qa/workloads/grpc-client.php "$concurrency-$worker" 100 > "$EVIDENCE/results-$concurrency-$worker.jsonl" 2> "$EVIDENCE/errors-$concurrency-$worker.log" &
-              pids+=("$!")
-            done
-            failed=0
-            for pid in "${pids[@]}"; do if ! wait "$pid"; then failed=1; fi; done
-            if (( failed )); then cat "$EVIDENCE"/errors-"$concurrency"-*.log >&2; exit 1; fi
-            php qa/workloads/report.php "$((concurrency * 100))" "$(( $(php -r 'echo intdiv(hrtime(true), 1000000);') - start ))" "$concurrency" "$EVIDENCE"/results-"$concurrency"-*.jsonl | tee "$EVIDENCE/summary-$concurrency.json"
-          done
-      - name: Real native streaming, TLS, deadline and cancellation
-        if: matrix.mode == 'streaming-tls'
-        shell: bash
-        run: bash qa/workloads/grpc-stream.sh
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: native-grpc-evidence-${{ matrix.mode }}
-          path: ${{ runner.temp }}/grpc-evidence/
-          if-no-files-found: error
+    uses: ./.github/workflows/production-worker-grpc.yml
+    with:
+      mode: ${{ matrix.mode }}
