@@ -62,3 +62,6 @@ Status: **V** = verified by latest applicable hosted execution; **I** = implemen
 - [OTP documentation tree](https://github.com/infocyph/OTP/tree/main/docs)
 - [Omnibus documentation tree](https://github.com/infocyph/Omnibus/tree/main/docs)
 - [TalkingBytes documentation tree](https://github.com/infocyph/TalkingBytes/tree/main/docs)
+
+## Detailed expansion
+See [production-capability-expansion.md](production-capability-expansion.md) for B12 granular DBLayer mechanics and remaining ecosystem tracks. New DBLayer scenarios are I (implemented, not verified) until exact-head hosted evidence is available. Existing mandatory failures are retained.

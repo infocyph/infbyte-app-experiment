@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
     paths: ['qa/**', '.github/workflows/production-workloads.yml']
+  pull_request:
+    paths: ['qa/**', '.github/workflows/production-workloads.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,6 +17,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-transactions, backend: mysql}
+          - {scenario: db-transactions, backend: pgsql}
+          - {scenario: db-locking, backend: mysql}
+          - {scenario: db-locking, backend: pgsql}
+          - {scenario: db-pool, backend: mysql}
+          - {scenario: db-pool, backend: pgsql}
+          - {scenario: db-replicas, backend: pgsql}
           - {scenario: cache-file, backend: pgsql}
           - {scenario: cache-phpfiles, backend: pgsql}
           - {scenario: cache-sqlite, backend: pgsql}
@@ -154,9 +163,15 @@ jobs:
           docker run --rm infbyte-lab-fpm php -m
           docker pull nginx:alpine
       - name: Execute independent concurrent business workers and reconcile state
-        if: matrix.scenario != 'http' && matrix.scenario != 'operations' && matrix.scenario != 'browser'
+        if: matrix.scenario != 'http' && matrix.scenario != 'operations' && matrix.scenario != 'browser' && !startsWith(matrix.scenario, 'db-')
         shell: bash
         run: bash qa/workloads/stress.sh
+      - name: Exercise DBLayer database mechanics independently
+        if: startsWith(matrix.scenario, 'db-')
+        env:
+          POSTGRES_SERVICE: ${{ job.services.postgres.id }}
+        shell: bash
+        run: bash qa/workloads/database.sh
       - name: Exercise compiled production HTTP application and host replacement
         if: matrix.scenario == 'http' || matrix.scenario == 'browser'
         shell: bash
