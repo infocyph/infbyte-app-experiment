@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 case "$SCENARIO" in
+  ecosystem-api-inventory) php "$GITHUB_WORKSPACE/qa/workloads/coverage-audit.php" | tee "$EVIDENCE/inventory.log" ;;
   ecosystem-release-cutover) bash "$GITHUB_WORKSPACE/qa/workloads/release-cutover.sh" ;;
   ecosystem-tenants) bash "$GITHUB_WORKSPACE/qa/workloads/tenants.sh" ;;
   ecosystem-mailbox-tls|ecosystem-mailbox-idle) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox-tls.sh" ;;

@@ -223,3 +223,7 @@ I: four MySQL/PostgreSQL × fused/sharded native combinations; old compiled gene
 ## B53 — combined dependency interruption and durable recovery
 
 I: two PostgreSQL × fused/sharded connected checkout lanes. After 160 durable orders and outbox relay, a consumer reserves a real message and is killed before side effects. SQL, Redis and SMTP service containers stop together; socket unavailability and readiness after restart are asserted. Expired reservation recovery, exact queue/business effects, encrypted documents, SMTP uniqueness and post-recovery independent SQL snapshot/table digests are checked. Deliberately faults before uncertain SMTP acknowledgement; no exactly-once external email or RPO/RTO claim. Hosted verification pending.
+
+## B54 — executable matrix and published source inventory
+
+I: independent audit lane checks normalized job identities, fused/sharded-only routing, matrix ceiling, dispatch coverage and referenced shell/PHP files; emits actual resolved Infocyph package versions and lexical declared public-method/type inventory without loading optional classes. It deliberately does not measure behavioral coverage. [Consolidated remaining register](production-gap-register.md) distinguishes implemented families from remaining executable cases and environmental qualification. All B41–B53 additions are committed; exact-head hosted verification pending. Full public production-contract closure is not established.

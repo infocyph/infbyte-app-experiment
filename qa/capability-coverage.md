@@ -147,3 +147,5 @@ B51 adds authenticated cross-tenant denial and duplicate request isolation throu
 B52 adds live additive migration and old/new compiled deployment generation overlap and rollback.
 
 B53 adds connected business dependency outage, worker reservation loss and restored ledger digest checks.
+
+B54 adds executable matrix/public declaration inventory and the [current residual register](production-gap-register.md). Historical broad rows are not a claim of complete implementation.

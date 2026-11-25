@@ -263,3 +263,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B53 — connected dependency outage and recovery
 - [x] Two matcher lanes with real reservation loss, simultaneous backend outage, restart and SQL snapshot reconciliation.
 - [ ] Hosted verification and expanded recovery topologies.
+
+## B54 — inventory and closure audit
+- [x] Executable matrix dispatch/identity checks, published source inventory and consolidated residual register.
+- [ ] Close remaining concrete gaps in production-gap-register.md; verify hosted scenario evidence. No upstream remediation in Phase 1.
