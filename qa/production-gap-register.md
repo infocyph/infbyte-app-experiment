@@ -1,5 +1,11 @@
 # Consolidated remaining implementation register (B231)
 
+## Implementation freeze — approved 2026-11-25
+
+**FROZEN at B231** ([baseline commit `974422a`](https://github.com/infocyph/infbyte-app-experiment/commit/974422a0504c57c963e565bc3392cf79adf02d03)). The owner approved the end of planned high-, medium- and low-priority scenario expansion. Baseline: 2,177 routine workload entries, 1,336 distinct routine scenario names, 41 separate PHPProbe engineering modes and one opt-in external SQL Server HA acceptance lane (2,219 total entries). Ten routine matrix groups, each at or below 256 entries. This freeze is a scope decision, not a claim of exhaustive coverage or passed acceptance. Historical open rows remain evidence and do not automatically require further permutation expansion.
+
+The next phase is hosted execution, evidence collection, failure classification, playground corrections, upstream defect remediation, regression qualification and stress/endurance/performance testing. New scenarios require a concrete reproduced defect, material uncovered production contract, or explicit owner-approved scope change. Do not weaken assertions, hide failures, or mark pending/blocked scenarios verified. External SQL Server HA provisioning, managed-provider qualification, known Foundation durable-width issue and hosted failures remain open; no production readiness claim. Continue using GitHub-hosted workers and single-commit batches for changes.
+
 This is a conservative, current gap register, not an exhaustive certification. `I` means a scenario is committed, not passed. Historical open rows in the append-only expansion register are not automatically closed by later work. Phase 1 ends only when every applicable documented capability and public production contract has an independently executable scenario or a justified explicit exclusion. Hosted failures remain required and upstream repairs are deferred.
 
 | Component | Register IDs | Implemented scenario families | Remaining implementation / qualification boundary |
