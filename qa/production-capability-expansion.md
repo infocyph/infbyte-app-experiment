@@ -629,3 +629,7 @@ I: 21 independent jobs: two risk telemetry contracts across nine shared-store co
 ## B154 — Shared HTTP cache policy and runtime boundary contracts
 
 I: 22 independent lanes: nine stores each for response-cache HEAD/freshness and unsafe request/response bypass, conditional precedence/range and creation, route-specific CORS, outbound cookie storage security and structured cancellation/deadline ownership. Uses real stores with independent peers; direct policy calls are not wire-level or compiled-host coverage. Existing HTTP host/matcher and transport workloads remain. CORE-01, REQUEST, DATA, SEC, MEM, OPS-02, EXEC-03: source and matrix/dispatcher review done; hosted qualification pending. 677 routine rows; no upstream changes.
+
+## B155 — Durable messaging retry and transaction boundaries; Pathwise reader/writer contracts
+
+I: 20 independent jobs: three SQL messaging contracts across five drivers, five local file contracts. Failure manager replay resets delivery stamps and preserves stable identity, invalid raw/workflow retries release claims, transactional enqueue reconciles rollback and commit with independent business rows. File contracts verify binary bounded chunk digests, native CSV multiline oracle, falsey JSONL and malformed tail, serialized safe values/object rejection, independent file-handle locks and disposal. Remote publication uncertainty remains open. CORE-01, DATA, SEC, MEM, EXEC-03: source and dispatcher/matrix reviewed; hosted qualification pending. 697 routine rows; no upstream changes.

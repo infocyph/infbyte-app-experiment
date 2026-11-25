@@ -215,3 +215,120 @@ function archiveLateRollbackWorkload(): void
     verify(file_get_contents($destination . '/existing.txt') === 'replacement' && file_get_contents($destination . '/created/first.txt') === 'new' && file_get_contents($destination . '/conflict/late.txt') === 'blocked', 'Same archive failed after conflict repair.');
     echo "Validated manifest, late extraction conflict, rollback of overwrites/new paths and successful retry passed\n";
 }
+
+function safeFileBinaryContracts(): void
+{
+    $path = evidenceDirectory() . '/binary-record';
+    $data = str_repeat("abc\0\xff", 2049);
+    $writer = new \Infocyph\Pathwise\FileManager\SafeFileWriter($path);
+    verify($writer->writeBinary($data) === strlen($data), 'Binary write length differs.');
+    $writer->close();
+    $reader = new \Infocyph\Pathwise\FileManager\SafeFileReader($path, 'rb');
+    foreach ([1, 127, 4096] as $size) {
+        $hash = hash_init('sha256');
+        $bytes = 0;
+        $chunks = 0;
+        foreach ($reader->chunks($size) as $chunk) {
+            verify(strlen($chunk) <= $size, 'Chunk exceeded configured size.');
+            $bytes += strlen($chunk);
+            hash_update($hash, $chunk);
+            ++$chunks;
+        }
+        verify($bytes === strlen($data) && hash_final($hash) === hash('sha256', $data) && $reader->count() === $chunks, 'Chunk replay lost or duplicated bytes.');
+    }
+    expectFailure(static fn() => $reader->chunks(0), InvalidArgumentException::class, 'Zero chunk size accepted.');
+    echo "Binary writer and repeatable bounded reader digest reconciliation passed\n";
+}
+
+function safeFileCsvContracts(): void
+{
+    $path = evidenceDirectory() . '/records.csv';
+    $rows = [['id', 'label'], ['1', 'comma, quote "'], ['2', "line\nbreak"], ['3', '0']];
+    $writer = new \Infocyph\Pathwise\FileManager\SafeFileWriter($path);
+    foreach ($rows as $row) {
+        verify($writer->writeCsv($row, escape: '') > 0, 'CSV write failed.');
+    }
+    $writer->close();
+    $reader = new \Infocyph\Pathwise\FileManager\SafeFileReader($path);
+    $actual = iterator_to_array($reader->csv(escape: ''));
+    verify($actual === $rows && $reader->count() === count($rows), 'CSV quoted/multiline record mismatch.');
+    $native = fopen($path, 'rb');
+    verify(is_resource($native), 'Independent CSV reader unavailable.');
+    try {
+        foreach ($rows as $row) {
+            verify(fgetcsv($native, escape: '') === $row, 'Native CSV reconciliation differs.');
+        }
+        verify(fgetcsv($native, escape: '') === false, 'Native reader found extra row.');
+    } finally {
+        fclose($native);
+    }
+    echo "CSV quote, delimiter and multiline records independently reconciled\n";
+}
+
+function safeFileJsonContracts(): void
+{
+    $path = evidenceDirectory() . '/records.jsonl';
+    $values = [null, false, 0, ['id' => 1, 'label' => "line\nbreak"]];
+    $writer = new \Infocyph\Pathwise\FileManager\SafeFileWriter($path);
+    foreach ($values as $value) {
+        $writer->writeLine(json_encode($value, JSON_THROW_ON_ERROR));
+    }
+    $writer->close();
+    $reader = new \Infocyph\Pathwise\FileManager\SafeFileReader($path);
+    verify(iterator_to_array($reader->jsonLines()) === $values && $reader->count() === 4, 'JSONL falsey or escaped record differs.');
+    file_put_contents($path, "invalid\n", FILE_APPEND | LOCK_EX);
+    $fresh = new \Infocyph\Pathwise\FileManager\SafeFileReader($path);
+    $seen = [];
+    try {
+        foreach ($fresh->jsonLines() as $value) {
+            $seen[] = $value;
+        }
+        throw new LogicException('Malformed JSON record was accepted.');
+    } catch (\Infocyph\Pathwise\Exceptions\FileAccessException) {
+        verify($seen === $values, 'Malformed tail changed valid preceding records.');
+    }
+    echo "JSONL scalar/array preservation and malformed-tail failure passed\n";
+}
+
+function safeFileSerializedContracts(): void
+{
+    $path = evidenceDirectory() . '/serialized-records';
+    $values = [false, null, 0, ['id' => 1]];
+    $writer = new \Infocyph\Pathwise\FileManager\SafeFileWriter($path);
+    foreach ($values as $value) {
+        $writer->writeSerialized($value);
+    }
+    $writer->close();
+    $reader = new \Infocyph\Pathwise\FileManager\SafeFileReader($path);
+    verify(iterator_to_array($reader->serializedValues()) === $values, 'Safe serialization lost falsey values.');
+    file_put_contents($path, serialize(new stdClass()) . "\n", FILE_APPEND | LOCK_EX);
+    $fresh = new \Infocyph\Pathwise\FileManager\SafeFileReader($path);
+    expectFailure(static fn() => iterator_to_array($fresh->serializedValues()), \Infocyph\Pathwise\Exceptions\FileAccessException::class, 'Serialized object was accepted.');
+    echo "Serialized scalar/array roundtrip and object rejection passed\n";
+}
+
+function safeFileLockContracts(): void
+{
+    $path = evidenceDirectory() . '/locked-reader';
+    verify(file_put_contents($path, "record\n") === 7, 'Lock fixture seed failed.');
+    $reader = new \Infocyph\Pathwise\FileManager\SafeFileReader($path, lockType: LOCK_SH);
+    verify(iterator_to_array($reader->lines()) === ["record\n"], 'Locked read differs.');
+    $probe = fopen($path, 'r+b');
+    verify(is_resource($probe), 'Independent file handle unavailable.');
+    try {
+        verify(!flock($probe, LOCK_EX | LOCK_NB), 'Exclusive ownership overlapped shared reader.');
+        $reader->releaseLock();
+        verify(flock($probe, LOCK_EX | LOCK_NB), 'Explicit reader release leaked lock.');
+        flock($probe, LOCK_UN);
+        unset($reader);
+        $replacement = new \Infocyph\Pathwise\FileManager\SafeFileReader($path, lockType: LOCK_EX);
+        verify(iterator_to_array($replacement->lines()) === ["record\n"], 'Replacement reader failed.');
+        verify(!flock($probe, LOCK_SH | LOCK_NB), 'Shared lock overlapped exclusive reader.');
+        unset($replacement);
+        verify(flock($probe, LOCK_EX | LOCK_NB), 'Reader disposal leaked exclusive lock.');
+        flock($probe, LOCK_UN);
+    } finally {
+        fclose($probe);
+    }
+    echo "Independent file handle lock contention, release and disposal passed\n";
+}

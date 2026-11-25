@@ -452,6 +452,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-omnibus-failure-replay, backend: pgsql}
+          - {scenario: ecosystem-omnibus-failure-replay, backend: mysql}
+          - {scenario: ecosystem-omnibus-failure-replay, backend: mariadb}
+          - {scenario: ecosystem-omnibus-failure-replay, backend: sqlite}
+          - {scenario: ecosystem-omnibus-failure-replay, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-failure-rejection, backend: pgsql}
+          - {scenario: ecosystem-omnibus-failure-rejection, backend: mysql}
+          - {scenario: ecosystem-omnibus-failure-rejection, backend: mariadb}
+          - {scenario: ecosystem-omnibus-failure-rejection, backend: sqlite}
+          - {scenario: ecosystem-omnibus-failure-rejection, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: pgsql}
+          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mysql}
+          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mariadb}
+          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: sqlite}
+          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-file-binary-contracts, backend: pgsql}
+          - {scenario: ecosystem-file-csv-contracts, backend: pgsql}
+          - {scenario: ecosystem-file-jsonl-contracts, backend: pgsql}
+          - {scenario: ecosystem-file-serialized-contracts, backend: pgsql}
+          - {scenario: ecosystem-file-lock-contracts, backend: pgsql}
           - {scenario: ecosystem-response-cache-freshness-redis, backend: pgsql}
           - {scenario: ecosystem-response-cache-freshness-valkey, backend: pgsql}
           - {scenario: ecosystem-response-cache-freshness-memcached, backend: pgsql}

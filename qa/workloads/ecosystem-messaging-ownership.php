@@ -109,3 +109,84 @@ function omnibusFailureClaims(): void
     verify($owner->removeRetried($third) && $replacement->find('claim') === null && $peer->table('omnibus_failures')->count() === 0, 'Terminal failure cleanup mismatch.');
     echo "Failure version ordering, binary evidence, exclusive retry claim, expiry, stale tokens, sent-state protection and cleanup passed\n";
 }
+
+function omnibusFailureReplayContracts(): void
+{
+    [$db, $serializer] = messagingSetup();
+    $clock = new LabMessagingClock();
+    $store = new DBLayerFailureStore($db, $serializer, clock: $clock);
+    $queue = new DBLayerTransport($db, $serializer, $clock);
+    $manager = new \Infocyph\Omnibus\Failure\FailureManager($store);
+    $envelope = new Envelope(new LabJob('replay', 42), [
+        new MessageIdStamp('replay-id'), new \Infocyph\Omnibus\Envelope\AttemptStamp(3),
+        new DelayStamp(90.0), new \Infocyph\Omnibus\Envelope\RouteStamp('old', 'old'),
+        new \Infocyph\Omnibus\Envelope\UniqueStamp('old-key', 'old-token', 30.0),
+    ]);
+    $store->add(FailedMessage::decoded('replay-id', 'orders', $envelope, 3, $clock->now(), DomainException::class, 'fixture'));
+    $sent = $manager->retry('replay-id', $queue, 'recovered');
+    verify($sent->last(MessageIdStamp::class)->id === 'replay-id' && $sent->last(DelayStamp::class) === null && $sent->last(\Infocyph\Omnibus\Envelope\UniqueStamp::class) === null && $sent->last(\Infocyph\Omnibus\Envelope\AttemptStamp::class) === null && $sent->last(\Infocyph\Omnibus\Envelope\RouteStamp::class) === null, 'Retry retained delivery-local stamps.');
+    [$peer] = messagingSetup(false);
+    $other = new DBLayerTransport($peer, $serializer, $clock);
+    $failures = new DBLayerFailureStore($peer, $serializer, clock: $clock);
+    verify($failures->find('replay-id') === null && $other->size('orders') === 0 && $other->size('recovered') === 1, 'Retry removal or target queue differs.');
+    expectFailure(static fn() => $manager->retry('replay-id', $queue), FailureNotFound::class, 'Settled failure retried twice.');
+    $received = iterator_to_array($other->receive('recovered', 1));
+    verify(count($received) === 1 && $received[0]->messageId === 'replay-id' && $received[0]->attempt === 1 && $received[0]->envelope()->message->step === 42, 'Retry identity or attempt reset differs.');
+    $other->acknowledge($received[0]);
+    verify($peer->table('omnibus_messages')->count() === 0 && $peer->table('omnibus_failures')->count() === 0, 'Retry left durable rows.');
+    echo "SQL failure manager replay, delivery stamp reset and independent settlement passed\n";
+}
+
+function omnibusFailureRejectionContracts(): void
+{
+    [$db, $serializer] = messagingSetup();
+    $clock = new LabMessagingClock();
+    $store = new DBLayerFailureStore($db, $serializer, clock: $clock);
+    $queue = new DBLayerTransport($db, $serializer, $clock);
+    $manager = new \Infocyph\Omnibus\Failure\FailureManager($store);
+    $raw = "\0\xffbad";
+    $store->add(FailedMessage::undecodable('raw', 'orders', $raw, 1, $clock->now(), RuntimeException::class, 'raw'));
+    $workflow = new Envelope(new LabJob('workflow', 1), [new MessageIdStamp('workflow'), new \Infocyph\Omnibus\Envelope\ChainStamp('chain-id', 'item-id', 0)]);
+    $store->add(FailedMessage::decoded('workflow', 'orders', $workflow, 2, $clock->now(), DomainException::class, 'workflow'));
+    expectFailure(static fn() => $manager->retry('raw', $queue), \Infocyph\Omnibus\Failure\UndecodableFailure::class, 'Undecodable failure dispatched.');
+    expectFailure(static fn() => $manager->retry('workflow', $queue), \Infocyph\Omnibus\Failure\WorkflowFailureRequiresRecovery::class, 'Workflow failure dispatched as ordinary job.');
+    [$peer] = messagingSetup(false);
+    $replacement = new DBLayerFailureStore($peer, $serializer, clock: $clock);
+    verify($replacement->find('raw')?->payload === $raw && $replacement->find('workflow')?->envelope?->last(\Infocyph\Omnibus\Envelope\ChainStamp::class)?->itemId === 'item-id', 'Rejected retry changed evidence.');
+    foreach (['raw', 'workflow'] as $id) {
+        $claim = $replacement->claimRetry($id, 5.0);
+        verify($replacement->releaseRetry($claim), 'Validation failure leaked retry claim.');
+    }
+    verify($queue->size('orders') === 0 && $manager->forget('raw') && !$manager->forget('raw') && $manager->flush() === 1 && $peer->table('omnibus_failures')->count() === 0, 'Failure removal/flush reconciliation differs.');
+    echo "SQL undecodable/workflow retry rejection, claim cleanup and explicit failure removal passed\n";
+}
+
+function omnibusTransactionContracts(): void
+{
+    [$db, $serializer] = messagingSetup();
+    [$peer] = messagingSetup(false);
+    $clock = new LabMessagingClock();
+    $queue = new DBLayerTransport($db, $serializer, $clock);
+    $other = new DBLayerTransport($peer, $serializer, $clock);
+    try {
+        $db->transaction(static function ($active) use ($queue): never {
+            $active->table('lab_job_effects')->insert(['id' => 'rolled-back', 'step' => 1]);
+            $queue->send(new Envelope(new LabJob('rolled-back', 1)), 'orders');
+            throw new DomainException('fixture rollback');
+        });
+        throw new LogicException('Transaction did not roll back.');
+    } catch (\Infocyph\DBLayer\Exceptions\TransactionException $failure) {
+        verify($failure->getPrevious() instanceof DomainException, 'Unexpected rollback cause.');
+    }
+    verify($other->size('orders') === 0 && $peer->table('lab_job_effects')->count() === 0, 'Rollback leaked queue or business row.');
+    $db->transaction(static function ($active) use ($queue): void {
+        $active->table('lab_job_effects')->insert(['id' => 'committed', 'step' => 2]);
+        $queue->send(new Envelope(new LabJob('committed', 2)), 'orders');
+    });
+    verify($other->size('orders') === 1 && $peer->table('lab_job_effects')->count() === 1, 'Commit did not publish both rows.');
+    $reservation = iterator_to_array($other->receive('orders', 1))[0];
+    verify($reservation->envelope()->message->id === 'committed', 'Rolled-back message was delivered.');
+    $other->acknowledge($reservation);
+    verify($peer->table('omnibus_messages')->count() === 0 && (int) $peer->table('lab_job_effects')->value('step') === 2, 'Terminal durable reconciliation differs.');
+    echo "SQL transaction-bound enqueue, rollback and committed business/queue reconciliation passed\n";
+}
