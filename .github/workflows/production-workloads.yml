@@ -278,6 +278,20 @@ jobs:
           - {scenario: ecosystem-validation-database, backend: mysql}
           - {scenario: ecosystem-validation-database, backend: pgsql}
           - {scenario: ecosystem-validation-database, backend: sqlite}
+    uses: ./.github/workflows/production-worker.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+      php: ${{ matrix.php || '8.6' }}
+
+  ecosystem-extra:
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - {scenario: ecosystem-otp-durable, backend: mysql}
           - {scenario: ecosystem-otp-durable, backend: pgsql}
           - {scenario: ecosystem-otp-backends, backend: mysql}
@@ -397,6 +411,10 @@ jobs:
           - {scenario: ecosystem-array-config, backend: pgsql}
           - {scenario: ecosystem-array-stream, backend: pgsql}
           - {scenario: ecosystem-uid-formats, backend: pgsql}
+          - {scenario: ecosystem-amqp-consumer-failures, backend: pgsql}
+          - {scenario: ecosystem-amqp-consumer-failures, backend: mysql}
+          - {scenario: ecosystem-sqs-consumer-failures, backend: pgsql}
+          - {scenario: ecosystem-sqs-consumer-failures, backend: mysql}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

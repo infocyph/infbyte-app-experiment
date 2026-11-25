@@ -69,7 +69,7 @@ function auditMatrix(string $repository, string $workloads): array
             auditAssert(is_file($workloads . '/' . $script), 'Dispatcher script not found: ' . $script);
         }
     }
-    preg_match_all('/^\h{2}(database|ecosystem|application):\h*\n(.*?)(?=^ {2}\S|\z)/ms', $workflow, $shards, PREG_SET_ORDER);
+    preg_match_all('/^\h{2}(database|ecosystem|ecosystem-extra|application):\h*\n(.*?)(?=^ {2}\S|\z)/ms', $workflow, $shards, PREG_SET_ORDER);
     $shardCounts = [];
     foreach ($shards as $shard) {
         preg_match_all('/^\h*-\h*\{scenario:\h*([^,}]+)/m', $shard[2], $entries);
@@ -77,11 +77,11 @@ function auditMatrix(string $repository, string $workloads): array
         foreach ($entries[1] as $name) {
             $name = trim($name);
             $expected = str_starts_with($name, 'db-') ? 'database' : (str_starts_with($name, 'ecosystem-') ? 'ecosystem' : 'application');
-            auditAssert($expected === $shard[1], 'Scenario assigned to wrong shard: ' . $name);
+            auditAssert($expected === $shard[1] || ($expected === 'ecosystem' && $shard[1] === 'ecosystem-extra'), 'Scenario assigned to wrong shard: ' . $name);
         }
         $shardCounts[$shard[1]] = count($entries[1]);
     }
-    auditAssert(count($shardCounts) === 3 && array_sum($shardCounts) === count($rows), 'Incomplete matrix shard inventory.');
+    auditAssert(count($shardCounts) === 4 && array_sum($shardCounts) === count($rows), 'Incomplete matrix shard inventory.');
     ksort($scenarios);
 
     return ['matrix_rows' => count($rows), 'matrix_shards' => $shardCounts, 'unique_scenarios' => array_keys($scenarios), 'rows' => array_values($rows)];

@@ -253,3 +253,109 @@ function brokerAcknowledgementWorkload(string $provider): void
     }
     echo "$provider actual broker settlement, injected before/after acknowledgement ambiguity, replacement and durable idempotent effects passed\n";
 }
+
+
+final class LabPermanentBrokerFailure extends DomainException implements \Infocyph\Omnibus\Retry\NonRetryableFailure {}
+
+function brokerConsumerFailureWorkload(string $provider): void
+{
+    [$db, $serializer, , $clock] = messagingSetup();
+    $db->statement('CREATE TABLE lab_broker_attempts (id VARCHAR(100) PRIMARY KEY, attempts INTEGER NOT NULL)');
+    $queue = 'consumer-contract';
+    $connection = null;
+    $client = null;
+    $url = null;
+    if ($provider === 'amqp') {
+        $connection = new \PhpAmqpLib\Connection\AMQPStreamConnection('127.0.0.1', 15672, 'experiment', 'fixture-only-password');
+        $channel = $connection->channel();
+        $channel->exchange_declare('lab-failure-exchange', 'direct', false, true, false);
+        $channel->queue_declare('consumer-dead', false, true, false, false);
+        $channel->queue_bind('consumer-dead', 'lab-failure-exchange', 'dead');
+        $channel->queue_declare($queue, false, true, false, false, false, new \PhpAmqpLib\Wire\AMQPTable(['x-dead-letter-exchange' => 'lab-failure-exchange', 'x-dead-letter-routing-key' => 'dead']));
+        $backend = new LabAmqpBackend($channel);
+        $transport = new AmqpTransport($backend, $serializer);
+    } else {
+        $client = new SqsClient(['version' => 'latest', 'region' => 'us-east-1', 'endpoint' => 'http://127.0.0.1:19324', 'credentials' => ['key' => 'fixture', 'secret' => 'fixture'], 'http' => ['connect_timeout' => 3, 'timeout' => 10]]);
+        $url = $client->createQueue(['QueueName' => $queue])['QueueUrl'];
+        $backend = new LabSqsBackend($client, $url);
+        $transport = new SqsTransport($backend, $serializer);
+    }
+    try {
+        $failures = new \Infocyph\Omnibus\Integration\DBLayer\DBLayerFailureStore($db, $serializer);
+        $handler = new \Infocyph\Omnibus\Handler\HandlerInvoker(new \Infocyph\Omnibus\Handler\HandlerMap([
+            LabJob::class => static function (LabJob $job, \Infocyph\Omnibus\Envelope\Envelope $envelope) use ($db): void {
+                $db->table('lab_broker_attempts')->upsert([['id' => $job->id, 'attempts' => 0]], ['id'], ['id']);
+                $db->update('UPDATE lab_broker_attempts SET attempts = attempts + 1 WHERE id = ?', [$job->id]);
+                $attempt = (int) $db->table('lab_broker_attempts')->where('id', '=', $job->id)->value('attempts');
+                $stamp = $envelope->last(\Infocyph\Omnibus\Envelope\AttemptStamp::class);
+                verify($stamp !== null && $stamp->attempt === $attempt, 'Broker attempt stamp changed.');
+                if ($job->id === 'permanent') {
+                    throw new LabPermanentBrokerFailure('permanent fixture');
+                }
+                if ($job->id === 'exhausted' || ($job->id === 'transient' && $attempt === 1)) {
+                    throw new RuntimeException('retryable fixture');
+                }
+                $db->table('lab_job_effects')->insert(['id' => $job->id, 'step' => $job->step]);
+            },
+        ]));
+        $retry = new \Infocyph\Omnibus\Retry\ExponentialRetryStrategy(maximumAttempts: 2, initialDelaySeconds: $provider === 'amqp' ? 0.0 : 3.0);
+        $consumer = new \Infocyph\Omnibus\Consumer\Consumer($transport, $handler, $retry, $failures, $clock);
+        $run = static function () use ($consumer, $queue) {
+            $deadline = hrtime(true) + 15_000_000_000;
+            do {
+                $result = $consumer->run($queue, 1, 10.0);
+                if ($result->received > 0) { return $result; }
+                usleep(20000);
+            } while (hrtime(true) < $deadline);
+            throw new RuntimeException('Expected real broker delivery missing.');
+        };
+        foreach (['transient', 'exhausted', 'permanent', 'healthy'] as $id) {
+            $transport->send(new Envelope(new LabJob($id, 42)), $queue);
+            $first = $run();
+            if ($id === 'transient' || $id === 'exhausted') {
+                verify($first->released === 1 && $first->succeeded === 0 && $first->failed === 0, 'Retry did not release delivery.');
+                if ($provider === 'sqs') {
+                    verify($consumer->run($queue, 1, 10.0)->received === 0, 'Delayed retry became visible early.');
+                }
+                $second = $run();
+                verify($second->succeeded === ($id === 'transient' ? 1 : 0) && $second->failed === ($id === 'exhausted' ? 1 : 0), 'Retry terminal outcome mismatch.');
+            } else {
+                verify($first->succeeded === ($id === 'healthy' ? 1 : 0) && $first->failed === ($id === 'permanent' ? 1 : 0) && $first->released === 0, 'Permanent/healthy terminal outcome mismatch.');
+            }
+        }
+        $backend->send($queue, 'malformed-fixture', '{"not-an-envelope":true}', 0.0);
+        $bad = $run();
+        verify($bad->failed === 1 && $bad->released === 0, 'Undecodable delivery was retried or accepted.');
+        $records = $failures->all(100);
+        verify(count($records) === 3, 'Unexpected durable failure count.');
+        $decoded = [];
+        $raw = 0;
+        foreach ($records as $record) {
+            if ($record->envelope === null) {
+                verify($record->payload === '{"not-an-envelope":true}' && $record->attempt === 1 && !$record->payloadTruncated, 'Raw failure evidence mismatch.');
+                ++$raw;
+            } else {
+                $decoded[$record->envelope->message->id] = $record->attempt;
+            }
+        }
+        ksort($decoded);
+        verify($decoded === ['exhausted' => 2, 'permanent' => 1] && $raw === 1, 'Durable failure identity/attempt mismatch.');
+        verify($db->table('lab_job_effects')->count() === 2 && $db->table('lab_job_effects')->where('id', '=', 'transient')->exists() && $db->table('lab_job_effects')->where('id', '=', 'healthy')->exists(), 'Business effects did not reconcile.');
+        verify($consumer->run($queue, 1, 10.0)->received === 0, 'Settled delivery remained in source queue.');
+        if ($provider === 'amqp') {
+            $dead = iterator_to_array($transport->receive('consumer-dead', 3));
+            verify(count($dead) === 3, 'RabbitMQ DLX did not route all terminal failures.');
+            $ids = [];
+            foreach ($dead as $delivery) {
+                $ids[] = $delivery->decodingFailure() === null ? $delivery->envelope()->message->id : 'malformed';
+                $transport->acknowledge($delivery);
+            }
+            sort($ids);
+            verify($ids === ['exhausted', 'malformed', 'permanent'] && $transport->size('consumer-dead') === 0, 'DLX reconciliation failed.');
+        }
+        echo "Real broker consumer retry, permanent rejection, decode failure and durable effect reconciliation passed\n";
+    } finally {
+        if ($connection !== null) { $connection->close(); }
+        if ($client !== null && $url !== null) { $client->deleteQueue(['QueueUrl' => $url]); }
+    }
+}

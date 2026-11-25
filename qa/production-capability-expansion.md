@@ -577,3 +577,7 @@ I: extend the eight dedicated Redis/Valkey/file/PHP-files/SQLite/PostgreSQL/MySQ
 ## B141 — Collection, Remix and compound validation contracts
 
 I: three independent lanes exercise collection presence and ownership through array/property access, iterator and JSON import, immutable pipelines; InterMix conditional and tap proxies, annotation/config mixins, rejection atomicity and Fence override/requirement lifecycle; ReqShield ordered direct/wildcard cast composition, enum/array/object/JSON projection, malformed values and strict scalar cast boundaries. 431 routine rows; hosted qualification pending (TYPE, DATA, MEM, EXEC-03). Existing tests retained; upstream repairs deferred.
+
+## B142 — Real broker consumer failure contracts and matrix capacity
+
+I: four independent AMQP/SQS-compatible plus MySQL/PostgreSQL jobs exercise transient retry with real broker redelivery, SQS delayed visibility, retry exhaustion, explicitly non-retryable failure, raw decode failure, durable SQL failure and business effect reconciliation, and actual RabbitMQ terminal DLX routing. Split the growing ecosystem matrix into two independently bounded reusable-worker shards and retain all prior entries; update the inventory shard validation without weakening uniqueness or dispatch checks. 435 routine rows; hosted qualification pending (DATA, OPS, EXEC-03). No upstream modifications.

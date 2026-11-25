@@ -111,6 +111,8 @@ match ($argv[1] ?? '') {
     'http-retry-safety' => httpRetrySafetyWorkload(),
     'http-proxy' => httpProxyWorkload(),
     'amqp-dlq' => amqpDlqWorkload(),
+    'amqp-consumer-failures' => brokerConsumerFailureWorkload('amqp'),
+    'sqs-consumer-failures' => brokerConsumerFailureWorkload('sqs'),
     'amqp-ack-uncertain' => brokerAcknowledgementWorkload('amqp'),
     'amqp-wire-ack' => brokerAcknowledgementWorkload('amqp-wire'),
     'sqs-ack-uncertain' => brokerAcknowledgementWorkload('sqs'),
