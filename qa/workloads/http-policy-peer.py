@@ -41,22 +41,33 @@ class Handler(BaseHTTPRequestHandler):
 
     def boundary_redirect(self):
         path = urlsplit(self.path).path
-        if not (path.startswith("/redirect-contract/") or path.startswith("/redirect-target/")):
+        prefixes = ("/redirect-contract/", "/redirect-target/", "/redirect-cross-contract/", "/redirect-cross-target/")
+        if not path.startswith(prefixes):
             return False
+        cross = path.startswith("/redirect-cross-")
+        source = path.startswith(("/redirect-contract/", "/redirect-cross-contract/"))
         length = int(self.headers.get("Content-Length", "0"))
         assert 0 <= length <= 4096
         body = self.rfile.read(length) if length else b""
         with lock:
             counts[path] = counts.get(path, 0) + 1
-        if path.startswith("/redirect-contract/"):
+        if source:
             _, _, status, method = path.split("/")
             assert self.command.lower() == method
             assert status in ("301", "302", "303", "307", "308")
             assert body == (b"order\x00receipt\xff" if method in ("post", "put", "patch", "delete") else b"")
             assert bool(self.headers.get("Authorization"))
             assert self.headers.get("Content-Type", "absent") == ("application/octet-stream" if body else "absent")
+            if cross:
+                assert self.server is primary
+                assert self.headers.get("Cookie") == "fixture=only"
+                assert self.headers.get("X-API-Key") == "fixture-key"
+                assert self.headers.get("X-Lab-Secret") == "fixture-custom"
+                assert self.headers.get("X-Lab-Public") == "retained"
+                assert parse_qs(urlsplit(self.path).query).get("fixture_secret") == ["fixture-query"]
             self.send_response(int(status))
-            self.send_header("Location", f"/redirect-target/{status}/{method}")
+            location = f"https://127.0.0.1:{other.server_port}/redirect-cross-target/{status}/{method}" if cross else f"/redirect-target/{status}/{method}"
+            self.send_header("Location", location)
             self.send_header("Content-Length", "0")
             self.end_headers()
         else:
@@ -66,6 +77,10 @@ class Handler(BaseHTTPRequestHandler):
                 ("X-Lab-Digest", hashlib.sha256(body).hexdigest()),
                 ("X-Lab-Content-Type", self.headers.get("Content-Type", "absent")),
                 ("X-Lab-Authorization", "present" if self.headers.get("Authorization") else "absent"),
+                ("X-Lab-Sensitive", "present" if any(self.headers.get(name) for name in ("Cookie", "X-API-Key", "X-Lab-Secret", "Proxy-Authorization")) else "absent"),
+                ("X-Lab-Query-Secret", "present" if "fixture_secret" in parse_qs(urlsplit(self.path).query) else "absent"),
+                ("X-Lab-Public", self.headers.get("X-Lab-Public", "absent")),
+                ("X-Lab-Target-Origin", "other" if self.server is other else "primary"),
             ])
         return True
 

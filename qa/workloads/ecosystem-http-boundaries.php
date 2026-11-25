@@ -13,12 +13,19 @@ function labHttpBoundaryRequest(string $path, string $method = 'get'): HttpReque
     return HttpRequest::$method($base . $path)->caBundle((string) getenv('LAB_HTTP_CA'))->timeout(5);
 }
 
-function httpRedirectMethodContracts(int $status, string $method): void
+function httpRedirectMethodContracts(int $status, string $method, bool $crossOrigin = false): void
 {
     $client = HttpClient::curl();
-    $path = '/redirect-contract/' . $status . '/' . $method;
+    $prefix = $crossOrigin ? 'redirect-cross' : 'redirect';
+    $path = '/' . $prefix . '-contract/' . $status . '/' . $method;
     $payload = "order\x00receipt\xff";
     $request = labHttpBoundaryRequest($path, $method)->followRedirects(true, 2)->withBearerToken('fixture-only');
+    if ($crossOrigin) {
+        $request = $request->header('Cookie', 'fixture=only')
+            ->header('X-API-Key', 'fixture-key')->header('X-Lab-Secret', 'fixture-custom')
+            ->markSensitiveHeader('X-Lab-Secret')->header('X-Lab-Public', 'retained')
+            ->query('fixture_secret', 'fixture-query')->markSensitiveQuery('fixture_secret');
+    }
     $bodyMethods = ['post', 'put', 'patch', 'delete'];
     if (in_array($method, $bodyMethods, true)) {
         $request = $request->raw($payload, 'application/octet-stream');
@@ -37,12 +44,18 @@ function httpRedirectMethodContracts(int $status, string $method): void
         && $response->headerLine('X-Lab-Digest') === hash('sha256', $body), 'Redirect body changed or leaked.');
     verify($response->headerLine('X-Lab-Content-Type') === ($body === '' ? 'absent' : 'application/octet-stream'),
         'Redirect entity headers did not follow method.');
-    verify($response->headerLine('X-Lab-Authorization') === 'present', 'Same-origin redirect lost authentication.');
+    verify($response->headerLine('X-Lab-Authorization') === ($crossOrigin ? 'absent' : 'present'), 'Redirect authorization boundary differs.');
+    if ($crossOrigin) {
+        verify($response->headerLine('X-Lab-Sensitive') === 'absent'
+            && $response->headerLine('X-Lab-Query-Secret') === 'absent'
+            && $response->headerLine('X-Lab-Public') === 'retained'
+            && $response->headerLine('X-Lab-Target-Origin') === 'other', 'Cross-origin redirect leaked credentials or lost public metadata.');
+    }
     if ($method === 'head') {
         verify($response->text() === '', 'HEAD redirect returned a body.');
     }
     $counts = $client->send(labHttpBoundaryRequest('/counts'))->response->json();
-    verify(($counts[$path] ?? 0) === 1 && ($counts['/redirect-target/' . $status . '/' . $method] ?? 0) === 1,
+    verify(($counts[$path] ?? 0) === 1 && ($counts['/' . $prefix . '-target/' . $status . '/' . $method] ?? 0) === 1,
         'Redirect request multiplicity differed.');
     echo "Real $method $status redirect method, body, headers and wire counts passed\n";
 }
