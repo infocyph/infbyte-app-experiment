@@ -75,3 +75,7 @@ I: DB-11 bounded one/many/many-to-many (duplicate parents, empty results and que
 ## B16 — route matcher acceptance policy
 
 I: use fused and sharded exclusively, with both matchers on native and PHP-FPM browser lanes and on every existing authenticated HTTP host/database combination. Apply explicit matcher configuration to both scenarios, reject other laboratory matcher values. Historical generated-lane findings remain in previous run records; typed-route and authenticated-readiness reproductions remain mandatory. Hosted verification pending.
+
+## B17 — core and data ecosystem workloads
+
+I: five independent jobs: Foundation production core compiled readiness, live maintenance entry/exit and concurrent health after recovery; InterMix strict compiled/dynamic DI with 2,000 scoped jobs, nested and borrowed input, aliases, lifetime and invocation; ArrayKit immutable lazy config generations, partial/failed rebuild; renewable 300k-row lazy pipeline and hooked collection isolation; UID UUID1–8, six bases, binary/ULID roundtrip and 4k uniqueness. PHPProbe is an engineering tool, not runtime diagnostics (separate dev-only qualification required). All broader library rows remain open; hosted evidence pending.

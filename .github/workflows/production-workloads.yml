@@ -15,6 +15,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-core-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-intermix, backend: pgsql}
+          - {scenario: ecosystem-array-config, backend: pgsql}
+          - {scenario: ecosystem-array-stream, backend: pgsql}
+          - {scenario: ecosystem-uid-formats, backend: pgsql}
           - {scenario: db-driver, backend: mysql}
           - {scenario: db-driver, backend: pgsql}
           - {scenario: db-driver, backend: sqlite}
@@ -217,9 +222,13 @@ jobs:
           docker run --rm infbyte-lab-fpm php -m
           docker pull nginx:alpine
       - name: Execute independent concurrent business workers and reconcile state
-        if: matrix.scenario != 'http' && matrix.scenario != 'operations' && matrix.scenario != 'browser' && !startsWith(matrix.scenario, 'db-')
+        if: matrix.scenario != 'http' && matrix.scenario != 'operations' && matrix.scenario != 'browser' && !startsWith(matrix.scenario, 'db-') && !startsWith(matrix.scenario, 'ecosystem-')
         shell: bash
         run: bash qa/workloads/stress.sh
+      - name: Exercise independent core and ecosystem capabilities
+        if: startsWith(matrix.scenario, 'ecosystem-')
+        shell: bash
+        run: bash qa/workloads/ecosystem.sh
       - name: Exercise DBLayer database mechanics independently
         if: startsWith(matrix.scenario, 'db-')
         env:

@@ -73,3 +73,5 @@ B14 adds database operational scenarios; see the detailed expansion register. St
 B15 adds five-driver mechanics and bounded relationship lanes. Remaining relation variants and per-driver coverage are explicitly open in the detailed expansion register.
 
 B16 sets fused/sharded as the only acceptance matchers for both production HTTP workloads. Historical generated matcher execution remains evidence, not a required current lane.
+
+B17 adds five core/InterMix/ArrayKit/UID native capability jobs; PHPProbe belongs to engineering QA, not production runtime. Detailed tracker records implemented vs open.
