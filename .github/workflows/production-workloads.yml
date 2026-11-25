@@ -15,6 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-connected, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-connected, backend: mysql, matcher: sharded}
+          - {scenario: ecosystem-connected, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-connected, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-routing, backend: pgsql, matcher: fused}
           - {scenario: ecosystem-routing, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-coroutines, backend: pgsql}

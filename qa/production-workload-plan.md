@@ -127,3 +127,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B19 — runtime and remaining ecosystem native lanes
 - [x] Add eleven independent runtime, Webrick, Pathwise, Omnibus and TalkingBytes jobs; separate PHPProbe engineering acceptance.
 - [ ] Hosted evidence and remaining granular capabilities across all packages.
+
+## B20 — connected checkout workload
+- [x] Four real native HTTP-to-SQL-to-outbox-to-queue-to-encrypted-storage-to-SMTP lanes, with idempotent replay and rollback.
+- [ ] Hosted verification and remaining scenario families; no upstream changes.
