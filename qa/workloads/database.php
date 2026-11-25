@@ -275,9 +275,15 @@ require __DIR__ . '/database-sqlserver-ag.php';
 require __DIR__ . '/database-cache-race.php';
 require __DIR__ . '/database-active-backup.php';
 require __DIR__ . '/database-contracts.php';
+require __DIR__ . '/database-query-advanced-contracts.php';
 
 $db = new Connection(config(($argv[1] ?? '') === 'mysql-physical-verify' ? ['port' => 3308] : []));
 match ($argv[1] ?? '') {
+    'window-query' => windowQueryContracts($db),
+    'recursive-query' => recursiveQueryContracts($db),
+    'generated-identity' => generatedIdentityContracts($db),
+    'upsert-returning' => upsertReturningContracts($db),
+    'compiler-payload' => compilerPayloadContracts($db),
     'complex-join' => complexJoinContracts($db),
     'grouped-query' => groupedQueryContracts($db),
     'union-multiplicity' => unionMultiplicityContracts($db),

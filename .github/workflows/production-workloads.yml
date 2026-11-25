@@ -16,6 +16,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-window-query, backend: pgsql}
+          - {scenario: db-window-query, backend: mysql}
+          - {scenario: db-window-query, backend: mariadb}
+          - {scenario: db-window-query, backend: sqlite}
+          - {scenario: db-window-query, backend: mssql}
+          - {scenario: db-recursive-query, backend: pgsql}
+          - {scenario: db-recursive-query, backend: mysql}
+          - {scenario: db-recursive-query, backend: mariadb}
+          - {scenario: db-recursive-query, backend: sqlite}
+          - {scenario: db-recursive-query, backend: mssql}
+          - {scenario: db-generated-identity, backend: pgsql}
+          - {scenario: db-generated-identity, backend: mysql}
+          - {scenario: db-generated-identity, backend: mariadb}
+          - {scenario: db-generated-identity, backend: sqlite}
+          - {scenario: db-generated-identity, backend: mssql}
+          - {scenario: db-upsert-returning, backend: pgsql}
+          - {scenario: db-upsert-returning, backend: mysql}
+          - {scenario: db-upsert-returning, backend: mariadb}
+          - {scenario: db-upsert-returning, backend: sqlite}
+          - {scenario: db-upsert-returning, backend: mssql}
+          - {scenario: db-compiler-payload, backend: pgsql}
+          - {scenario: db-compiler-payload, backend: mysql}
+          - {scenario: db-compiler-payload, backend: mariadb}
+          - {scenario: db-compiler-payload, backend: sqlite}
+          - {scenario: db-compiler-payload, backend: mssql}
           - {scenario: db-complex-join, backend: pgsql}
           - {scenario: db-complex-join, backend: mysql}
           - {scenario: db-complex-join, backend: mariadb}

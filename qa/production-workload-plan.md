@@ -745,3 +745,7 @@ I: two independent PHP 8.4 native MongoDB extension jobs. Actual standalone Mong
 ## B173 — Foundation specialist provider lifecycle
 
 I: 18 jobs. Explicitly configured published provider graph in worker execution: JSON dispatch native/tunneled errors and three-driver offset/cursor/validation projection; configured file logger with sampling, exception throttling, nested redaction and twelve-process exact append reconciliation; core runtime-directory automatic/explicit boot; all auth templates and configured mail notification spool send/peek/claim/archive. Web-only built-ins explicitly registered for worker use; not a claim of compiled web-host qualification. CORE-01, DATA, OBS, SEC, EXEC-03: source/matrix wiring inspected; hosted outcomes deferred. 986 routine rows.
+
+## B174 — DBLayer advanced query and execution contracts
+
+I: 25 real SQL lanes across PostgreSQL/MySQL/MariaDB/SQLite/SQL Server: structured ranking/window aggregation and invalid identifiers, bound recursive tenant/depth traversal, generated identity native/fallback and unsupported bulk boundary, composite-key upsert-returning projection and rollback, immutable compiler mutation payload/binding/execution reconciliation. Independent connection/PHP oracles and native capability checks. CORE-01, DATA, TYPE, SEC, EXEC-03: source/matrix wiring inspected; hosted outcomes deferred. 1011 routine rows.
