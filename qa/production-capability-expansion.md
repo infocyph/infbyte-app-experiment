@@ -251,3 +251,7 @@ I: RabbitMQ durable dead-letter exchange and unacknowledged connection closure w
 ## B60 — durable authentication lifecycle and distributed replay
 
 I: four jobs on MySQL/PostgreSQL. Account lock/suspend/disable and unlock, real Redis threshold lockout, durable device registration/trust/revocation/ownership, remember-token family rotation and replay-triggered revocation; separate published Foundation SQL Epicrypt replay-store race with 12 independent processes, exactly one winner and namespace isolation. No secret/token artifact output. SEC-01/09, DATA-01: authoritative account and replay state; hosted verification pending. Actual browser OAuth endpoints and conditional driver combinations remain open.
+
+## B61 — concurrent HTTP and transfer contracts
+
+I: two independent actual TLS peer lanes: 64 correlated curl-multi requests, stop scheduling after failure, pre-cancelled pool and operation deadline; actual 1 MiB file upload, multipart stream and field digest, buffered and streamed download digest, maximum download bytes. Uses independent Python MIME parser and SHA-256 oracle. No production network or provider claims. Hosted verification pending; Runwire outbound protocol variants and inbound framework multipart remain separate.

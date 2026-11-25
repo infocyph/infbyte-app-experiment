@@ -161,3 +161,5 @@ B58 adds a real PostgreSQL protocol-level lost COMMIT acknowledgement test; not 
 B59 adds actual AMQP dead-letter routing and unacknowledged recovery plus SQS-compatible FIFO order and deduplication.
 
 B60 adds account lockout, device trust, remember family rotation and independent SQL replay race.
+
+B61 adds real TLS concurrent pool, deadlines, upload/multipart and download integrity.

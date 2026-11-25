@@ -14,4 +14,4 @@ for i in $(seq 1 100); do
 done
 export LAB_HTTP_PORT="$(php -r 'echo json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR)["port"];' "$root/ready.json")"
 export LAB_HTTP_OTHER="$(php -r 'echo json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR)["other"];' "$root/ready.json")"
-php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" http-policy | tee "$EVIDENCE/ecosystem.log"
+php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"

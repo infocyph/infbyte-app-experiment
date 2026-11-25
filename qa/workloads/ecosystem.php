@@ -60,9 +60,12 @@ require __DIR__ . '/ecosystem-file-lifecycle.php';
 require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
 require __DIR__ . '/ecosystem-broker-boundaries.php';
+require __DIR__ . '/ecosystem-http-transfer.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'http-pool' => httpPoolWorkload(),
+    'http-transfer' => httpTransferWorkload(),
     'amqp-dlq' => amqpDlqWorkload(),
     'sqs-fifo' => sqsFifoWorkload(),
     'remote-jwks' => remoteJwksWorkload(),

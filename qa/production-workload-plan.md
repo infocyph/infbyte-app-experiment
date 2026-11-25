@@ -291,3 +291,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B60 — authentication and replay lifecycle
 - [x] Four actual SQL/Redis auth lifecycle and distributed replay lanes.
 - [ ] Hosted qualification and remaining HTTP/conditional auth variants.
+
+## B61 — HTTP concurrency and transfer
+- [x] Real HTTP multi pool and streaming/multipart transfer scenarios.
+- [ ] Hosted qualification and remaining inbound/transport variants.

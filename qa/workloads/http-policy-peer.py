@@ -1,5 +1,8 @@
 """Loopback TLS HTTP peer; records only synthetic request counts."""
 import json
+import hashlib
+from email.parser import BytesParser
+from email.policy import default
 import os
 import ssl
 import sys
@@ -31,12 +34,48 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError, ssl.SSLError):
             pass
 
+    def do_PUT(self):
+        length = int(self.headers.get("Content-Length", "0"))
+        if not 0 < length <= 2 * 1024 * 1024:
+            self.reply(413, {})
+            return
+        payload = self.rfile.read(length)
+        self.reply(200, {"bytes": len(payload), "digest": hashlib.sha256(payload).hexdigest()})
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", "0"))
+        if not 0 < length <= 2 * 1024 * 1024:
+            self.reply(413, {})
+            return
+        prefix = ("Content-Type: " + self.headers["Content-Type"] + "\r\nMIME-Version: 1.0\r\n\r\n").encode()
+        message = BytesParser(policy=default).parsebytes(prefix + self.rfile.read(length))
+        result = {}
+        for part in message.iter_parts():
+            name = part.get_param("name", header="content-disposition")
+            payload = part.get_payload(decode=True)
+            result[name] = {"bytes": len(payload), "digest": hashlib.sha256(payload).hexdigest(), "filename": part.get_filename()}
+        self.reply(200, result)
+
     def do_GET(self):
         path = urlsplit(self.path).path
         with lock:
             counts[path] = counts.get(path, 0) + 1
             attempt = counts[path]
-        if path == "/retry" and attempt < 3:
+        if path.startswith("/pool/"):
+            time.sleep(0.05)
+            self.reply(200, {"path": path, "attempt": attempt})
+        elif path == "/download":
+            payload = bytes(range(256)) * 4096
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Content-Type", "application/octet-stream")
+            self.end_headers()
+            try:
+                for offset in range(0, len(payload), 8192):
+                    self.wfile.write(payload[offset:offset + 8192])
+            except (BrokenPipeError, ConnectionResetError, ssl.SSLError):
+                pass
+        elif path == "/retry" and attempt < 3:
             self.reply(503, {"attempt": attempt}, [("Retry-After", "0")])
         elif path == "/missing":
             self.reply(404, {"attempt": attempt})
