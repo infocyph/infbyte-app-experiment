@@ -7,6 +7,7 @@ from email.parser import BytesParser
 from email.policy import default
 import os
 import ssl
+import socket
 import sys
 import threading
 import time
@@ -65,12 +66,69 @@ class Handler(BaseHTTPRequestHandler):
             ])
         return True
 
+    def retry_matrix(self):
+        path = urlsplit(self.path).path
+        if not path.startswith("/retry-matrix/"):
+            return False
+        _, _, group, contract = path.split("/")
+        length = int(self.headers.get("Content-Length", "0"))
+        assert 0 <= length <= 4096
+        payload = self.rfile.read(length) if length else b""
+        digest = hashlib.sha256(payload).hexdigest()
+        key = self.headers.get("Idempotency-Key", "")
+        identity = (self.command, digest, key)
+        with lock:
+            counts[path] = counts.get(path, 0) + 1
+            attempt = counts[path]
+            first = mutations.setdefault(path, identity)
+        if group == "transport" and attempt < 3:
+            self.close_connection = True
+            try:
+                self.connection.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            return True
+        status = (int(contract) if group == "status" else 503) if attempt < 3 else 200
+        if group == "delay" and contract == "exhausted":
+            status = 503
+        headers = [
+            ("Connection", "close"), ("X-Lab-Attempt", str(attempt)),
+            ("X-Lab-Method", self.command), ("X-Lab-Digest", digest),
+            ("X-Lab-Same", "yes" if identity == first else "no"),
+            ("X-Lab-Key", "yes" if key else "no"),
+        ]
+        if group == "delay":
+            value = {"zero": "0", "past-date": "Wed, 01 Jan 2020 00:00:00 GMT",
+                     "capped": "90", "huge": "9999999999999999999999999",
+                     "invalid": "not-a-date"}.get(contract)
+            if value is not None:
+                headers.append(("Retry-After", value))
+        elif group == "cancel":
+            headers.append(("Retry-After", "3"))
+        elif group != "transport":
+            headers.append(("Retry-After", "0"))
+        self.reply(status, {"attempt": attempt}, headers)
+        self.close_connection = True
+        return True
+
+    def do_PATCH(self):
+        if not self.retry_matrix():
+            self.send_error(404)
+
+    def do_DELETE(self):
+        if not self.retry_matrix():
+            self.send_error(404)
+
+    def do_OPTIONS(self):
+        if not self.retry_matrix():
+            self.send_error(404)
+
     def do_HEAD(self):
-        if not self.boundary_redirect():
+        if not self.retry_matrix() and not self.boundary_redirect():
             self.send_error(404)
 
     def do_PUT(self):
-        if self.boundary_redirect():
+        if self.retry_matrix() or self.boundary_redirect():
             return
         length = int(self.headers.get("Content-Length", "0"))
         if not 0 < length <= 2 * 1024 * 1024:
@@ -80,7 +138,7 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(200, {"bytes": len(payload), "digest": hashlib.sha256(payload).hexdigest()})
 
     def do_POST(self):
-        if self.boundary_redirect():
+        if self.retry_matrix() or self.boundary_redirect():
             return
         length = int(self.headers.get("Content-Length", "0"))
         if not 0 < length <= 2 * 1024 * 1024:
@@ -129,7 +187,7 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(200, result)
 
     def do_GET(self):
-        if self.boundary_redirect():
+        if self.retry_matrix() or self.boundary_redirect():
             return
         path = urlsplit(self.path).path
         with lock:

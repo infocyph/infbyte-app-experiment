@@ -1420,6 +1420,42 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-http-retry-matrix-status-408, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-425, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-429, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-500, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-502, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-503, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-504, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-400, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-401, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-403, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-404, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-409, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-status-422, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-method-get-safe, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-method-head-safe, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-method-options-safe, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-method-put-safe, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-method-delete-safe, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-method-post-unsafe, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-method-patch-unsafe, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-method-post-keyed, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-method-patch-keyed, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-method-patch-opted, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-delay-zero, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-delay-past-date, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-delay-capped, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-delay-huge, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-delay-invalid, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-delay-missing, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-delay-exhausted, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-transport-get-enabled, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-transport-get-disabled, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-transport-post-unsafe, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-transport-post-keyed, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-cancel-preflight, backend: pgsql}
+          - {scenario: ecosystem-http-retry-matrix-cancel-during-wait, backend: pgsql}
           - {scenario: ecosystem-host-budget-request, backend: pgsql, host: fpm, php: '8.4'}
           - {scenario: ecosystem-host-budget-request, backend: pgsql, host: frankenphp}
           - {scenario: ecosystem-host-budget-request, backend: pgsql, host: roadrunner}

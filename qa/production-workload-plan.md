@@ -876,3 +876,7 @@ I: 25 independent lanes across FPM/Nginx, FrankenPHP worker, RoadRunner, Swoole 
 ## B204 — Compiled Foundation web telemetry and logging
 
 I: 24 independently runnable lanes on native/FPM/RoadRunner/FrankenPHP/Swoole/OpenSwoole and both compiled matchers. Explicit artifact-safe route middleware with real trace context, valid/malformed inbound trace and request ID, span isolation, timing and NEL; actual compiled Foundation PSR logger injection, nested credential redaction and exact persisted event correlation; real 503 and thrown 500 response behavior, safe exception logging and cache policy; repeated concurrent clients and fresh host generation. Global arbitrary middleware not bypassed; no upstream changes. CORE-01, SEC, REQUEST, OBS, OPS, EXEC-03 source and wiring reviewed; hosted execution pending. 1541 routine rows.
+
+## B205 — TalkingBytes real HTTP retry and connection-loss matrix
+
+I: 36 independently runnable TLS wire lanes: seven default retry and six terminal statuses, ten method/idempotency/unsafe-opt-in contracts, seven Retry-After and attempt-budget variants, four real socket-loss retry policies, and cancellation before I/O/during sliced backoff. Independent peer records method, binary payload digest, key consistency and exact request count. Public sleeper injection records requested delays without wall-clock jitter; other transport and response behavior remains real. CORE-01, REQUEST, DATA, SEC, EXEC-03: source and dispatch reviewed; hosted execution pending; no vendor changes. 1577 routine rows.
