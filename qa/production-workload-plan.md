@@ -349,3 +349,7 @@ I: split engineering-only acceptance into five fail-independent hosted jobs: syn
 ## B74 — actual SQL Server verified TLS
 
 I: real SQL Server 2022/ODBC 18 hosted lane on PHP 8.4, generated disposable CA and DNS-only server certificate, forced encryption, trust rejection before/after runner CA installation, DBLayer verified connection and DMV encryption evidence, wrong-IP identity rejection, required encrypt policy, durable transfer and reconnect. Hosted only; CA removal in EXIT trap, no private key artifacts. CORE-01/SEC/DATA/OPS: real peer trust, isolated ownership and conservation; FLOW/EXEC-03: lint and hosted runtime evidence pending. 273 routine rows. SQL Server HA and ambiguous commit remain open.
+
+## B75 — broker TLS, persistent restart and redrive
+
+I: RabbitMQ TLS-only actual broker with isolated CA/DNS SAN and wrong trust rejection, durable queue and unacknowledged reservation across stop/start, exact identity/attempt and post-restart publication. Independent ElasticMQ SQS-compatible redrive lane requires broker-side maxReceiveCount, fresh receipts, dead-letter payload and subsequent healthy work. No real AWS certification claimed. Existing application adapters reused; no dependency pin or upstream edits. CORE/SEC/DATA/OPS: transport verification, bounded waits, independent service lifecycle, durable identities; hosted lint and execution pending. 275 routine rows.

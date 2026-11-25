@@ -60,6 +60,7 @@ require __DIR__ . '/ecosystem-file-lifecycle.php';
 require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
 require __DIR__ . '/ecosystem-broker-boundaries.php';
+require __DIR__ . '/ecosystem-broker-recovery.php';
 require __DIR__ . '/ecosystem-http-transfer.php';
 require __DIR__ . '/ecosystem-cache-tls.php';
 require __DIR__ . '/ecosystem-route-boundaries.php';
@@ -74,6 +75,9 @@ match ($argv[1] ?? '') {
     'http-pool' => httpPoolWorkload(),
     'http-transfer' => httpTransferWorkload(),
     'amqp-dlq' => amqpDlqWorkload(),
+    'amqp-tls-seed' => amqpTlsSeed(),
+    'amqp-tls-recover' => amqpTlsRecover(),
+    'sqs-redrive' => sqsRedriveWorkload(),
     'sqs-fifo' => sqsFifoWorkload(),
     'remote-jwks' => remoteJwksWorkload(),
     'uid-provider-boundaries' => uidProviderBoundariesWorkload(),

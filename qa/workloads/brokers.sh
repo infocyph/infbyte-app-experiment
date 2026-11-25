@@ -12,7 +12,7 @@ case "$SCENARIO" in
     done
     docker exec lab-broker rabbitmq-diagnostics -q ping
     ;;
-  ecosystem-sqs|ecosystem-sqs-fifo)
+  ecosystem-sqs|ecosystem-sqs-fifo|ecosystem-sqs-redrive)
     docker run -d --name lab-broker -p 127.0.0.1:19324:9324 softwaremill/elasticmq-native:latest
     composer require aws/aws-sdk-php --no-interaction --prefer-dist --no-progress
     for i in $(seq 1 60); do

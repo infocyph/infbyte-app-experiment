@@ -15,7 +15,8 @@ case "$SCENARIO" in
   ecosystem-wire-outbound-h3) bash "$GITHUB_WORKSPACE/qa/workloads/outbound-h3.sh" ;;
   ecosystem-wire-*) bash "$GITHUB_WORKSPACE/qa/workloads/wire.sh" ;;
   ecosystem-module-*) bash "$GITHUB_WORKSPACE/qa/workloads/module-matrix.sh" ;;
-  ecosystem-amqp|ecosystem-sqs|ecosystem-amqp-dlq|ecosystem-sqs-fifo) bash "$GITHUB_WORKSPACE/qa/workloads/brokers.sh" ;;
+  ecosystem-amqp-tls) bash "$GITHUB_WORKSPACE/qa/workloads/broker-tls.sh" ;;
+  ecosystem-amqp|ecosystem-sqs|ecosystem-amqp-dlq|ecosystem-sqs-fifo|ecosystem-sqs-redrive) bash "$GITHUB_WORKSPACE/qa/workloads/brokers.sh" ;;
   ecosystem-imap|ecosystem-pop3) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox.sh" ;;
   ecosystem-redis-cluster|ecosystem-mongodb|ecosystem-s3|ecosystem-sftp|ecosystem-sftp-trust|ecosystem-ftp|ecosystem-webdav|ecosystem-gridfs|ecosystem-sftp2|ecosystem-async-s3|ecosystem-azure|ecosystem-gcs|ecosystem-storage-local-modes) bash "$GITHUB_WORKSPACE/qa/workloads/remote-services.sh" ;;
   ecosystem-http-policy|ecosystem-http-pool|ecosystem-http-transfer) bash "$GITHUB_WORKSPACE/qa/workloads/http-policy.sh" ;;
