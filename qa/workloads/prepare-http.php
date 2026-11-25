@@ -20,6 +20,9 @@ foreach ($config as $key => $value) {
     ensure(file_put_contents($path, "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($merged, true) . ";\n", LOCK_EX) !== false, 'Config fixture write failed.');
     chmod($path, 0600);
 }
+if (getenv('SCENARIO') === 'oauth-http') {
+    return; // Foundation owns the protocol routes; never register duplicate adapters.
+}
 if (getenv('SCENARIO') === 'operations') {
     $console = $root . '/routes/console.php';
     ensure(file_put_contents($console, "<?php\n\ndeclare(strict_types=1);\n\nreturn ['lab:report' => \\Experiment\\ReportCommand::class];\n", LOCK_EX) !== false, 'Command registration failed.');

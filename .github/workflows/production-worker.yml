@@ -180,7 +180,7 @@ jobs:
           docker run --rm --entrypoint php infbyte-lab-frankenphp -v
           docker run --rm --entrypoint php infbyte-lab-frankenphp -m
       - name: Execute independent concurrent business workers and reconcile state
-        if: inputs.scenario != 'http' && inputs.scenario != 'operations' && inputs.scenario != 'browser' && inputs.scenario != 'transfer' && !startsWith(inputs.scenario, 'db-') && !startsWith(inputs.scenario, 'ecosystem-')
+        if: inputs.scenario != 'http' && inputs.scenario != 'operations' && inputs.scenario != 'browser' && inputs.scenario != 'transfer' && inputs.scenario != 'oauth-http' && !startsWith(inputs.scenario, 'db-') && !startsWith(inputs.scenario, 'ecosystem-')
         shell: bash
         run: bash qa/workloads/stress.sh
       - name: Exercise independent core and ecosystem capabilities
@@ -199,7 +199,7 @@ jobs:
         shell: bash
         run: bash qa/workloads/database.sh
       - name: Exercise compiled production HTTP application and host replacement
-        if: inputs.scenario == 'http' || inputs.scenario == 'browser' || inputs.scenario == 'transfer'
+        if: inputs.scenario == 'http' || inputs.scenario == 'browser' || inputs.scenario == 'transfer' || inputs.scenario == 'oauth-http'
         shell: bash
         run: bash qa/workloads/http.sh
       - name: Exercise distributed scheduling, state restore, release rollback and backend failure

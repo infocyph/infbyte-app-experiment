@@ -311,6 +311,10 @@ jobs:
           - {scenario: queue, backend: mysql}
           - {scenario: passkey, backend: pgsql}
           - {scenario: passkey, backend: mysql}
+          - {scenario: oauth-http, backend: pgsql, host: native, matcher: fused}
+          - {scenario: oauth-http, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: oauth-http, backend: mysql, host: fpm, php: '8.4', matcher: fused}
+          - {scenario: oauth-http, backend: mysql, host: fpm, php: '8.4', matcher: sharded}
           - {scenario: transfer, backend: pgsql, host: native, matcher: fused}
           - {scenario: transfer, backend: pgsql, host: native, matcher: sharded}
           - {scenario: transfer, backend: pgsql, host: fpm, php: '8.4', matcher: fused}

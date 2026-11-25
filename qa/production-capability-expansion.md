@@ -325,3 +325,7 @@ I: independent MinIO S3 and pinned SFTP v3 jobs reuse actual adapter provisionin
 ## B78 — inbound gRPC application boundary and typed validation pipelines
 
 I: independent TalkingBytes host-controlled unary exchange lane tests cancellation before/after acceptance, exact response ownership, method/status/metadata/deadline boundaries, redacted exception events, authentication and SQL idempotent effects. This is the documented source/exchange API, not a native inbound streaming server (unsupported in 2.2). Independent ReqShield interpreted/compiled wildcard normalization, strict scalar/enum/date/JSON typed projections, overflow/invalid values, unknown-field isolation and repeat reuse. Hosted validation pending. 282 routine rows.
+
+## B79 — Foundation-owned real HTTP OAuth endpoints
+
+I: four isolated native/PostgreSQL and FPM/MySQL fused/sharded lanes enable OAuth/OIDC with disposable private keys, provision the real auth schema and confidential client, compile the release without duplicate routes, exercise metadata/JWKS, malformed form/query/credential combinations, no-store/error semantics, client credentials, durable introspection across host replacement and revocation/reissuance. Secret fixture in runner temp only; no secret response bodies in evidence. Also fixes the B68 matcher selection omission in bootstrap. Browser consent and edge integration remain open. 286 routine rows; hosted evidence pending.

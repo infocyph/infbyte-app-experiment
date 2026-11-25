@@ -89,13 +89,13 @@ function configuration(): array
             ]],
         ]],
     ];
-    if (in_array(getenv('SCENARIO'), ['http', 'browser', 'ecosystem-connected', 'ecosystem-recovery', 'ecosystem-endurance', 'ecosystem-tenants', 'ecosystem-release-cutover'], true)) {
+    if (in_array(getenv('SCENARIO'), ['http', 'browser', 'transfer', 'oauth-http', 'ecosystem-connected', 'ecosystem-recovery', 'ecosystem-endurance', 'ecosystem-tenants', 'ecosystem-release-cutover'], true)) {
         $matcher = getenv('LAB_MATCHER') ?: 'fused';
         ensure(in_array($matcher, ['fused', 'sharded'], true), 'Unsupported laboratory matcher.');
         $config['router'] = ['matcher' => $matcher];
     }
 
-    if (in_array(getenv('SCENARIO'), ['http', 'ecosystem-tenants'], true)) {
+    if (in_array(getenv('SCENARIO'), ['http', 'oauth-http', 'ecosystem-tenants'], true)) {
         $config['app']['env'] = 'production';
         $config['app']['debug'] = false;
         $config['app']['capabilities'] = ['auth', 'cache', 'database', 'filesystem', 'validation', 'security', 'otp', 'passkeys', 'notifications', 'communication', 'runwire'];
@@ -145,7 +145,7 @@ function configuration(): array
         $config['app']['capabilities'] = ['cache', 'database', 'filesystem', 'validation', 'runwire'];
     }
 
-    if (in_array(getenv('SCENARIO'), ['oauth', 'refresh', 'oidc', 'dpop', 'ecosystem-jwt-replay'], true)) {
+    if (in_array(getenv('SCENARIO'), ['oauth', 'refresh', 'oidc', 'dpop', 'oauth-http', 'ecosystem-jwt-replay'], true)) {
         $keyRoot = $root . '/storage/lab-oauth-keys';
         $config['auth']['oauth'] = [
             'enabled' => true, 'issuer' => 'https://identity.example.test',
@@ -159,7 +159,7 @@ function configuration(): array
         ];
     }
 
-    if (getenv('SCENARIO') === 'oidc') {
+    if (in_array(getenv('SCENARIO'), ['oidc', 'oauth-http'], true)) {
         $keyRoot = $root . '/storage/lab-oidc-keys';
         $config['auth']['oauth']['resource_audiences'][] = 'https://identity.example.test/oidc/userinfo';
         $config['auth']['oauth']['oidc'] = [
@@ -172,6 +172,14 @@ function configuration(): array
                 'private_key' => $keyRoot . '/private.pem',
                 'public_keys' => [['id' => 'oidc-key', 'path' => $keyRoot . '/public.pem', 'status' => 'active']],
             ],
+        ];
+    }
+    if (getenv('SCENARIO') === 'oauth-http') {
+        $config['app']['capabilities'][] = 'session';
+        $config['session'] = [
+            'driver' => 'cache', 'stores' => ['cache' => ['store' => 'shared']],
+            'cookie' => ['name' => 'lab_session', 'secure' => true, 'http_only' => true, 'same_site' => 'Strict', 'path' => '/'],
+            'lock' => ['enabled' => true, 'store' => 'shared', 'wait' => 10.0, 'lease' => 30.0],
         ];
     }
     if (getenv('SCENARIO') === 'pat') {

@@ -8,10 +8,20 @@ export APP_ENV=production APP_DEBUG=false
 export LAB_HTTP_URL=http://127.0.0.1:18781
 cd "$PROJECT"
 probe="$GITHUB_WORKSPACE/qa/workloads/run.php"
+if [[ "$SCENARIO" == oauth-http ]]; then
+  umask 077
+  for purpose in oauth oidc; do
+    mkdir -p "$PROJECT/storage/lab-$purpose-keys"
+    openssl ecparam -name prime256v1 -genkey -noout -out "$PROJECT/storage/lab-$purpose-keys/private.pem"
+    openssl ec -in "$PROJECT/storage/lab-$purpose-keys/private.pem" -pubout -out "$PROJECT/storage/lab-$purpose-keys/public.pem"
+  done
+fi
 php "$GITHUB_WORKSPACE/qa/workloads/prepare-http.php"
 if [[ "$SCENARIO" == browser ]]; then
   mkdir -p "$PROJECT/storage/lab-public"
   php -r 'file_put_contents($argv[1],str_repeat("0123456789abcdef",8192),LOCK_EX);' "$PROJECT/storage/lab-public/report.bin"
+elif [[ "$SCENARIO" == oauth-http ]]; then
+  php "$GITHUB_WORKSPACE/qa/workloads/oauth-http-seed.php"
 elif [[ "$SCENARIO" == transfer ]]; then
   mkdir -m 700 "$PROJECT/storage/lab-transfers"
 else
@@ -118,6 +128,14 @@ CONF
   return 1
 }
 start_host
+if [[ "$SCENARIO" == oauth-http ]]; then
+  php "$GITHUB_WORKSPACE/qa/workloads/oauth-http-client.php" seed | tee "$EVIDENCE/oauth-http-seed.log"
+  stop_host
+  start_host
+  php "$GITHUB_WORKSPACE/qa/workloads/oauth-http-client.php" recover | tee "$EVIDENCE/oauth-http-recover.log"
+  rm -f "$RUNNER_TEMP/oauth-http-fixture.json"
+  exit 0
+fi
 if [[ "$SCENARIO" == transfer ]]; then
   php "$GITHUB_WORKSPACE/qa/workloads/transfer-client.php" | tee "$EVIDENCE/transfer.log"
   stop_host
