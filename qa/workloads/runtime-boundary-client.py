@@ -170,11 +170,119 @@ def backpressure():
     print(json.dumps({"stream": record, "cancelled": reasons, "recovery_requests": 8}))
 
 
+
+def quota_records(name):
+    path = os.path.join(os.environ["LAB_BOUNDARY_ROOT"], name)
+    if not os.path.exists(path):
+        return []
+    with open(path, encoding="utf-8") as stream:
+        return stream.read().splitlines()
+
+
+def held_upload(target):
+    connection = socket.create_connection(ADDRESS, timeout=3)
+    connection.settimeout(5)
+    connection.sendall(f"POST {target} HTTP/1.1\r\nHost: localhost\r\nContent-Length: 6\r\nConnection: close\r\n\r\n".encode() + b"ab")
+    eventually(lambda: target in quota_records("admitted.log"), seconds=5)
+    return connection
+
+
+def read_response(connection):
+    response = http.client.HTTPResponse(connection)
+    response.begin()
+    body = response.read()
+    return response.status, dict(response.getheaders()), body
+
+
+def admission():
+    eventually(lambda: exchange("/ready"))
+    for wave in range(8):
+        first = f"/quota-hold/{wave}/first"
+        second = f"/quota-hold/{wave}/second"
+        rejected = f"/quota-rejected/{wave}"
+        with held_upload(first) as a, held_upload(second) as b:
+            conn = http.client.HTTPConnection(*ADDRESS, timeout=3)
+            try:
+                conn.request("GET", rejected)
+                response = conn.getresponse()
+                assert response.status == 503 and response.getheader("Retry-After") == "2"
+                assert response.read() == b""
+            finally:
+                conn.close()
+            assert rejected not in quota_records("admitted.log")
+            a.sendall(b"cdef")
+            status, _, body = read_response(a)
+            assert status == 200 and json.loads(body)["digest"] == hashlib.sha256(b"abcdef").hexdigest()
+            # One terminal response frees capacity while the other remains active.
+            exchange(f"/quota-recovered/{wave}")
+            b.shutdown(socket.SHUT_RDWR)
+        eventually(lambda: second in quota_records("quota-cancel.log"), seconds=5)
+        exchange(f"/quota-after-cancel/{wave}")
+    records = quota_records("admitted.log")
+    assert all(not row.startswith("/quota-rejected/") for row in records), records
+    assert all(records.count(f"/quota-hold/{wave}/first") == 1 and records.count(f"/quota-hold/{wave}/second") == 1 for wave in range(8))
+    cancelled = quota_records("quota-cancel.log")
+    assert sorted(cancelled) == sorted(f"/quota-hold/{wave}/second" for wave in range(8)), cancelled
+    print("8 full-capacity HTTP/1 waves: real 503/Retry-After, no handler entry, successful terminal and cancellation release")
+
+
+def connection_quotas():
+    eventually(lambda: exchange("/ready"))
+    first = http.client.HTTPConnection(*ADDRESS, timeout=3)
+    second = http.client.HTTPConnection(*ADDRESS, timeout=3)
+    third = None
+
+    def send(conn, path):
+        conn.request("GET", path)
+        reply = conn.getresponse()
+        assert reply.status == 200 and json.loads(reply.read())["target"] == path
+        return reply
+
+    try:
+        send(first, "/quota-connected/first")
+        send(second, "/quota-connected/second")
+        assert first.sock is not None and second.sock is not None
+        third = socket.create_connection(ADDRESS, timeout=2)
+        third.settimeout(0.4)
+        third.sendall(b"GET /quota-connected/overflow HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+        try:
+            data = third.recv(4096)
+            assert b"200 OK" not in data
+        except (TimeoutError, ConnectionResetError):
+            pass
+        assert "/quota-connected/overflow" not in quota_records("admitted.log"), "Connection cap allowed a third active connection"
+        # Close the queued or refused client before releasing a slot.
+        third.close()
+        third = None
+        second.close()
+        eventually(lambda: exchange("/quota-after-release"), seconds=5)
+        send(first, "/quota-keepalive/2")
+        final = send(first, "/quota-keepalive/3")
+        assert final.will_close or first.sock is None, "Keepalive request quota did not close connection"
+        with socket.create_connection(ADDRESS, timeout=3) as idle:
+            idle.settimeout(8)
+            idle.sendall(b"GET /quota-idle HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            status, _, _ = read_response(idle)
+            assert status == 200
+            assert idle.recv(1) == b"", "Idle connection not closed"
+        exchange("/quota-final")
+    finally:
+        first.close()
+        second.close()
+        if third is not None:
+            third.close()
+    print("Per-worker connection ceiling, released capacity, keepalive request cap and idle cleanup passed")
+
+
 if sys.argv[1] == "supervisor":
     supervisor()
 elif sys.argv[1] == "http-framing":
     framing()
 elif sys.argv[1] == "http-backpressure":
     backpressure()
+elif sys.argv[1] == "http-admission":
+    admission()
+elif sys.argv[1] == "http-connection-quotas":
+    connection_quotas()
 else:
     raise ValueError("Unknown runtime boundary")

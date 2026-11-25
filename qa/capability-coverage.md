@@ -407,3 +407,7 @@ I: independent helper lane verifies native reference key-preserving operations, 
 ## B122 — Epicrypt key eligibility and timed rotation lifecycle
 
 I: independent lane enumerates every published KeyPurpose with deterministic clock, active/fallback/disabled/retired/future and exact expiry, algorithm/issuer separation, wrong-purpose rejection and metadata without material. Actual HMAC signing and verification across old/new generations uses native reference bytes, matched key/fallback provenance, tamper rejection, expiry, explicit key rejection and invalid/ambiguous/weak ring configurations. No secret or proof output; application-specific key deployment and production DNS peer binding remain open. 384 routine rows; hosted qualification pending (SEC, DATA, TYPE, EXEC-03).
+
+## B123 — Runwire native HTTP request and connection admission quotas
+
+I: independent single-worker HTTP/1 lanes use real partial uploads to hold two active requests, require 503 with Retry-After for a third without handler entry, finish one upload and cancel the other to demonstrate capacity release across eight waves. Separate connection-limit lane holds two actual persistent connections, asserts no third admitted request until capacity releases, then checks keepalive count and idle socket closure with healthy replacement. No production throughput claim. 386 routine rows; hosted qualification pending (MEM, REQUEST, OPS, EXEC-03). Multiplexed stream and queued-byte quota combinations remain open.
