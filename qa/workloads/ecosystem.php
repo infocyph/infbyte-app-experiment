@@ -60,6 +60,8 @@ require __DIR__ . '/ecosystem-http-semantics.php';
 require __DIR__ . '/ecosystem-file-lifecycle.php';
 require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-utility-lifecycle.php';
+require __DIR__ . '/ecosystem-grpc-inbound.php';
+require __DIR__ . '/ecosystem-validation-casts.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
 require __DIR__ . '/ecosystem-broker-boundaries.php';
 require __DIR__ . '/ecosystem-broker-recovery.php';
@@ -75,6 +77,8 @@ match ($argv[1] ?? '') {
     'otp-valkey' => otpAdditionalBackendWorkload('valkey'),
     'otp-phpfiles' => otpAdditionalBackendWorkload('phpfiles'),
     'http-pool' => httpPoolWorkload(),
+    'grpc-inbound' => grpcInboundWorkload(),
+    'validation-casts' => validationCastsWorkload(),
     'http-transfer' => httpTransferWorkload(),
     'amqp-dlq' => amqpDlqWorkload(),
     'amqp-tls-seed' => amqpTlsSeed(),

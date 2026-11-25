@@ -227,3 +227,7 @@ I: three new independent lanes: UID filesystem fork reservation identity, replac
 ## B77 — actual remote storage outage and explicit recovery
 
 I: independent MinIO S3 and pinned SFTP v3 jobs reuse actual adapter provisioning. Seed durable binary and foreign-tenant content, stop service and confirm port unavailable, require read/write/delete failure, restart same service, verify original digests and no phantom object, explicitly retry streamed publication and reconcile tenant isolation. No automatic mutation replay or cloud-provider certification claimed; mid-transfer acknowledgement ambiguity remains open. Hosted verification pending. 280 routine rows.
+
+## B78 — inbound gRPC application boundary and typed validation pipelines
+
+I: independent TalkingBytes host-controlled unary exchange lane tests cancellation before/after acceptance, exact response ownership, method/status/metadata/deadline boundaries, redacted exception events, authentication and SQL idempotent effects. This is the documented source/exchange API, not a native inbound streaming server (unsupported in 2.2). Independent ReqShield interpreted/compiled wildcard normalization, strict scalar/enum/date/JSON typed projections, overflow/invalid values, unknown-field isolation and repeat reuse. Hosted validation pending. 282 routine rows.
