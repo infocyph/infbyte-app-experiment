@@ -3,6 +3,7 @@ set -euo pipefail
 probe="$GITHUB_WORKSPACE/qa/workloads/database.php"
 bash "$GITHUB_WORKSPACE/qa/workloads/database-init.sh"
 case "$SCENARIO" in
+  db-mysql-group-election|db-mysql-group-quorum|db-mariadb-galera-rejoin|db-mariadb-galera-quorum) bash "$GITHUB_WORKSPACE/qa/workloads/database-cluster-ha.sh" ;;
   db-active-backup) bash "$GITHUB_WORKSPACE/qa/workloads/database-active-backup.sh" ;;
   db-portable-backup) bash "$GITHUB_WORKSPACE/qa/workloads/database-portable-backup.sh" ;;
   db-physical-backup) bash "$GITHUB_WORKSPACE/qa/workloads/database-physical-backup.sh" ;;

@@ -16,6 +16,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-mysql-group-election, backend: mysql}
+          - {scenario: db-mysql-group-quorum, backend: mysql}
+          - {scenario: db-mariadb-galera-rejoin, backend: mariadb}
+          - {scenario: db-mariadb-galera-quorum, backend: mariadb}
           - {scenario: db-derived-query, backend: pgsql}
           - {scenario: db-derived-query, backend: mysql}
           - {scenario: db-derived-query, backend: mariadb}
