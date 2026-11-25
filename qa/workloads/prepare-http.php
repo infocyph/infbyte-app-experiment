@@ -36,7 +36,7 @@ $addition = file_get_contents(__DIR__ . match (getenv('SCENARIO')) {
     'ecosystem-tenants' => '/tenant-routes.php',
     'browser' => '/browser-routes.php',
     'transfer' => '/transfer-routes.php',
-    'ecosystem-connected', 'ecosystem-recovery' => '/connected-routes.php',
+    'ecosystem-connected', 'ecosystem-recovery', 'ecosystem-active-recovery' => '/connected-routes.php',
     'ecosystem-endurance' => '/endurance-routes.php',
     default => '/http-routes.php',
 });

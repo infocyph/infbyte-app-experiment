@@ -345,3 +345,7 @@ I: two independent engineering-only modes. Real disposable Git repository proves
 ## B83 — Valkey TLS and persistent Redis-compatible counter restart
 
 I: three additional independent lanes exercise real Valkey TLS trust/name rejection, atomic operations and cold-key race, and Redis/Valkey TLS counter persistence with AOF, actual stop/restart, fail-closed fresh connection, exact integer and TTL state, and twelve concurrent recovery increments. Existing Redis TLS lane also asserts wrong peer name. This tests restart, not automatic cluster election or lost increment acknowledgements. 291 routine scenarios; hosted verification pending.
+
+## B84 — active application writes across dependency outage
+
+I: two additional compiled native host lanes (fused/sharded). Eight independent checkout workers commit pre-outage orders, remain live while PostgreSQL, Redis and SMTP stop, attempt new writes with all ports confirmed unavailable, and replay after restart without replacing the host. Sixteen extra unique orders, rejection of offline success, exact response/ledger identity, stock, transactional outbox, killed reservation, encrypted receipt/cache digests, SMTP count, and distinct SQL backup restoration. Existing 160-order flow retained. Does not yet certify external storage or external broker restore. 293 routine rows; hosted evidence pending.

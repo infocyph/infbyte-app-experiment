@@ -1,4 +1,4 @@
-# Consolidated remaining implementation register (B83)
+# Consolidated remaining implementation register (B84)
 
 This is a conservative, current gap register, not an exhaustive certification. `I` means a scenario is committed, not passed. Historical open rows in the append-only expansion register are not automatically closed by later work. Phase 1 ends only when every applicable documented capability and public production contract has an independently executable scenario or a justified explicit exclusion. Hosted failures remain required and upstream repairs are deferred.
 
@@ -19,7 +19,7 @@ This is a conservative, current gap register, not an exhaustive certification. `
 | Omnibus | M01 | SQL/Redis workflows, AMQP/SQS boundaries, B59 actual RabbitMQ DLQ/reconnection and SQS FIFO, B75 broker TLS/restart and SQS redrive, retry/dead letter, reservation loss, outbox | Further provider TLS/outage and DLQ/FIFO variants, delayed redelivery and ambiguous acknowledgement, sync middleware/event variants |
 | TalkingBytes | T01+ | HTTP policy, B61 concurrent HTTP pool/stream transfer, SMTP/MIME, real IMAP/POP3 TLS/IDLE, native gRPC streaming | B78 host-controlled unary inbound dispatch; additional TLS/auth/proxy/retry/cancellation combinations |
 | PHPProbe | X01 | B73 five independent CLI contract lanes; B82 real Git changed-only and deterministic programmatic graph extraction | Remaining diagnostic API and detector-specific changed-only/option variants; not a production no-dev dependency |
-| Cross-library | X02 | Order/import/receipt/tenant workflows, scheduler, deployment, stress/soak/chaos and SQL restore | Combined cache/SQL/storage/broker restore under active writes; remote storage/SMTP uncertain effects; production infrastructure RPO/RTO and SLO require separate environment |
+| Cross-library | X02 | Order/import/receipt/tenant workflows, scheduler, deployment, stress/soak/chaos and SQL restore, B84 active checkout across SQL/Redis/SMTP outage with full receipt reconciliation | Combined remote storage/broker failure and backup/restore under active writes; remote storage/SMTP uncertain effects; production infrastructure RPO/RTO and SLO require separate environment |
 
 ## Inventory and closure rules
 

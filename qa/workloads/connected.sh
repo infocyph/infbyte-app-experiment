@@ -40,13 +40,18 @@ for pid in "${pids[@]}"; do if ! wait "$pid"; then failed=1; fi; done
 (( failed == 0 ))
 [[ "$(cat "$EVIDENCE"/connected-orders-*.txt | sort -u | wc -l)" == 160 ]]
 [[ "$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$url/api/connected/checkout-1-1/3")" == 409 ]]
+expected=160
+if [[ "$SCENARIO" == ecosystem-active-recovery ]]; then
+  bash "$GITHUB_WORKSPACE/qa/workloads/connected-active-recovery.sh" "$url"
+  expected=176
+fi
 php "$worker" rollback
 for i in 1 2 3 4; do php "$worker" relay > "$EVIDENCE/relay-$i.log" 2>&1 & pids[$((i-1))]=$!; done
 failed=0
 for i in 0 1 2 3; do if ! wait "${pids[$i]}"; then failed=1; fi; done
 (( failed == 0 ))
-if [[ "$SCENARIO" == ecosystem-recovery ]]; then
-  php "$worker" pending 160
+if [[ "$SCENARIO" == ecosystem-recovery || "$SCENARIO" == ecosystem-active-recovery ]]; then
+  php "$worker" pending "$expected"
   # Reserve a real message without completing it. Kill the process before external side effects.
   php "$worker" reserve-recovery > "$EVIDENCE/reservation.log" 2>&1 &
   reserved=$!
@@ -59,7 +64,7 @@ if [[ "$SCENARIO" == ecosystem-recovery ]]; then
   kill -KILL "$reserved"
   wait "$reserved" 2>/dev/null || :
   bash "$GITHUB_WORKSPACE/qa/workloads/connected-recovery.sh" outage
-  php "$worker" pending 160
+  php "$worker" pending "$expected"
 fi
 for i in 1 2 3 4; do php "$worker" drain > "$EVIDENCE/consumer-$i.log" 2>&1 & pids[$((i-1))]=$!; done
 failed=0
@@ -67,6 +72,6 @@ for i in 0 1 2 3; do if ! wait "${pids[$i]}"; then failed=1; fi; done
 (( failed == 0 ))
 php "$worker" duplicate "$(head -n 1 "$EVIDENCE/connected-orders-1.txt")"
 php "$worker" drain
-php "$worker" verify 160
-if [[ "$SCENARIO" == ecosystem-recovery ]]; then bash "$GITHUB_WORKSPACE/qa/workloads/connected-recovery.sh" restore; fi
-echo '160 unique HTTP orders, 160 replay requests, transactional outbox rollback/relay, four durable consumers, encrypted files, duplicate delivery and exact SMTP reconciliation.' >> "$GITHUB_STEP_SUMMARY"
+php "$worker" verify "$expected"
+if [[ "$SCENARIO" == ecosystem-recovery || "$SCENARIO" == ecosystem-active-recovery ]]; then bash "$GITHUB_WORKSPACE/qa/workloads/connected-recovery.sh" restore; fi
+echo "$expected unique HTTP orders, replay requests, transactional outbox rollback/relay, four durable consumers, encrypted files, duplicate delivery and exact SMTP reconciliation." >> "$GITHUB_STEP_SUMMARY"

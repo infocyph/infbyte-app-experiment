@@ -6,6 +6,7 @@ namespace Experiment;
 
 use Infocyph\Foundation\Application\Application;
 use Infocyph\Foundation\Database\DBLayerFactory;
+use Infocyph\Foundation\Cache\CacheManager;
 use Infocyph\Foundation\Messaging\MessagingDatabaseSchema;
 use Infocyph\Omnibus\Integration\DBLayer\DBLayerTransport;
 use Infocyph\Omnibus\MessageBus;
@@ -93,6 +94,10 @@ final readonly class ConnectedOrders
         $handler = new ConnectedReceipt($this->app);
         foreach ($db->select('SELECT id, quantity FROM lab_connected_orders') as $row) {
             $handler->verifyDocument($row['id'], (int) $row['quantity']);
+            if (getenv('SCENARIO') === 'ecosystem-active-recovery') {
+                $plain = json_encode(['order' => $row['id'], 'quantity' => (int) $row['quantity']], JSON_THROW_ON_ERROR);
+                ensure($this->app->make(CacheManager::class)->store('shared')->get('connected.' . $row['id']) === hash('sha256', $plain), 'Recovered receipt cache diverged.');
+            }
         }
         new Mail($this->app)->verify($expected);
     }

@@ -27,7 +27,7 @@ case "$SCENARIO" in
     composer check-platform-reqs --no-dev
     composer show --format=json > "$EVIDENCE/packages.json"
     php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" closure | tee "$EVIDENCE/ecosystem.log" ;;
-  ecosystem-connected|ecosystem-recovery) bash "$GITHUB_WORKSPACE/qa/workloads/connected.sh" ;;
+  ecosystem-connected|ecosystem-recovery|ecosystem-active-recovery) bash "$GITHUB_WORKSPACE/qa/workloads/connected.sh" ;;
   ecosystem-core-lifecycle) bash "$GITHUB_WORKSPACE/qa/workloads/core-lifecycle.sh" ;;
   ecosystem-*) php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log" ;;
   *) echo "Unknown ecosystem scenario" >&2; exit 1 ;;
