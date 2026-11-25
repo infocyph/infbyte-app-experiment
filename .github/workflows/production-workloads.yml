@@ -283,6 +283,7 @@ jobs:
           - {scenario: ecosystem-http-framing, backend: pgsql}
           - {scenario: ecosystem-http-backpressure, backend: pgsql}
           - {scenario: ecosystem-http-admission, backend: pgsql}
+          - {scenario: ecosystem-worker-budget, backend: pgsql}
           - {scenario: ecosystem-http-connection-quotas, backend: pgsql}
           - {scenario: ecosystem-wire-http3, backend: pgsql}
           - {scenario: ecosystem-wire-http3-flow, backend: pgsql}
