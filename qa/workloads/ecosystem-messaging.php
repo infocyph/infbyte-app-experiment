@@ -44,10 +44,20 @@ final readonly class LabJob
 function messagingSetup(bool $initialize = true): array
 {
     $driver = (string) getenv('DB_BACKEND');
-    $db = new Connection(ConnectionConfig::fromArray([
-        'driver' => $driver, 'host' => '127.0.0.1', 'port' => $driver === 'pgsql' ? 5432 : 3306,
-        'database' => 'experiment', 'username' => 'experiment', 'password' => 'experiment',
-    ]));
+    $config = match ($driver) {
+        'sqlite' => ['driver' => 'sqlite', 'database' => evidenceDirectory() . '/messaging.sqlite'],
+        'mssql' => ['driver' => 'mssql', 'host' => '127.0.0.1', 'port' => 1433, 'database' => 'experiment',
+            'username' => 'sa', 'password' => 'Experiment-Only-42!', 'encrypt' => true, 'trust_server_certificate' => true],
+        'pgsql', 'mysql', 'mariadb' => ['driver' => $driver, 'host' => '127.0.0.1',
+            'port' => match ($driver) { 'pgsql' => 5432, 'mariadb' => 3307, default => 3306 },
+            'database' => 'experiment', 'username' => 'experiment', 'password' => 'experiment'],
+        default => throw new InvalidArgumentException('Unsupported messaging SQL backend.'),
+    };
+    $db = new Connection(ConnectionConfig::fromArray($config));
+    if ($driver === 'sqlite') {
+        $db->getPdo()->exec('PRAGMA foreign_keys = ON');
+        $db->getPdo()->exec('PRAGMA busy_timeout = 5000');
+    }
     if ($initialize) {
         foreach (QueueSchema::statements($driver) as $statement) {
             $db->statement($statement);

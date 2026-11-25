@@ -219,9 +219,13 @@ jobs:
           - {scenario: ecosystem-jwt-replay, backend: pgsql}
           - {scenario: ecosystem-amqp-dlq, backend: pgsql}
           - {scenario: ecosystem-amqp-ack-uncertain, backend: pgsql}
+          - {scenario: ecosystem-amqp-ack-uncertain, backend: mariadb}
           - {scenario: ecosystem-amqp-wire-ack, backend: pgsql}
+          - {scenario: ecosystem-amqp-wire-ack, backend: mariadb}
           - {scenario: ecosystem-sqs-ack-uncertain, backend: pgsql}
+          - {scenario: ecosystem-sqs-ack-uncertain, backend: mariadb}
           - {scenario: ecosystem-sqs-wire-ack, backend: pgsql}
+          - {scenario: ecosystem-sqs-wire-ack, backend: mariadb}
           - {scenario: ecosystem-amqp-tls, backend: pgsql}
           - {scenario: ecosystem-sqs-fifo, backend: pgsql}
           - {scenario: ecosystem-sqs-redrive, backend: pgsql}
@@ -421,11 +425,33 @@ jobs:
           - {scenario: ecosystem-omnibus-workflow, backend: pgsql}
           - {scenario: ecosystem-omnibus-middleware, backend: pgsql}
           - {scenario: ecosystem-omnibus-middleware, backend: mysql}
+          - {scenario: ecosystem-omnibus-middleware, backend: mariadb}
+          - {scenario: ecosystem-omnibus-middleware, backend: sqlite}
+          - {scenario: ecosystem-omnibus-middleware, backend: mssql, php: '8.4'}
           - {scenario: ecosystem-omnibus-events, backend: pgsql}
           - {scenario: ecosystem-omnibus-events, backend: mysql}
+          - {scenario: ecosystem-omnibus-events, backend: mariadb}
+          - {scenario: ecosystem-omnibus-events, backend: sqlite}
+          - {scenario: ecosystem-omnibus-events, backend: mssql, php: '8.4'}
           - {scenario: ecosystem-omnibus-workflow, backend: mysql}
+          - {scenario: ecosystem-omnibus-workflow, backend: mariadb}
+          - {scenario: ecosystem-omnibus-workflow, backend: sqlite}
+          - {scenario: ecosystem-omnibus-workflow, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-failure-claims, backend: pgsql}
+          - {scenario: ecosystem-omnibus-failure-claims, backend: mysql}
+          - {scenario: ecosystem-omnibus-failure-claims, backend: mariadb}
+          - {scenario: ecosystem-omnibus-failure-claims, backend: sqlite}
+          - {scenario: ecosystem-omnibus-failure-claims, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-omnibus-reservation-ownership, backend: pgsql}
+          - {scenario: ecosystem-omnibus-reservation-ownership, backend: mysql}
+          - {scenario: ecosystem-omnibus-reservation-ownership, backend: mariadb}
+          - {scenario: ecosystem-omnibus-reservation-ownership, backend: sqlite}
+          - {scenario: ecosystem-omnibus-reservation-ownership, backend: mssql, php: '8.4'}
           - {scenario: ecosystem-omnibus-redis, backend: pgsql}
           - {scenario: ecosystem-omnibus-redis, backend: mysql}
+          - {scenario: ecosystem-omnibus-redis, backend: mariadb}
+          - {scenario: ecosystem-omnibus-redis, backend: sqlite}
+          - {scenario: ecosystem-omnibus-redis, backend: mssql, php: '8.4'}
           - {scenario: ecosystem-cache-tier, backend: pgsql}
           - {scenario: ecosystem-cache-local, backend: pgsql}
           - {scenario: ecosystem-cache-integrity, backend: pgsql}
@@ -442,8 +468,10 @@ jobs:
           - {scenario: ecosystem-uid-formats, backend: pgsql}
           - {scenario: ecosystem-amqp-consumer-failures, backend: pgsql}
           - {scenario: ecosystem-amqp-consumer-failures, backend: mysql}
+          - {scenario: ecosystem-amqp-consumer-failures, backend: mariadb}
           - {scenario: ecosystem-sqs-consumer-failures, backend: pgsql}
           - {scenario: ecosystem-sqs-consumer-failures, backend: mysql}
+          - {scenario: ecosystem-sqs-consumer-failures, backend: mariadb}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

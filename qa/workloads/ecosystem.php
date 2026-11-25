@@ -41,6 +41,7 @@ require __DIR__ . '/ecosystem-runtime.php';
 require __DIR__ . '/ecosystem-runtime-budget.php';
 require __DIR__ . '/ecosystem-messaging.php';
 require __DIR__ . '/ecosystem-messaging-events.php';
+require __DIR__ . '/ecosystem-messaging-ownership.php';
 require __DIR__ . '/ecosystem-smtp-faults.php';
 require __DIR__ . '/ecosystem-remote-order-recovery.php';
 require __DIR__ . '/ecosystem-remote.php';
@@ -245,6 +246,8 @@ match ($argv[1] ?? '') {
     'mail-mime' => mailMimeWorkload(),
     'smtp-uncertain' => smtpUncertainWorkload(),
     'smtp-tls-auth' => smtpTlsAuthWorkload(),
+    'omnibus-reservation-ownership' => omnibusReservationOwnership(),
+    'omnibus-failure-claims' => omnibusFailureClaims(),
     'omnibus-workflow' => omnibusWorkflowWorkload(),
     'omnibus-middleware' => omnibusMiddlewareWorkload(),
     'omnibus-events' => omnibusEventsWorkload(),

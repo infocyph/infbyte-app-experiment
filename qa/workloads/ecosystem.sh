@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+bash "$GITHUB_WORKSPACE/qa/workloads/database-init.sh"
 case "$SCENARIO" in
   ecosystem-auth-lifecycle|ecosystem-jwt-replay|ecosystem-consent-lifecycle) bash "$GITHUB_WORKSPACE/qa/workloads/auth-lifecycle.sh" ;;
   ecosystem-remote-jwks) bash "$GITHUB_WORKSPACE/qa/workloads/jwks.sh" ;;
