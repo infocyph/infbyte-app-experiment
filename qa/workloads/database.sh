@@ -2,6 +2,7 @@
 set -euo pipefail
 probe="$GITHUB_WORKSPACE/qa/workloads/database.php"
 case "$SCENARIO" in
+  db-commit-uncertain) bash "$GITHUB_WORKSPACE/qa/workloads/database-uncertain.sh" ;;
   db-proxy-mysql) bash "$GITHUB_WORKSPACE/qa/workloads/database-mysql-proxy.sh" ;;
   db-migration-fault|db-connection-loss) php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-proxy-*) bash "$GITHUB_WORKSPACE/qa/workloads/database-proxy.sh" ;;

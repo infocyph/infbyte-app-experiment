@@ -239,3 +239,7 @@ I: two lanes cover UID in-memory domain capacity, shared real Redis PSR-16 seque
 ## B57 — remote JWKS trust, cache and rotation
 
 I: actual isolated TLS issuer, PSR-18 test transport restricted to one exact logical origin and explicit loopback mapping, real Redis cache, forced kid refresh, replacement cache reuse, bounded stale/no-store and response limits, discovery issuer binding, and unsafe DNS answers rejected before transport. Resolver supplies controlled public-address answers for positive cases; this is an integration boundary test, not production DNS/peer-pinning certification. No private key material in evidence. SEC/DATA: bounded responses and explicit trust; hosted verification pending.
+
+## B58 — real lost SQL commit acknowledgement
+
+I: PostgreSQL wire fault proxy forwards startup and real SQL traffic, observes the backend CommandComplete(COMMIT) response and drops that acknowledgement exactly once. A real DBLayer transaction asserts no replay, no confirmed-commit callback, durable ledger and balance conservation, explicit reconnect and idempotency reconciliation. Plaintext is constrained to a disposable loopback fixture; no query or credential content logged. DATA-01/02 and OPS: distinguish unknown from rollback and preserve durable state. Hosted verification pending. Other SQL protocols and HA topologies remain open.

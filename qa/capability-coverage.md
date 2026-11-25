@@ -155,3 +155,5 @@ B55 adds exact local indexing, retention, hard-link deduplication, ZIP safety an
 B56 adds actual Redis sequence state fault cases and dynamic/compiled contextual DI/tag resolution.
 
 B57 adds remote JWKS integration with real TLS fixture and Redis cache; explicitly controlled DNS and transport boundaries.
+
+B58 adds a real PostgreSQL protocol-level lost COMMIT acknowledgement test; not a simulated callback failure.

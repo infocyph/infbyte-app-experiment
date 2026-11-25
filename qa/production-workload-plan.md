@@ -279,3 +279,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B57 — remote JWKS
 - [x] TLS fixture, shared cache, rotation, stale/response limits, DNS rejection and discovery scenario.
 - [ ] Hosted verification; production transport DNS/peer binding and distributed replay still open.
+
+## B58 — ambiguous database commit
+- [x] Real PostgreSQL COMMIT acknowledgement loss and idempotent recovery lane.
+- [ ] Hosted qualification, other driver protocols and remaining HA.
