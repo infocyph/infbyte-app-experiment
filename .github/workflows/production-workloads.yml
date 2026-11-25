@@ -147,6 +147,8 @@ jobs:
           - {scenario: ecosystem-counter-restart, backend: pgsql}
           - {scenario: ecosystem-valkey-counter-restart, backend: pgsql}
           - {scenario: ecosystem-counter-contracts, backend: pgsql}
+          - {scenario: ecosystem-counter-election, backend: pgsql}
+          - {scenario: ecosystem-valkey-counter-election, backend: pgsql}
           - {scenario: ecosystem-otp-valkey, backend: pgsql}
           - {scenario: ecosystem-otp-phpfiles, backend: pgsql}
           - {scenario: ecosystem-otp-file, backend: pgsql}

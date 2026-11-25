@@ -117,3 +117,47 @@ function otpAdditionalBackendWorkload(string $backend): void
     verify(!$totp->verifyWithWindow($totp->generate($timestamp - 30), $timestamp - 30, new VerificationWindow(), $factory(), 'totp-shared')->matched, 'TOTP replay state regressed.');
     echo "$backend challenge exhaustion, HOTP generations/exhaustion and TOTP monotonic replay passed\n";
 }
+
+
+function counterElectionWorkload(bool $seed): void
+{
+    $backend = (string) getenv('LAB_COUNTER_BACKEND');
+    $port = $seed ? 17389 : 17390;
+    $client = new Redis();
+    verify($client->connect('127.0.0.1', $port, 2.0), 'Counter election endpoint unavailable.');
+    $store = match ($backend) {
+        'redis' => AtomicCounters::redis('lab-election', client: $client),
+        'valkey' => AtomicCounters::valkey('lab-election', client: $client),
+        default => throw new InvalidArgumentException('Unexpected election backend.'),
+    };
+    $key = 'cachelayer:counter:lab-election:window';
+    if ($seed) {
+        verify($store->increment('window', 100, 600)->initialized, 'Initial counter not created.');
+        verify($store->increment('window', 25)->value === 125 && $store->increment('persistent', 12)->value === 12, 'Seed counter values differ.');
+        verify($client->rawCommand('WAIT', '1', '10000') === 1, 'Counter writes not acknowledged by replica.');
+        $ttl = $client->pttl($key);
+        verify($ttl > 0 && file_put_contents(evidenceDirectory() . '/counter-election-ttl', (string) $ttl, LOCK_EX) !== false, 'Counter TTL evidence unavailable.');
+    } else {
+        $oldTtl = (int) file_get_contents(evidenceDirectory() . '/counter-election-ttl');
+        $ttl = $client->pttl($key);
+        verify($store->get('window') === 125 && $store->get('persistent') === 12 && $ttl > 0 && $ttl <= $oldTtl, 'Promoted replica lost confirmed state or extended TTL.');
+        $result = $store->increment('window', 5, 3600);
+        verify(!$result->initialized && $result->value === 130 && $client->pttl($key) <= $ttl, 'Promoted counter reset existing window.');
+        $result = $store->decrement('persistent', 2, 60);
+        verify(!$result->initialized && $result->value === 10 && $client->ttl('cachelayer:counter:lab-election:persistent') === -1, 'Promoted persistent counter changed semantics.');
+        $cache = $backend === 'redis'
+            ? Cache::redis('lab-election', "redis://127.0.0.1:$port")
+            : Cache::valkey('lab-election', "valkey://127.0.0.1:$port");
+        verify($cache->set('window', 'unrelated') && $cache->clear() && $store->get('window') === 130, 'Promoted namespace isolation failed.');
+        $results = parallelRace(static function () use ($backend, $port): int {
+            $next = $backend === 'redis' ? AtomicCounters::redis('lab-election', "redis://127.0.0.1:$port") : AtomicCounters::valkey('lab-election', "valkey://127.0.0.1:$port");
+            $initialized = 0;
+            for ($i = 0; $i < 25; ++$i) {
+                $initialized += (int) $next->increment('post-election')->initialized;
+            }
+            return $initialized;
+        }, 'counter-election', 8);
+        verify(array_sum($results) === 1 && $store->get('post-election') === 200, 'Promoted primary lost concurrent increments.');
+    }
+    echo "$backend counter election " . ($seed ? 'seed' : 'verification') . " passed\n";
+}

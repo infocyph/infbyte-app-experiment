@@ -397,3 +397,7 @@ I: isolated MinIO lane routes two specific signed fixture PUTs through a bounded
 ## B96 — Physical PostgreSQL write-primary replacement
 
 I: independent lane reuses the physical standby fixture, verifies replay through the primary's committed WAL flush LSN, stops the original primary, promotes the standby and opens a replacement DBLayer write connection. It reconciles prior idempotency identity, committed balances, new write/callback and fresh connection state. No claim of automatic DBLayer write discovery or zero-loss unplanned asynchronous failover. 348 routine rows; hosted qualification pending. DATA/OPS: explicit ownership and bounded readiness, original primary remains stopped on the disposable runner.
+
+## B97 — Redis and Valkey counter primary election
+
+I: two disposable real Sentinel lanes wait for replica discovery and explicit replication acknowledgement, stop the old primary, observe Sentinel-selected promotion, reconnect the published counter factory to the promoted endpoint and verify exact signed values, fixed TTL, persistent state, cache namespace independence and 200 concurrent increments. One Sentinel is a fixture, not production quorum qualification. AtomicCounters accepts native Redis clients, not RedisCluster; automatic endpoint discovery is application-owned. 350 routine rows; hosted qualification pending (DATA, OPS, COMPAT).
