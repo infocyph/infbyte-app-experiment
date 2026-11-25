@@ -55,8 +55,8 @@ final readonly class Orders
         $cache = $this->app->make(CacheManager::class)->store('shared');
         $atomic = $cache->atomic();
         ensure($atomic !== null, 'Shared Redis lacks atomic capability.');
-        ensure($atomic->setIfAbsent('order:' . $id, 1, 3600), 'Duplicate business operation.');
-        ensure(!$atomic->setIfAbsent('order:' . $id, 2, 3600), 'Replay accepted.');
+        ensure($atomic->setIfAbsent('order.' . $id, 1, 3600), 'Duplicate business operation.');
+        ensure(!$atomic->setIfAbsent('order.' . $id, 2, 3600), 'Replay accepted.');
         $disk = $this->app->make(StorageRegistry::class)->disk('local');
         $payload = json_encode(['order' => $id, 'amount' => 300], JSON_THROW_ON_ERROR);
         $path = 'experiment/orders/' . $id . '.json';

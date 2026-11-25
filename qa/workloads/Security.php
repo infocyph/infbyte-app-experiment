@@ -32,6 +32,30 @@ final readonly class Security
         $owner = $auth->accounts()->create('owner-' . $id . '@example.test', metadata: ['tenant' => 'alpha'])->account;
         $other = $auth->accounts()->create('other-' . $id . '@example.test', metadata: ['tenant' => 'beta'])->account;
         ensure($owner instanceof Account && $other instanceof Account, 'Missing persisted accounts.');
+        if (getenv('SCENARIO') === 'passkey') {
+            $this->assertPasskey($owner->id());
+
+            return;
+        }
+        if (getenv('SCENARIO') === 'authorization') {
+            $this->assertAuthorization($owner, $other, $id);
+
+            return;
+        }
+        $otp = $this->app->make(OtpManager::class);
+        $enrollment = $otp->beginEnrollment($owner->id(), 'owner-' . $id, false, 8);
+        $factor = $enrollment->factor();
+        ensure($enrollment->successful() && $factor !== null && count($enrollment->recoveryCodes()) === 8, 'OTP enrollment failed.');
+        $code = new TOTP($enrollment->payload->secret, 6, 30, 'sha256')->generate();
+        $confirmed = $otp->completeEnrollment($owner->id(), $factor->id, $code);
+        ensure($confirmed->successful() && $confirmed->factor?->enabled === true, 'TOTP confirmation failed.');
+        ensure(!$otp->verifyFactor($factor, $code)->verified, 'TOTP replay accepted.');
+    }
+
+    /** @throws \Throwable */
+    private function assertAuthorization(Account $owner, Account $other, string $id): void
+    {
+        $auth = $this->app->make(AuthServices::class);
         $principal = new Principal($owner->id(), accountId: $owner->id(), metadata: ['tenant' => 'alpha']);
         $foreign = new Principal($other->id(), accountId: $other->id(), metadata: ['tenant' => 'beta']);
         $permission = $auth->permissions()->create('receipt.read.' . $id);
@@ -49,19 +73,6 @@ final readonly class Security
         ensure(!$auth->authorizer()->can($principal, 'receipt.approve', $resource)->allowed, 'Revoked grant accepted.');
         $auth->roles()->revoke($owner->id(), $role->id);
         ensure(!$auth->authorizer()->can($principal, 'receipt.read.' . $id)->allowed, 'Revoked role accepted.');
-        if (getenv('SCENARIO') === 'passkey') {
-            $this->assertPasskey($owner->id());
-
-            return;
-        }
-        $otp = $this->app->make(OtpManager::class);
-        $enrollment = $otp->beginEnrollment($owner->id(), 'owner-' . $id, false, 8);
-        $factor = $enrollment->factor();
-        ensure($enrollment->successful() && $factor !== null && count($enrollment->recoveryCodes()) === 8, 'OTP enrollment failed.');
-        $code = new TOTP($enrollment->payload->secret, 6, 30, 'sha256')->generate();
-        $confirmed = $otp->completeEnrollment($owner->id(), $factor->id, $code);
-        ensure($confirmed->successful() && $confirmed->factor?->enabled === true, 'TOTP confirmation failed.');
-        ensure(!$otp->verifyFactor($factor, $code)->verified, 'TOTP replay accepted.');
     }
 
     /** @throws \Throwable */

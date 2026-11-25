@@ -56,6 +56,7 @@ final readonly class Queues
         while (hrtime(true) < $until) {
             $result = $consumer->run('receipts', 8, 10.0);
             if ($result->received > 0) {
+                echo json_encode($result, JSON_THROW_ON_ERROR), PHP_EOL;
                 $idle = 0;
                 continue;
             }
@@ -100,7 +101,16 @@ final readonly class Queues
     {
         $db = $this->app->make(DBLayerFactory::class)->connection();
         ensure($this->app->make(DBLayerTransport::class)->size('receipts') === 0, 'Undelivered messages.');
-        ensure(count($this->app->make(DBLayerFailureStore::class)->all()) === $expected, 'Dead-letter or rolled-back dispatch count mismatch.');
+        $failures = $this->app->make(DBLayerFailureStore::class)->all();
+        foreach ($failures as $failure) {
+            $message = $failure->envelope?->message;
+            echo json_encode(['failure_id' => $failure->id, 'attempt' => $failure->attempt, 'class' => $failure->failureClass, 'reason' => $failure->reason, 'message_id' => $message instanceof Receipt ? $message->id : null, 'kind' => $message instanceof Receipt ? $message->kind : null], JSON_THROW_ON_ERROR), PHP_EOL;
+        }
+        ensure(count($failures) === $expected, 'Dead-letter count mismatch: expected ' . $expected . ', got ' . count($failures));
+        foreach ($failures as $failure) {
+            $message = $failure->envelope?->message;
+            ensure($message instanceof Receipt && $message->kind === 'fail' && str_contains($failure->reason, 'Intentional permanent receipt failure.'), 'Unexpected dead-letter reason.');
+        }
         ensure(countValue($db->scalar('SELECT COUNT(*) FROM experiment_receipts')) === $expected * 2, 'Lost or duplicate durable business effect.');
         ensure(countValue($db->scalar("SELECT COUNT(*) FROM experiment_attempts WHERE attempts = 2")) === $expected * 2, 'Duplicate and retry attempts mismatch.');
     }

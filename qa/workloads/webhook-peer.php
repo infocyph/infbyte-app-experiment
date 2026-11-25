@@ -48,7 +48,7 @@ $app->execution()->run(static function () use ($app): void {
     }
     $id = $event->payload['order'] ?? null;
     ensure(is_string($id), 'Verified webhook lacks order identity.');
-    ensure($cache->set('webhook-received:' . $id, $id, 3600), 'Webhook effect write failed.');
+    ensure($cache->set('webhook-received.' . $id, $id, 3600), 'Webhook effect write failed.');
     // The single loopback fixture serializes receipt counting. The replay claim
     // itself is native distributed Redis and also prevents concurrent duplicates.
     ensure($cache->set('webhook-count', countValue($cache->get('webhook-count', 0)) + 1, 3600), 'Webhook count write failed.');

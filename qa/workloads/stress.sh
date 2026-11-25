@@ -27,7 +27,7 @@ php "$probe" setup
 total=0
 for concurrency in 1 4 8; do
   iterations=40
-  if [[ "$SCENARIO" == accounts || "$SCENARIO" == security || "$SCENARIO" == passkey ]]; then iterations=8; fi
+  if [[ "$SCENARIO" == accounts || "$SCENARIO" == security || "$SCENARIO" == passkey || "$SCENARIO" == authorization ]]; then iterations=8; fi
   if [[ "$SCENARIO" == queue ]]; then iterations=20; fi
   start="$(date +%s%3N)"
   pids=()
@@ -55,6 +55,7 @@ for concurrency in 1 4 8; do
     done
     failed=0
     for pid in "${pids[@]}"; do if ! wait "$pid"; then failed=1; fi; done
+    cat "$EVIDENCE"/queue-"$concurrency"-*.log
     if (( failed )); then cat "$EVIDENCE"/queue-"$concurrency"-*.log >&2; exit 1; fi
   fi
   php "$probe" verify "$total"

@@ -77,7 +77,7 @@ function configuration(): array
             ]]],
             'webhooks' => [
                 'default_inbound' => 'lab',
-                'inbound' => ['lab' => ['secret' => getenv('AUTH_TOKEN_SECRET'), 'max_age_seconds' => 300]],
+                'inbound' => ['lab' => ['secret' => getenv('AUTH_TOKEN_SECRET'), 'max_age_seconds' => 300, 'replay' => ['enabled' => true, 'store' => 'shared', 'ttl_seconds' => 600]]],
             ],
         ],
         'notifications' => ['email' => [

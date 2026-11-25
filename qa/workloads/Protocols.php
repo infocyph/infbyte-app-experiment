@@ -29,10 +29,11 @@ final readonly class Protocols
         ensure(is_string($secret), 'Missing disposable webhook signing key.');
         $message = WebhookMessage::event('orders.created')->deliveryId(hash('sha256', $id))->url($url . '/hook')->payload(['order' => $id]);
         $sender = Webhook::sender($http)->withSecret($secret);
-        ensure($sender->send($message)->delivery?->delivered === true, 'Signed webhook was not received.');
+        $delivery = $sender->send($message);
+        ensure($delivery->delivery?->delivered === true, 'Signed webhook was not received: ' . json_encode($delivery, JSON_THROW_ON_ERROR));
         ensure($sender->send($message)->delivery?->delivered === false, 'Duplicate webhook accepted.');
         $cache = $this->app->make(CacheManager::class)->store('shared');
-        ensure($cache->get('webhook-received:' . $id) === $id, 'Receiver did not persist verified effect.');
+        ensure($cache->get('webhook-received.' . $id) === $id, 'Receiver did not persist verified effect.');
     }
 
     /** @throws \Throwable */

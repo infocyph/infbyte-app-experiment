@@ -39,7 +39,7 @@ pm.max_children = 4
 clear_env = no
 catch_workers_output = yes
 CONF
-    php-fpm8.6 -F -y "$RUNNER_TEMP/lab-fpm.conf" >> "$EVIDENCE/host.log" 2>&1 &
+    php-fpm${PHP_SERIES} -F -y "$RUNNER_TEMP/lab-fpm.conf" >> "$EVIDENCE/host.log" 2>&1 &
     host=$!
     mkdir -p "$RUNNER_TEMP/lab-nginx"
     cat > "$RUNNER_TEMP/lab-nginx.conf" <<CONF
