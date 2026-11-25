@@ -126,3 +126,61 @@ function fileWatchWorkload(): void
     verify($expected->created === $created && $expected->modified === $modified && $expected->deleted === $deleted, 'Watcher and final snapshot mismatch.');
     echo "Independent process create/modify/delete, live polling and final snapshot reconciliation passed\n";
 }
+
+function archiveContractsWorkload(): void
+{
+    $root = evidenceDirectory() . '/archive-contracts';
+    foreach ([$root, $root . '/source', $root . '/selected', $root . '/wrong', $root . '/correct', $root . '/bounded'] as $path) {
+        verify(mkdir($path, 0700), 'Archive directory creation failed.');
+    }
+    $source = $root . '/source';
+    $files = ['a.txt' => str_repeat('alpha', 100), 'b.txt' => str_repeat('beta', 100), 'keep.log' => 'audit', 'skip.tmp' => 'excluded'];
+    foreach ($files as $name => $content) {
+        verify(file_put_contents($source . '/' . $name, $content) === strlen($content), 'Archive source write failed.');
+    }
+    $events = [];
+    $archive = new FileCompression($root . '/filtered.zip', true);
+    $archive->setGlobPatterns(['*.txt', '*.log'], ['*.tmp'])
+        ->setProgressCallback(static function (array $event) use (&$events): void { $events[] = $event; })
+        ->compress($source)->save();
+    $names = $archive->listFiles();
+    sort($names);
+    verify($names === ['a.txt', 'b.txt', 'keep.log'] && $archive->fileCount() === 3, 'Filtered archive membership differs.');
+    $iterated = array_values(iterator_to_array($archive->getFileIterator()));
+    sort($iterated);
+    verify($iterated === $names, 'Archive iterator disagrees with manifest.');
+    $archive->batchExtractFiles(['a.txt' => 'renamed.txt', 'keep.log' => 'audit.log'], $root . '/selected');
+    verify(file_get_contents($root . '/selected/renamed.txt') === $files['a.txt']
+        && file_get_contents($root . '/selected/audit.log') === $files['keep.log']
+        && count(glob($root . '/selected/*')) === 2, 'Selected extraction lost or invented entries.');
+    verify(in_array('compress', array_column($events, 'operation'), true)
+        && in_array('decompress', array_column($events, 'operation'), true), 'Progress events missing.');
+
+    $password = bin2hex(random_bytes(16));
+    $encrypted = $root . '/encrypted.zip';
+    new FileCompression($encrypted, true)->setPassword($password)
+        ->batchAddFiles([$source . '/a.txt' => 'a.txt', $source . '/b.txt' => 'b.txt'])->save();
+    $native = new ZipArchive();
+    verify($native->open($encrypted) === true, 'Native ZIP inspection failed.');
+    verify($native->getFromName('a.txt') === false, 'Encrypted entry readable without password.');
+    verify($native->setPassword($password) && $native->getFromName('a.txt') === $files['a.txt'], 'Independent ZIP decryption mismatch.');
+    verify($native->close(), 'ZIP inspection close failed.');
+    expectFailure(static fn() => new FileCompression($encrypted)->setPassword('wrong-password')->decompress($root . '/wrong'),
+        \Infocyph\Pathwise\Exceptions\CompressionException::class, 'Wrong archive password accepted.');
+    new FileCompression($encrypted)->setPassword($password)->setDefaultDecompressionPath($root . '/correct')->decompress();
+    foreach (['a.txt', 'b.txt'] as $name) {
+        verify(file_get_contents($root . '/correct/' . $name) === $files[$name], 'Encrypted extraction bytes differ.');
+    }
+    $bounded = $root . '/bounded';
+    verify(file_put_contents($bounded . '/sentinel', 'original') === 8, 'Bounded extraction seed failed.');
+    foreach ([
+        static fn(FileCompression $zip) => $zip->setExtractionLimits(maxEntries: 2),
+        static fn(FileCompression $zip) => $zip->setExtractionLimits(maxTotalUncompressedBytes: 600),
+        static fn(FileCompression $zip) => $zip->setExtractionLimits(maxCompressionRatio: 2.0),
+    ] as $limit) {
+        expectFailure(static fn() => $limit(new FileCompression($root . '/filtered.zip'))->decompress($bounded),
+            UnsafeArchiveEntryException::class, 'ZIP limit ignored.');
+        verify(glob($bounded . '/*') === [$bounded . '/sentinel'] && file_get_contents($bounded . '/sentinel') === 'original', 'Rejected archive changed destination.');
+    }
+    echo "Filtered archive membership, selected extraction, progress, encrypted native interop and resource limits passed\n";
+}

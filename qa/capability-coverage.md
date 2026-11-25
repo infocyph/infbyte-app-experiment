@@ -275,3 +275,7 @@ I: two independent lanes exercise IP family/scope, UUID range/list/exclusion/var
 ## B89 — Randflake conversion, validation locale and actual preload startup
 
 I: three independent lanes cover signed/unsigned numeric boundaries, all six radices and byte ordering for both Randflake formats; regional locale fallback, wildcard aliases and custom interpolation with mutable/compiled reuse; and a fresh PHP CLI process with generated OPcache preload artifact, pre-autoload class visibility, preload statistics and DI singleton resolution. 304 routine rows; hosted qualification pending.
+
+## B90 — OTP shared-state parity and archive lifecycle
+
+I: five additional OTP lanes exercise the existing twelve-process challenge/HOTP/TOTP replay and attempt-exhaustion contract on Redis, file, SQLite, PostgreSQL PDO and MySQL PDO; independent archive lane verifies filter membership, selected extraction, iterator/progress parity, encrypted ZIP interoperability with native libzip, incorrect password failure, and entry-count/total-size/ratio limits without destination mutation. 310 routine rows; hosted qualification pending.

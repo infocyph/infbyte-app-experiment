@@ -78,11 +78,18 @@ function otpAdditionalBackendWorkload(string $backend): void
 {
     $options = new CacheOptions(integrityKey: random_bytes(32), allowClosures: false, allowObjects: false, failOpen: false);
     $root = (string) getenv('RUNNER_TEMP') . '/otp-phpfiles-state';
+    $driver = (string) getenv('DB_BACKEND');
+    $dsn = $driver === 'pgsql' ? 'pgsql:host=127.0.0.1;port=5432;dbname=experiment' : 'mysql:host=127.0.0.1;port=3306;dbname=experiment';
     $factory = match ($backend) {
+        'redis' => static fn(): Cache => Cache::redis('lab-otp-extra', options: $options),
+        'file' => static fn(): Cache => Cache::file('lab-otp-extra', $root . '/file', $options),
+        'sqlite' => static fn(): Cache => Cache::sqlite('lab-otp-extra', $root . '/state.sqlite', $options),
+        'pdo' => static fn(): Cache => Cache::pdo('lab-otp-extra', $dsn, 'experiment', 'experiment', options: $options),
         'valkey' => static fn(): Cache => Cache::valkey('lab-otp-extra', 'valkey://127.0.0.1:6380', options: $options),
         'phpfiles' => static fn(): Cache => Cache::phpFiles('lab-otp-extra', $root, $options),
         default => throw new InvalidArgumentException('Unexpected OTP backend.'),
     };
+    verify(is_dir($root) || mkdir($root, 0700, true), 'OTP state root unavailable.');
     $key = random_bytes(32);
     $service = new GenericOtp($factory(), $key, ttlSeconds: 120, maxAttempts: 4);
     $proof = $service->generate('consume-once');

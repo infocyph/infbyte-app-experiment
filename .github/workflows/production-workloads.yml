@@ -115,6 +115,11 @@ jobs:
           - {scenario: ecosystem-counter-contracts, backend: pgsql}
           - {scenario: ecosystem-otp-valkey, backend: pgsql}
           - {scenario: ecosystem-otp-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-file, backend: pgsql}
+          - {scenario: ecosystem-otp-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-pdo, backend: mysql}
           - {scenario: ecosystem-http-pool, backend: pgsql}
           - {scenario: ecosystem-grpc-inbound, backend: pgsql}
           - {scenario: ecosystem-validation-casts, backend: pgsql}
@@ -142,6 +147,7 @@ jobs:
           - {scenario: ecosystem-di-attributes, backend: pgsql}
           - {scenario: ecosystem-file-index-retention, backend: pgsql}
           - {scenario: ecosystem-archive-security, backend: pgsql}
+          - {scenario: ecosystem-archive-contracts, backend: pgsql}
           - {scenario: ecosystem-file-watch, backend: pgsql}
           - {scenario: ecosystem-api-inventory, backend: pgsql}
           - {scenario: ecosystem-recovery, backend: pgsql, matcher: fused}
