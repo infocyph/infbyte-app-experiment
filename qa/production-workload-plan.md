@@ -203,3 +203,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B38 — official storage adapter matrix
 - [x] Remaining documented official adapter keys have executable scenarios across eight independent jobs.
 - [ ] Hosted verification, cloud provider/security and local-only feature contracts.
+
+## B39 — Scylla and Redis Cluster HA
+- [x] Native Scylla and real Redis Cluster replica-promotion scenarios.
+- [ ] Hosted verification, native Cassandra compatibility and remaining cache contracts.

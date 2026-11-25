@@ -48,9 +48,13 @@ require __DIR__ . '/ecosystem-mailbox.php';
 require __DIR__ . '/ecosystem-brokers.php';
 require __DIR__ . '/ecosystem-invalidation.php';
 require __DIR__ . '/ecosystem-storage-adapters.php';
+require __DIR__ . '/ecosystem-cache-ha.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'scylla' => scyllaWorkload(),
+    'redis-failover-seed' => redisFailoverWorkload(true),
+    'redis-failover-verify' => redisFailoverWorkload(false),
     'storage-local-modes' => storageLocalModesWorkload(),
     'ftp' => ftpWorkload(),
     'webdav' => webdavWorkload(),

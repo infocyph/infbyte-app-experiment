@@ -117,3 +117,5 @@ B36 adds native concurrent Runwire wire acceptance with independent clients; HTT
 B37 adds real PgBouncer session/transaction pooling, native prepared statements and exact concurrent transaction reconciliation.
 
 B38 adds remaining documented official Pathwise adapters (cloud emulators explicitly distinct from production providers); hosted evidence pending.
+
+B39 adds native Scylla and six-node Redis Cluster actual failover; Cassandra driver compatibility and hosted evidence pending.

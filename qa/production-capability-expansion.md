@@ -163,3 +163,7 @@ I: two separate PgBouncer session/transaction-pooling lanes, real PostgreSQL sou
 ## B38 — Pathwise official adapter matrix
 
 I: eight independent jobs cover memory, read-only, prefixing and ZIP plus actual FTP, WebDAV, GridFS, SFTP v2, AsyncAws S3, Azure-compatible Azurite and GCS-compatible fake-gcs-server. Combined with existing local, S3 and SFTP v3 jobs, all fourteen documented official adapter keys now have executable construction and I/O scenarios. Cloud-compatible emulators do not certify cloud production IAM, service behavior or availability; protocol TLS/host key and outage, custom adapter and local-only transaction/ownership capabilities remain open. Hosted verification pending.
+
+## B39 — Scylla and real Redis Cluster election
+
+I: native Cassandra-extension Scylla lane for binary/bulk values, TTL, tag invalidation and namespace isolation; six-node Redis Cluster with three replica links, replication offset catchup, actual primary stop and observed replica promotion, complete durable-value and post-election write reconciliation. The native PHP Cassandra driver is a mandatory prerequisite, not a mocked replacement. Hosted evidence pending; additional cache outage/security and provider-specific contracts remain open.
