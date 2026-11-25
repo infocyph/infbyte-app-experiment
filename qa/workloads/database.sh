@@ -12,6 +12,7 @@ if [[ "$SCENARIO" != db-sqlserver-tls ]]; then
   fi
 fi
 case "$SCENARIO" in
+  db-active-backup) bash "$GITHUB_WORKSPACE/qa/workloads/database-active-backup.sh" ;;
   db-query-cache-overlap) bash "$GITHUB_WORKSPACE/qa/workloads/database-cache-overlap.sh" ;;
   db-query-cache-race) bash "$GITHUB_WORKSPACE/qa/workloads/database-cache-race.sh" ;;
   db-sqlserver-tls) bash "$GITHUB_WORKSPACE/qa/workloads/database-sqlserver-tls.sh" ;;

@@ -445,3 +445,7 @@ I: two disposable real Sentinel lanes wait for replica discovery and explicit re
 ## B98 — Combined remote storage and broker outage with active database writers
 
 I: real disposable S3-compatible storage and RabbitMQ stop together after four confirmed persistent messages; eight independent PHP processes prove remote unavailability and commit 32 new SQL orders/outbox rows while both are stopped. Restart reconciles four old messages, relays 36 pending operations, checks all 40 remote receipt bytes, and consumes 41 deliveries including an intentional duplicate into exactly 40 SQL effects. SQL remains available during the outage; no provider exactly-once guarantee or active backup claim. 351 routine rows; hosted verification pending (CORE-01, DATA, OPS).
+
+## B99 — Consistent database backup under active writes
+
+I: independent PostgreSQL lane exports a repeatable-read snapshot of 100 paired orders/ledger rows, observes actual pg_dump lock wait, commits another 160 paired operations across eight PHP writers before releasing the dump, restores the exported snapshot into a separate database and compares exact ordered row digests and financial invariants. Original database retains all 260 operations. This tests consistent logical backup, not physical PITR or production RPO/RTO. 352 routine rows; hosted qualification pending (DATA, OPS).

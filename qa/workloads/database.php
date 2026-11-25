@@ -271,12 +271,19 @@ require __DIR__ . '/database-uncertain.php';
 require __DIR__ . '/database-tls.php';
 require __DIR__ . '/database-sqlserver-tls.php';
 require __DIR__ . '/database-cache-race.php';
+require __DIR__ . '/database-active-backup.php';
 
 $db = new Connection(config());
 match ($argv[1] ?? '') {
     'tls' => databaseTlsWorkload(),
     'sqlserver-tls' => sqlServerTlsWorkload(),
     'cache-race-seed' => setup($db),
+    'active-backup-seed' => activeBackupSeed($db),
+    'active-backup-gate' => activeBackupGate($db),
+    'active-backup-snapshot' => activeBackupSnapshot($db),
+    'active-backup-wait' => activeBackupWait($db),
+    'active-backup-write' => activeBackupWrite($db, (int) ($argv[2] ?? -1)),
+    'active-backup-verify' => activeBackupVerify($db),
     'cache-overlap-hold' => databaseCacheOverlapHold($db),
     'cache-overlap-read' => databaseCacheOverlapRead($db, false),
     'cache-overlap-commit' => databaseCacheOverlapCommit($db),
