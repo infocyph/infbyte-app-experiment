@@ -332,3 +332,59 @@ function remoteHttpPublicationContracts(string $backend, string $mode): void
     verify($foreign->read($stage) === 'foreign-stage' && $foreign->read($final) === 'foreign-final', 'Recovered publication crossed tenant.');
     echo "$backend $mode origin fault and independent publication reconciliation passed\n";
 }
+
+function gridfsPublicationFaultWorkload(string $mode): void
+{
+    verify(in_array($mode, ['before', 'after'], true), 'Unknown GridFS fault mode.');
+    $context = additionalStorageContext('gridfs', true);
+    $direct = $context->filesystem();
+    $foreign = $context->filesystem('foreign');
+    $stage = 'receipts/fault-stage.bin';
+    $final = 'receipts/final.bin';
+    $payload = str_repeat("\x00\xffreceipt-gridfs\n", 65536);
+    $digest = hash('sha256', $payload);
+    $direct->write($final, 'previous');
+    $foreign->write($final, 'foreign-final');
+    $foreign->write($stage, 'foreign-stage');
+    verify(!$direct->fileExists($stage), 'Stage already existed.');
+    $fault = additionalStorageContext('gridfs', false, 27018)->filesystem();
+    $source = fopen('php://temp', 'w+b');
+    verify(is_resource($source), 'Source stream unavailable.');
+    $rejected = false;
+    try {
+        verify(fwrite($source, $payload) === strlen($payload) && rewind($source), 'Source preparation failed.');
+        try {
+            $fault->writeStream($stage, $source);
+        } catch (FilesystemException|\MongoDB\Driver\Exception\Exception $failure) {
+            $rejected = true;
+        }
+    } finally {
+        if (is_resource($source)) {
+            fclose($source);
+        }
+    }
+    verify($rejected, 'Unconfirmed GridFS write reported success.');
+    $marker = evidenceDirectory() . '/gridfs-fault.json';
+    verify(is_file($marker) && !is_file(evidenceDirectory() . '/gridfs-replayed'), 'Missing intended fault or replayed metadata mutation.');
+    $evidence = json_decode((string) file_get_contents($marker), true, flags: JSON_THROW_ON_ERROR);
+    verify($evidence['mode'] === $mode && $evidence['metadata'] === ($mode === 'after') && $evidence['bytes'] === strlen($payload) && $evidence['chunks'] > 1, 'Independent native chunk/metadata observation differs.');
+    $fresh = additionalStorageContext('gridfs');
+    $direct = $fresh->filesystem();
+    $foreign = $fresh->filesystem('foreign');
+    verify($direct->read($final) === 'previous' && $foreign->read($stage) === 'foreign-stage' && $foreign->read($final) === 'foreign-final', 'Uncertain mutation crossed publication or tenant boundary.');
+    if ($mode === 'before') {
+        verify(!$direct->fileExists($stage), 'Missing file metadata nevertheless exposed a published file.');
+        $direct->write($stage, $payload);
+    } else {
+        // If the SDK compensates the uncertain write by removing it, a new
+        // write is permissible only after the independent absence check.
+        if (!$direct->fileExists($stage)) {
+            $direct->write($stage, $payload);
+        }
+    }
+    verify($direct->fileSize($stage) === strlen($payload) && hash('sha256', $direct->read($stage)) === $digest, 'Stage metadata exists without complete content.');
+    $direct->move($stage, $final);
+    verify(!$direct->fileExists($stage) && hash('sha256', $direct->read($final)) === $digest, 'Publication reconciliation failed.');
+    verify($foreign->read($stage) === 'foreign-stage' && $foreign->read($final) === 'foreign-final', 'Recovery crossed tenant boundary.');
+    echo "GridFS $mode native chunk/metadata settlement and explicit reconciliation passed\n";
+}

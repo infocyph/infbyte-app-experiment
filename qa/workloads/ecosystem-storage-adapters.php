@@ -57,8 +57,9 @@ function additionalStorageContext(string $backend, bool $seed = false, ?int $pro
         'webdav' => static fn(string $prefix): array => ['driver' => 'webdav', 'constructor' => [
             new \Sabre\DAV\Client(['baseUri' => 'http://127.0.0.1:' . ($proxyPort ?? 18085) . '/', 'userName' => 'experiment', 'password' => 'fixture-only-password']), $prefix,
         ]],
-        'gridfs' => (static function () use ($bucket): Closure {
-            $client = new \MongoDB\Client('mongodb://127.0.0.1:27017/?serverSelectionTimeoutMS=3000&connectTimeoutMS=2000&socketTimeoutMS=4000');
+        'gridfs' => (static function () use ($proxyPort): Closure {
+            $port = $proxyPort ?? 27017;
+            $client = new \MongoDB\Client("mongodb://127.0.0.1:$port/?directConnection=true&retryWrites=false&serverSelectionTimeoutMS=3000&connectTimeoutMS=2000&socketTimeoutMS=4000");
             $storage = $client->selectDatabase('experiment')->selectGridFSBucket(['bucketName' => 'documents']);
             return static fn(string $prefix): array => ['driver' => 'mongodb-gridfs', 'constructor' => [$storage, $prefix]];
         })(),

@@ -461,6 +461,8 @@ match ($argv[1] ?? '') {
     'storage-local-modes' => storageLocalModesWorkload(),
     'ftp' => ftpWorkload(),
     'webdav' => webdavWorkload(),
+    'gridfs-publication-before' => gridfsPublicationFaultWorkload('before'),
+    'gridfs-publication-after' => gridfsPublicationFaultWorkload('after'),
     'gridfs' => gridfsWorkload(),
     'sftp2' => sftp2Workload(),
     'async-s3' => asyncS3Workload(),

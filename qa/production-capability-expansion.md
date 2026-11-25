@@ -697,3 +697,7 @@ I: four independent jobs for MongoDB and ScyllaDB fail-open and fail-closed beha
 ## B171 — Native FTP and SFTP-v2 publication faults
 
 I: six jobs: FTP and SFTP-v2 rename before/after settlement uncertainty and interrupted staged upload. Native FTP RNTO relay hooks only armed paths; OpenSSH subsystem fixture reused for SFTP-v2; physical origin path evidence, no silent retry after rename, explicit cleanup/retry after observed incomplete upload. Existing SFTP-v3 cases preserved. CORE-01, DATA, SEC, MEM, EXEC-03: source/matrix wiring inspected; hosted outcomes deferred. 966 routine rows.
+
+## B172 — GridFS native chunk and metadata settlement
+
+I: two independent PHP 8.4 native MongoDB extension jobs. Actual standalone MongoDB wire proxy forwards OP_QUERY/OP_MSG, parses bounded BSON metadata insert and independently verifies persisted contiguous chunks before withholding metadata request or successful response. Fault client disables retryable writes; independent absence or full-content verification precedes any recovery publication. SDK compensation may remove a committed stage; partial visible stage is rejected. No mock of GridFS. CORE-01, DATA, SEC, MEM, EXEC-03: source/matrix wiring inspected; hosted outcome deferred. 968 routine rows.

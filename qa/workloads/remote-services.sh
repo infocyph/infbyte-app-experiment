@@ -11,6 +11,7 @@ cleanup() {
 trap cleanup EXIT
 provision="$SCENARIO"
 case "$SCENARIO" in
+  ecosystem-gridfs-publication-before|ecosystem-gridfs-publication-after) provision=ecosystem-gridfs ;;
   ecosystem-ftp-rename-before|ecosystem-ftp-rename-after|ecosystem-ftp-interrupted-upload) provision=ecosystem-ftp ;;
   ecosystem-sftp2-interrupted-upload) provision=ecosystem-sftp2 ;;
   ecosystem-webdav-http-publication-before|ecosystem-webdav-http-publication-after|ecosystem-async-s3-http-publication-before|ecosystem-async-s3-http-publication-after|ecosystem-azure-http-publication-before|ecosystem-azure-http-publication-after|ecosystem-gcs-http-publication-before|ecosystem-gcs-http-publication-after)
@@ -126,6 +127,21 @@ composer check-platform-reqs --no-dev
 composer show --format=json > "$EVIDENCE/packages.json"
 if [[ "$SCENARIO" == ecosystem-cache-mongodb-outage-* ]]; then
   bash "$GITHUB_WORKSPACE/qa/workloads/remote-cache-outage.sh" lab-mongo mongodb
+elif [[ "$SCENARIO" == ecosystem-gridfs-publication-* ]]; then
+  python3 -m venv "$RUNNER_TEMP/gridfs-peer-venv"
+  python="$RUNNER_TEMP/gridfs-peer-venv/bin/python"
+  "$python" -m pip install 'pymongo>=4,<5'
+  "$python" "$GITHUB_WORKSPACE/qa/workloads/gridfs-fault-peer.py" "$EVIDENCE" "${SCENARIO##*-}" > "$EVIDENCE/gridfs-proxy.log" 2>&1 &
+  fault_peer=$!
+  trap 'kill "$fault_peer" 2>/dev/null || :; wait "$fault_peer" 2>/dev/null || :; cleanup' EXIT
+  for attempt in {1..100}; do
+    [[ -f "$EVIDENCE/gridfs-ready" ]] && break
+    kill -0 "$fault_peer"
+    sleep 0.1
+  done
+  test -f "$EVIDENCE/gridfs-ready"
+  timeout 120s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
+  test -s "$EVIDENCE/gridfs-fault.json" && test ! -e "$EVIDENCE/gridfs-replayed"
 elif [[ "$SCENARIO" == *-http-publication-* ]]; then
   backend="${provision#ecosystem-}"
   mode="${SCENARIO##*-}"
