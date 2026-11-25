@@ -49,6 +49,11 @@ final readonly class Security
         ensure(!$auth->authorizer()->can($principal, 'receipt.approve', $resource)->allowed, 'Revoked grant accepted.');
         $auth->roles()->revoke($owner->id(), $role->id);
         ensure(!$auth->authorizer()->can($principal, 'receipt.read.' . $id)->allowed, 'Revoked role accepted.');
+        if (getenv('SCENARIO') === 'passkey') {
+            $this->assertPasskey($owner->id());
+
+            return;
+        }
         $otp = $this->app->make(OtpManager::class);
         $enrollment = $otp->beginEnrollment($owner->id(), 'owner-' . $id, false, 8);
         $factor = $enrollment->factor();
@@ -57,7 +62,6 @@ final readonly class Security
         $confirmed = $otp->completeEnrollment($owner->id(), $factor->id, $code);
         ensure($confirmed->successful() && $confirmed->factor?->enabled === true, 'TOTP confirmation failed.');
         ensure(!$otp->verifyFactor($factor, $code)->verified, 'TOTP replay accepted.');
-        $this->assertPasskey($owner->id());
     }
 
     /** @throws \Throwable */

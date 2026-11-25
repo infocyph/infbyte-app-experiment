@@ -17,7 +17,7 @@ php "$probe" setup
 total=0
 for concurrency in 1 4 8; do
   iterations=40
-  if [[ "$SCENARIO" == accounts || "$SCENARIO" == security ]]; then iterations=8; fi
+  if [[ "$SCENARIO" == accounts || "$SCENARIO" == security || "$SCENARIO" == passkey ]]; then iterations=8; fi
   if [[ "$SCENARIO" == queue ]]; then iterations=20; fi
   start="$(date +%s%3N)"
   pids=()

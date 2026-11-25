@@ -11,13 +11,17 @@ $scenario = match (getenv('SCENARIO')) {
     'orders' => new Orders($app),
     'accounts' => new Accounts($app),
     'mail' => new Mail($app),
-    'security' => new Security($app),
+    'security', 'passkey' => new Security($app),
+    'http' => new Orders($app),
     'queue' => new Queues($app),
     default => throw new \InvalidArgumentException('Unknown workload.'),
 };
 $mode = $argv[1] ?? '';
 if ($mode === 'setup') {
     $app->execution()->run($scenario->setup(...));
+    if (getenv('SCENARIO') === 'http') {
+        $app->execution()->run(static fn() => HttpOrders::seed($app));
+    }
 } elseif ($mode === 'verify') {
     $app->execution()->run(static fn() => $scenario->verify((int) ($argv[2] ?? 0)));
 } elseif ($mode === 'drain' && $scenario instanceof Queues) {

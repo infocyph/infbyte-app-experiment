@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   workload:
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / PHP 8.6"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / PHP 8.6"
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
@@ -24,6 +24,11 @@ jobs:
           - {scenario: security, backend: mysql}
           - {scenario: queue, backend: pgsql}
           - {scenario: queue, backend: mysql}
+          - {scenario: passkey, backend: pgsql}
+          - {scenario: passkey, backend: mysql}
+          - {scenario: http, backend: pgsql, host: native}
+          - {scenario: http, backend: mysql, host: native}
+          - {scenario: http, backend: pgsql, host: fpm}
     services:
       postgres:
         image: postgres:17
@@ -51,6 +56,7 @@ jobs:
         ports: ['1025:1025', '8025:8025']
     env:
       SCENARIO: ${{ matrix.scenario }}
+      HOST_MODE: ${{ matrix.host || 'worker' }}
       DB_BACKEND: ${{ matrix.backend }}
       COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
     steps:
@@ -88,6 +94,7 @@ jobs:
             $path="composer.json";
             $config=json_decode(file_get_contents($path),true,flags:JSON_THROW_ON_ERROR);
             $config["autoload"]["psr-4"]["Experiment\\"]="lab/";
+            $config["autoload"]["files"][]="lab/helpers.php";
             file_put_contents($path,json_encode($config,JSON_THROW_ON_ERROR|JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES).PHP_EOL);
           '
           composer dump-autoload --no-dev --optimize --no-interaction
@@ -99,13 +106,25 @@ jobs:
           lscpu > "$EVIDENCE/cpu.txt"
           free -m > "$EVIDENCE/memory.txt"
           for source in "$GITHUB_WORKSPACE"/qa/workloads/*.php; do php -l "$source"; done
+      - name: Provision PHP-FPM and Nginx for the FPM workload
+        if: matrix.host == 'fpm'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends php8.6-fpm nginx
+          php-fpm8.6 -v
+          nginx -v
       - name: Execute independent concurrent business workers and reconcile state
+        if: matrix.scenario != 'http'
         shell: bash
         run: bash qa/workloads/stress.sh
+      - name: Exercise compiled production HTTP application and host replacement
+        if: matrix.scenario == 'http'
+        shell: bash
+        run: bash qa/workloads/http.sh
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: workload-${{ matrix.scenario }}-${{ matrix.backend }}
+          name: workload-${{ matrix.scenario }}-${{ matrix.backend }}-${{ matrix.host || 'worker' }}
           path: ${{ runner.temp }}/workload-evidence/
           if-no-files-found: error
           retention-days: 30

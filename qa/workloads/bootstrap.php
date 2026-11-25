@@ -9,23 +9,15 @@ use Infocyph\Foundation\Foundation;
 
 require getenv('PROJECT') . '/vendor/autoload.php';
 
-/** @throws \RuntimeException */
-function ensure(bool $condition, string $message): void
-{
-    if (!$condition) {
-        throw new \RuntimeException($message);
-    }
-}
-
 /** @throws \Throwable */
-function application(): Application
+function configuration(): array
 {
     $root = getenv('PROJECT');
     ensure(is_string($root) && is_dir($root), 'Missing isolated application.');
     $driver = getenv('DB_BACKEND');
     ensure(in_array($driver, ['mysql', 'pgsql'], true), 'Unexpected database backend.');
 
-    return Foundation::worker([
+    $config = [
         'app' => ['base_path' => $root, 'load_env' => false, 'env' => 'local', 'capabilities' => [
             'auth', 'cache', 'database', 'filesystem', 'validation', 'security', 'notifications',
             'communication', 'messaging', 'otp', 'passkeys', 'session', 'runwire',
@@ -56,7 +48,7 @@ function application(): Application
         'auth' => [
             'drivers' => ['storage' => 'database', 'cache' => 'cache', 'passwords' => 'security', 'tokens' => 'simple', 'notifications' => 'collect',
                 'mfa' => getenv('SCENARIO') === 'security' ? 'otp' : 'simple',
-                'passkey' => getenv('SCENARIO') === 'security' ? 'webauthn' : 'memory'],
+                'passkey' => in_array(getenv('SCENARIO'), ['security', 'passkey'], true) ? 'webauthn' : 'memory'],
             'token_secret_environment' => 'AUTH_TOKEN_SECRET',
             'otp' => ['replay' => ['store' => 'shared'], 'totp' => ['algorithm' => 'sha256', 'digits' => 6, 'period' => 30, 'secret_bytes' => 32, 'window' => 1],
                 'secret_protection' => ['keys' => [['id' => 'experiment', 'environment' => 'AUTH_OTP_PROTECTION_KEY', 'status' => 'active']]]],
@@ -87,15 +79,28 @@ function application(): Application
                 'security' => 'none', 'timeoutSeconds' => 5,
             ]],
         ]],
-    ])->boot();
-}
-
-/** @throws \RuntimeException */
-function countValue(mixed $value): int
-{
-    if (!is_numeric($value)) {
-        throw new \RuntimeException('Expected numeric database aggregate.');
+    ];
+    if (getenv('SCENARIO') === 'http') {
+        $config['app']['env'] = 'production';
+        $config['app']['debug'] = false;
+        $config['app']['capabilities'] = ['auth', 'cache', 'database', 'filesystem', 'validation', 'security', 'otp', 'passkeys', 'notifications', 'communication', 'runwire'];
+        $config['auth']['drivers']['tokens'] = 'security';
+        $config['auth']['drivers']['mfa'] = 'otp';
+        $config['auth']['drivers']['passkey'] = 'webauthn';
+        $config['auth']['drivers']['notifications'] = 'talkingbytes';
+        $config['auth']['http']['resolver_order'] = ['bearer'];
+        $config['security']['jwt'] = ['algorithm' => 'HS256', 'issuer' => 'https://experiment.test', 'audience' => 'experiment-api'];
+        $config['cache']['serialization'] = ['allow_object_payloads' => false, 'allow_closure_payloads' => false];
+        $config['notifications']['auth'] = ['sender' => 'mailpit', 'from' => 'security@example.test'];
+        $config['notifications']['email']['default_from'] = 'security@example.test';
     }
 
-    return (int) $value;
+    return $config;
+}
+
+
+/** @throws \Throwable */
+function application(): Application
+{
+    return Foundation::worker(configuration())->boot();
 }

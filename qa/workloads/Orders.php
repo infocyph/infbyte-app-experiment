@@ -49,8 +49,8 @@ final readonly class Orders
                 $db->statement('INSERT INTO experiment_orders (id, tenant_id, amount) VALUES (?, ?, ?)', [$id . '-rollback', 1, 999]);
                 throw new \DomainException('intentional rollback');
             });
-        } catch (\DomainException $failure) {
-            ensure($failure->getMessage() === 'intentional rollback', 'Unexpected rollback exception.');
+        } catch (\Infocyph\DBLayer\Exceptions\TransactionException $failure) {
+            ensure($failure->getPrevious() instanceof \DomainException && $failure->getPrevious()->getMessage() === 'intentional rollback', 'Unexpected rollback exception.');
         }
         $cache = $this->app->make(CacheManager::class)->store('shared');
         $atomic = $cache->atomic();

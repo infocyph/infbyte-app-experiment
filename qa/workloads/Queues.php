@@ -42,8 +42,8 @@ final readonly class Queues
                 $dispatcher->dispatch(new Receipt($id . '-rollback', 'rollback'));
                 throw new \DomainException('intentional rollback');
             });
-        } catch (\DomainException $exception) {
-            ensure($exception->getMessage() === 'intentional rollback', 'Unexpected dispatch failure.');
+        } catch (\Infocyph\DBLayer\Exceptions\TransactionException $exception) {
+            ensure($exception->getPrevious() instanceof \DomainException && $exception->getPrevious()->getMessage() === 'intentional rollback', 'Unexpected dispatch failure.');
         }
     }
 
