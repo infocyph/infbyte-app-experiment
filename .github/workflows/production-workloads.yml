@@ -1089,6 +1089,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-wire-http3-aggregate-drain, backend: pgsql}
+          - {scenario: ecosystem-wire-http3-aggregate-reset, backend: pgsql}
+          - {scenario: ecosystem-wire-http3-aggregate-isolation, backend: pgsql}
           - {scenario: ecosystem-cache-scylla-tls-trust, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-cache-scylla-tls-identity, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-cache-scylla-tls-payload, backend: pgsql, php: '8.4'}

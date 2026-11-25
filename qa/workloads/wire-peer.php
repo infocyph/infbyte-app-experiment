@@ -142,7 +142,7 @@ if (in_array($mode, ['http2-admission', 'http3-admission'], true)) {
         }
     };
 }
-if (str_starts_with($mode, 'http2-aggregate-')) {
+if (str_starts_with($mode, 'http2-aggregate-') || str_starts_with($mode, 'http3-aggregate-')) {
     $ordinary = $http;
     $http = static function (HttpRequest $request, ResponseWriterInterface $writer) use ($ordinary, $root): void {
         if (preg_match('~^/aggregate/([a-z0-9-]+)$~D', $request->target, $match) !== 1) {
@@ -181,6 +181,7 @@ $server = match ($mode) {
     }, options: new DatagramOptions(maxDatagramBytes: 512)),
     'websocket' => Server::http('127.0.0.1:18785', $http),
     'http3' => (new Server('quic', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')))->withHttp3(),
+    'http3-aggregate-drain', 'http3-aggregate-reset', 'http3-aggregate-isolation' => (new Server('quic-aggregate', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')))->withHttp3(new Http3Options(limits: new Http3Limits(maxPendingResponseBytesPerStream: 32768, responseLowWatermarkBytes: 8192, responseHighWatermarkBytes: 16384, maxPendingResponseBytesPerConnection: 65536, maxQpackEncoderQueueBytes: 16384, maxResponseFramePayloadBytes: 4096))),
     'http3-flow' => (new Server('quic-flow', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')))->withHttp3(new Http3Options(limits: new Http3Limits(maxPendingResponseBytesPerStream: 32768, responseLowWatermarkBytes: 8192, responseHighWatermarkBytes: 16384, maxPendingResponseBytesPerConnection: 65536, maxQpackEncoderQueueBytes: 16384, maxResponseFramePayloadBytes: 4096))),
     'mtls' => new Server('mutual-tls', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem', extraContext: ['cafile' => $root . '/ca.pem'], requireClientCertificate: true)),
     'http2-admission' => new Server('h2-admission', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')),
