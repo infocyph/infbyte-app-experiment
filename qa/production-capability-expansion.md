@@ -441,3 +441,7 @@ I: fused/sharded FPM lanes compile the application, run real Nginx TLS reverse p
 ## B107 — MariaDB MaxScale read/write routing and reader outage
 
 I: extend the existing physical binlog replication fixture with a dedicated two-backend MaxScale deployment, separate read/write split and read-only connection listeners, real monitor state evidence, primary-affine transactions/savepoints/callbacks, reader loss with primary fallback, writes during outage and exact recovered reader data. Uses the documented MaxScale container registry and no automatic transaction replay; primary election remains separate. 363 routine rows; hosted qualification pending (DATA, OPS, EXEC-03).
+
+## B108 — SQL Server physical read-scale availability group and manual promotion
+
+I: two SQL Server Developer instances with HADR enabled, certificate-authenticated mirroring endpoints, automatic seeding and synchronous physical replication. Reconcile 20 committed ledger entries and balances on the readable secondary, fence the old primary, explicitly promote and switch the DBLayer endpoint, then verify a fresh committed operation/callback and independent durable observation. CLUSTER_TYPE=NONE and manual FORCE_FAILOVER_ALLOW_DATA_LOSS are deliberately not Pacemaker/WSFC automatic HA or a general zero-loss guarantee. 364 routine rows; hosted qualification pending (DATA, OPS, EXEC-03).

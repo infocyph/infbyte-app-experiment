@@ -15,6 +15,7 @@ case "$SCENARIO" in
   db-active-backup) bash "$GITHUB_WORKSPACE/qa/workloads/database-active-backup.sh" ;;
   db-query-cache-overlap) bash "$GITHUB_WORKSPACE/qa/workloads/database-cache-overlap.sh" ;;
   db-query-cache-race) bash "$GITHUB_WORKSPACE/qa/workloads/database-cache-race.sh" ;;
+  db-sqlserver-ag) bash "$GITHUB_WORKSPACE/qa/workloads/database-sqlserver-ag.sh" ;;
   db-sqlserver-tls) bash "$GITHUB_WORKSPACE/qa/workloads/database-sqlserver-tls.sh" ;;
   db-tls) bash "$GITHUB_WORKSPACE/qa/workloads/database-tls.sh" ;;
   db-mysql-family-tls) bash "$GITHUB_WORKSPACE/qa/workloads/database-mysql-family-tls.sh" ;;

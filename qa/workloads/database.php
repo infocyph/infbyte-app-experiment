@@ -270,6 +270,7 @@ require __DIR__ . '/database-faults.php';
 require __DIR__ . '/database-uncertain.php';
 require __DIR__ . '/database-tls.php';
 require __DIR__ . '/database-sqlserver-tls.php';
+require __DIR__ . '/database-sqlserver-ag.php';
 require __DIR__ . '/database-cache-race.php';
 require __DIR__ . '/database-active-backup.php';
 
@@ -277,6 +278,9 @@ $db = new Connection(config());
 match ($argv[1] ?? '') {
     'tls' => databaseTlsWorkload(),
     'sqlserver-tls' => sqlServerTlsWorkload(),
+    'sqlserver-ag-seed' => sqlServerAgSeed($db),
+    'sqlserver-ag-read' => sqlServerAgRead(),
+    'sqlserver-ag-promoted' => sqlServerAgPromoted(),
     'cache-race-seed' => setup($db),
     'active-backup-seed' => activeBackupSeed($db),
     'active-backup-gate' => activeBackupGate($db),
