@@ -18,7 +18,7 @@ case "$SCENARIO" in
   ecosystem-mailbox-tls|ecosystem-mailbox-idle) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox-tls.sh" ;;
   ecosystem-cache-tls|ecosystem-valkey-tls|ecosystem-counter-restart|ecosystem-valkey-counter-restart) bash "$GITHUB_WORKSPACE/qa/workloads/cache-tls.sh" ;;
   ecosystem-counter-uncertain|ecosystem-valkey-counter-uncertain) bash "$GITHUB_WORKSPACE/qa/workloads/counter-uncertain.sh" ;;
-  ecosystem-counter-election|ecosystem-valkey-counter-election) bash "$GITHUB_WORKSPACE/qa/workloads/counter-election.sh" ;;
+  ecosystem-counter-election|ecosystem-valkey-counter-election|ecosystem-otp-election-redis|ecosystem-otp-election-valkey) bash "$GITHUB_WORKSPACE/qa/workloads/counter-election.sh" ;;
   ecosystem-cache-outage|ecosystem-cache-valkey-outage|ecosystem-cache-memcached-outage|ecosystem-di-cache-outage|ecosystem-foundation-risk-outage-redis|ecosystem-foundation-risk-outage-valkey|ecosystem-foundation-risk-outage-memcached) bash "$GITHUB_WORKSPACE/qa/workloads/cache-outage.sh" ;;
   ecosystem-otp-durable) bash "$GITHUB_WORKSPACE/qa/workloads/otp-durable.sh" ;;
   ecosystem-supervisor|ecosystem-http-framing|ecosystem-http-backpressure|ecosystem-http-admission|ecosystem-http-connection-quotas) bash "$GITHUB_WORKSPACE/qa/workloads/runtime-boundaries.sh" ;;

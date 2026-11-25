@@ -5,7 +5,7 @@ image=redis:8
 server=redis-server
 cli=redis-cli
 export LAB_COUNTER_BACKEND=redis
-if [[ "$SCENARIO" == ecosystem-valkey-counter-election ]]; then
+if [[ "$SCENARIO" == ecosystem-valkey-counter-election || "$SCENARIO" == ecosystem-otp-election-valkey ]]; then
   image=valkey/valkey:8
   server=valkey-server
   cli=valkey-cli
@@ -41,7 +41,23 @@ for attempt in {1..60}; do
 done
 test "$ready" = 1
 probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
-php "$probe" counter-election-seed | tee "$EVIDENCE/counter-election-seed.log"
+phase=counter-election
+if [[ "$SCENARIO" == ecosystem-otp-election-* ]]; then
+  phase=otp-election
+  umask 077
+  export LAB_OTP_ELECTION_STATE="$root/otp-state.json"
+fi
+php "$probe" "$phase-seed" | tee "$EVIDENCE/$phase-seed.log"
+offset="$(docker exec lab-counter-primary "$cli" -p 17389 info replication | tr -d '\r' | sed -n 's/^master_repl_offset://p')"
+test "$offset" -ge 0
+caught_up=0
+for attempt in {1..100}; do
+  replica_offset="$(docker exec lab-counter-replica "$cli" -p 17390 info replication | tr -d '\r' | sed -n 's/^slave_repl_offset://p')"
+  if [[ "$replica_offset" =~ ^[0-9]+$ ]] && (( replica_offset >= offset )); then caught_up=1; break; fi
+  sleep 0.1
+done
+test "$caught_up" = 1
+printf 'Primary offset: %s\nReplica offset: %s\n' "$offset" "$replica_offset" > "$EVIDENCE/replication-barrier.txt"
 docker stop -t 1 lab-counter-primary >/dev/null
 ready=0
 for attempt in {1..60}; do
@@ -53,4 +69,4 @@ for attempt in {1..60}; do
 done
 test "$ready" = 1
 docker exec lab-counter-sentinel "$cli" -p 17391 sentinel master lab-counter > "$EVIDENCE/elected-primary.txt"
-php "$probe" counter-election-verify | tee "$EVIDENCE/counter-election-verify.log"
+php "$probe" "$phase-verify" | tee "$EVIDENCE/$phase-verify.log"

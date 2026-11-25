@@ -693,3 +693,7 @@ I: 21 new jobs: three configuration-derived scope consent lanes, two MariaDB con
 ## B160 — Foundation risk state failure boundaries and additional matrix capacity
 
 I: 21 independent lanes: nine-store fail-open/local qualification with positive evidence and strict peer reconciliation; nine-store malformed state injection, partial failure, saturated counters and confirmed familiarity recovery; actual Redis/Valkey/Memcached container stop/restart with durable/volatile distinction. Fault injection targets the actual domain-separated telemetry records, not a fake cache. Added ecosystem-residual matrix and extended inventory audit to enforce normalized unique rows and all five shard limits. CORE-01, DATA, SEC, OBS, EXEC-03: source/matrix review done; hosted qualification pending. 801 routine rows; no upstream changes.
+
+## B161 — OTP moving-factor rotation and real replica promotion
+
+I: 26 new lanes: HOTP, counter OCRA and challenge OCRA application-selected generation overlap/cutover across eight shared-state configurations, and real Redis/Valkey Sentinel promotion with confirmed replication-offset barrier, fenced old endpoint and independent replacement. Reconcile consumed/exhausted/pending challenge state and HOTP/TOTP/MobileOTP/both OCRA replay state; 12-process post-promotion challenge race. Existing counter election now also uses explicit host replication barrier. Application generation policy is a fixture, not a new OTP API. CORE-01, DATA, SEC, EXEC-03: source/matrix wiring reviewed; hosted outcome deferred. 827 routine rows; no upstream changes.

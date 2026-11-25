@@ -183,3 +183,108 @@ function validationConditionalContracts(): void
     }
     echo "Direct/compiled conditional requirements, exclusion and reused validator isolation passed\n";
 }
+
+function otpMovingRotationContracts(string $backend, string $kind): void
+{
+    $root = evidenceDirectory() . '/otp-moving-rotation';
+    verify(mkdir($root, 0700), 'OTP fixture directory unavailable.');
+    $options = new CacheOptions(integrityKey: random_bytes(32), failOpen: false);
+    $factory = static fn() => sharedAtomicCache($backend, 'otp-moving-rotation', $root, $options);
+    $oldSecret = TOTP::generateSecret(32);
+    $newSecret = TOTP::generateSecret(32);
+    $now = 1_800_000_000;
+    $counterMode = $kind !== 'ocra-challenge';
+    if ($kind === 'hotp') {
+        $old = new \Infocyph\OTP\HOTP($oldSecret, 8, 'sha256');
+        $new = new \Infocyph\OTP\HOTP($newSecret, 8, 'sha256');
+        $plan = $old->planRotation($newSecret, 'account', 'Infbyte', initialCounter: 100, gracePeriodInSeconds: 60, now: $now);
+    } else {
+        $suite = $counterMode ? 'OCRA-1:HOTP-SHA256-8:C-QN08' : 'OCRA-1:HOTP-SHA256-8:QN08';
+        $old = \Infocyph\OTP\OCRA::fromBase32($suite, $oldSecret);
+        $new = \Infocyph\OTP\OCRA::fromBase32($suite, $newSecret);
+        $plan = $old->planRotation($newSecret, 'account', 'Infbyte', gracePeriodInSeconds: 60, now: $now);
+    }
+    $proof = static function (string $generation, int $counter) use ($kind, $counterMode, $old, $new): string {
+        $factor = $generation === 'old' ? $old : $new;
+        return $kind === 'hotp' ? $factor->generate($counter) : $factor->generate(sprintf('%08d', $counter), counter: $counterMode ? $counter : null);
+    };
+    $verify = static function (string $generation, string $code, int $counter, int $at) use ($factory, $kind, $counterMode, $old, $new, $plan): bool {
+        if ($generation === 'old' && !$plan->isDualSecretActive(new DateTimeImmutable('@' . $at))) {
+            return false;
+        }
+        $factor = $generation === 'old' ? $old : $new;
+        $id = 'account-' . $generation;
+        return $kind === 'hotp'
+            ? $factor->verifyWithResult($code, counter: $counter, cache: $factory(), factorId: $id)->matched
+            : $factor->verifyWithResult($code, sprintf('%08d', $counter), counter: $counterMode ? $counter : null, cache: $factory(), factorId: $id, replayTtl: $counterMode ? null : 600)->matched;
+    };
+    $firstOld = $proof('old', 42);
+    $firstNew = $proof('new', 100);
+    verify($verify('old', $firstOld, 42, $now) && $verify('new', $firstNew, 100, $now), 'Independent generation overlap failed.');
+    verify(!$verify('old', $firstOld, 42, $now) && !$verify('new', $firstNew, 100, $now), 'Overlap replay accepted.');
+    verify($verify('old', $proof('old', 43), 43, $now + 59), 'Old generation rejected before boundary.');
+    verify(!$verify('old', $proof('old', 44), 44, $now + 60), 'Old generation accepted at cutover.');
+    $next = $proof('new', 101);
+    $results = parallelRace(static fn(): int => (int) $verify('new', $next, 101, $now + 60), 'moving-cutover', 12);
+    verify(array_sum($results) === 1 && !$verify('new', $next, 101, $now + 60), 'Cutover replay race differed.');
+    if ($counterMode) {
+        verify(!$verify('new', $proof('new', 99), 99, $now + 61), 'Counter regressed after generation cutover.');
+    } else {
+        verify($verify('new', $proof('new', 99), 99, $now + 61), 'Independent challenge was denied.');
+    }
+    echo "OTP $kind/$backend generation overlap, cutover, replay and moving-factor semantics passed\n";
+}
+
+function otpElectionContracts(bool $seed): void
+{
+    $backend = (string) getenv('LAB_COUNTER_BACKEND');
+    $port = $seed ? 17389 : 17390;
+    $options = new CacheOptions(integrityKey: str_repeat('i', 32), failOpen: false);
+    $factory = static fn() => $backend === 'redis'
+        ? \Infocyph\CacheLayer\Cache\Cache::redis('otp-election', "redis://127.0.0.1:$port", options: $options)
+        : \Infocyph\CacheLayer\Cache\Cache::valkey('otp-election', "valkey://127.0.0.1:$port", options: $options);
+    $path = (string) getenv('LAB_OTP_ELECTION_STATE');
+    if ($seed) {
+        $state = ['secret' => TOTP::generateSecret(32), 'challengeKey' => bin2hex(random_bytes(32)), 'ocra' => bin2hex(random_bytes(32))];
+    } else {
+        $state = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
+    }
+    $cache = $factory();
+    $generic = new GenericOtp($cache, hex2bin($state['challengeKey']), ttlSeconds: 600, maxAttempts: 3);
+    $hotp = new \Infocyph\OTP\HOTP($state['secret']);
+    $totp = new TOTP($state['secret']);
+    $mobile = new \Infocyph\OTP\MobileOTP(substr($state['ocra'], 0, 16), '1234');
+    $ocra = new \Infocyph\OTP\OCRA('OCRA-1:HOTP-SHA256-8:C-QN08', hex2bin($state['ocra']));
+    $challengeFactor = new \Infocyph\OTP\OCRA('OCRA-1:HOTP-SHA256-8:QN08', hex2bin($state['ocra']));
+    $at = 1_800_000_000;
+    $window = new VerificationWindow(0, 0);
+    $check = static function (int $counter, int $time, string $challenge, bool $expected) use ($cache, $hotp, $totp, $mobile, $ocra, $challengeFactor, $window): void {
+        verify($hotp->verifyWithResult($hotp->generate($counter), counter: $counter, cache: $cache, factorId: 'hotp')->matched === $expected, 'HOTP election mismatch.');
+        verify($totp->verifyWithWindow($totp->generate($time), $time, $window, $cache, 'totp')->matched === $expected, 'TOTP election mismatch.');
+        verify($mobile->verifyWithWindow($mobile->generate($time), $time, $window, cache: $cache, factorId: 'mobile')->matched === $expected, 'MobileOTP election mismatch.');
+        verify($ocra->verifyWithResult($ocra->generate($challenge, counter: $counter), $challenge, counter: $counter, cache: $cache, factorId: 'ocra-counter')->matched === $expected, 'Counter OCRA election mismatch.');
+        verify($challengeFactor->verifyWithResult($challengeFactor->generate($challenge), $challenge, cache: $cache, factorId: 'ocra-challenge', replayTtl: 600)->matched === $expected, 'Challenge OCRA election mismatch.');
+    };
+    if ($seed) {
+        $check(42, $at, '12345678', true);
+        $state['consumed'] = $generic->generate('consumed');
+        verify($generic->verify('consumed', $state['consumed']), 'Challenge seed consumption failed.');
+        $state['pending'] = $generic->generate('pending');
+        $state['exhausted'] = $generic->generate('exhausted');
+        $wrong = ($state['exhausted'][0] === '0' ? '1' : '0') . substr($state['exhausted'], 1);
+        for ($i = 0; $i < 3; ++$i) {
+            verify(!$generic->verify('exhausted', $wrong), 'Wrong challenge passed.');
+        }
+        verify(file_put_contents($path, json_encode($state, JSON_THROW_ON_ERROR), LOCK_EX) !== false, 'Private election state write failed.');
+        // WAIT on a separate connection does not prove the original client's writes;
+        // a replication-offset barrier is enforced by the host before fencing.
+    } else {
+        $check(42, $at, '12345678', false);
+        verify(!$generic->verify('consumed', $state['consumed']) && !$generic->verify('exhausted', $state['exhausted']), 'Promotion resurrected consumed/exhausted proof.');
+        $results = parallelRace(static fn(): int => (int) (new GenericOtp($factory(), hex2bin($state['challengeKey']), ttlSeconds: 600, maxAttempts: 3))->verify('pending', $state['pending']), 'otp-promoted', 12);
+        verify(array_sum($results) === 1, 'Pending challenge did not settle exactly once after promotion.');
+        $check(43, $at + 30, '87654321', true);
+        $check(43, $at + 30, '87654321', false);
+    }
+    echo "$backend OTP election phase " . ($seed ? 'seed' : 'verify') . " passed\n";
+}

@@ -738,6 +738,32 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-otp-rotation-hotp-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-hotp-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-hotp-file, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-hotp-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-hotp-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-hotp-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-hotp-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-rotation-hotp-pdo, backend: mariadb}
+          - {scenario: ecosystem-otp-rotation-ocra-counter-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-counter-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-counter-file, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-counter-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-counter-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-counter-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-counter-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-rotation-ocra-counter-pdo, backend: mariadb}
+          - {scenario: ecosystem-otp-rotation-ocra-challenge-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-challenge-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-challenge-file, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-challenge-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-challenge-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-challenge-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-ocra-challenge-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-rotation-ocra-challenge-pdo, backend: mariadb}
+          - {scenario: ecosystem-otp-election-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-election-valkey, backend: pgsql}
           - {scenario: ecosystem-foundation-risk-qualification-redis, backend: pgsql}
           - {scenario: ecosystem-foundation-risk-qualification-valkey, backend: pgsql}
           - {scenario: ecosystem-foundation-risk-qualification-memcached, backend: pgsql}
