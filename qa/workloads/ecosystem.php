@@ -39,9 +39,14 @@ require __DIR__ . '/ecosystem-data.php';
 require __DIR__ . '/ecosystem-security.php';
 require __DIR__ . '/ecosystem-runtime.php';
 require __DIR__ . '/ecosystem-messaging.php';
+require __DIR__ . '/ecosystem-remote.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'redis-cluster' => redisClusterWorkload(),
+    'mongodb' => mongoWorkload(),
+    's3' => objectStorageWorkload(),
+    'sftp' => sftpWorkload(),
     'cache-tier' => cacheTierWorkload(),
     'cache-local' => cacheLocalWorkload(),
     'cache-integrity' => cacheIntegrityWorkload(),

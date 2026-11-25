@@ -15,6 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-redis-cluster, backend: pgsql}
+          - {scenario: ecosystem-mongodb, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-s3, backend: pgsql}
+          - {scenario: ecosystem-sftp, backend: pgsql}
           - {scenario: ecosystem-connected, backend: mysql, matcher: fused}
           - {scenario: ecosystem-connected, backend: mysql, matcher: sharded}
           - {scenario: ecosystem-connected, backend: pgsql, matcher: fused}
@@ -210,6 +214,14 @@ jobs:
           extensions: pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, curl, mbstring, intl, sodium, zip, fileinfo, apcu, shmop, sysvsem${{ matrix.scenario == 'cache-memcached' && ', memcached' || '' }}${{ matrix.backend == 'mssql' && ', pdo_sqlsrv' || '' }}
           tools: composer:v2
           ini-values: apc.enable_cli=1
+          coverage: none
+      - name: Install MongoDB extension for the optional driver
+        if: matrix.scenario == 'ecosystem-mongodb'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mongodb, pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, curl, mbstring, intl, sodium, zip, fileinfo
+          tools: composer:v2
           coverage: none
       - name: Set up isolated runner paths
         shell: bash

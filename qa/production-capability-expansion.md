@@ -95,3 +95,7 @@ I: four independent native compiled HTTP jobs (MySQL/PostgreSQL × fused/sharded
 ## B21 — advanced DB transaction contracts
 
 I: nine additional jobs: two real PostgreSQL SERIALIZABLE snapshot workers with actual retry and durable callbacks; PostgreSQL/MySQL raw NOWAIT, SKIP LOCKED and native advisory lock ownership; native PDO transaction ownership (query cache bypass, callback and cache-aware write rejection, rollback); post-commit failure propagation, later callback execution and durable commit preservation across MySQL/PostgreSQL/SQLite. Native lock SQL is deliberately passed through DBLayer, not a claim of a public portable lock-builder API. Other DB rows remain open; hosted results pending.
+
+## B22 — real optional service backends
+
+I: four isolated hosted jobs for a three-primary Redis Cluster (all slots, no HA replica election), MongoDB primary (PHP 8.4 extension and published client), S3-compatible MinIO and SFTP v3 (loopback disposable credentials, published optional adapters). Cache scenarios exercise 12-process atomic claims, 1,200 keys, bulk/tag/namespace/CAS/consume; storage scenarios exercise real stream/range/prefix/move/delete reconciliation. Remote service logs excluded from artifacts because they can contain disposable credentials. SFTP test is a local protocol fixture, not authenticated-host-key production certification. Scylla/Cassandra native client compatibility, other cloud/FTP adapters, cluster failover and remote outages remain open. Hosted results pending.

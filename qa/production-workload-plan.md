@@ -135,3 +135,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B21 — advanced DB transaction contracts
 - [x] Nine hosted jobs for serialization retry, native lock modes, external ownership and post-commit failure.
 - [ ] Hosted qualification and remaining DB/other library capabilities. No upstream fixes.
+
+## B22 — real optional cache and storage backends
+- [x] Redis Cluster, MongoDB, S3-compatible and SFTP v3 lanes using isolated service containers.
+- [ ] Hosted qualification, remaining remote adapters and failure/HA matrices.

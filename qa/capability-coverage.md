@@ -83,3 +83,5 @@ B19 adds native runtime/routing/storage/communication/queue lanes and a separate
 B20 adds four connected checkout jobs; existing authenticated HTTP and separate failure reproductions remain required. See detailed expansion register for boundaries and unresolved coverage.
 
 B21 adds advanced DB transaction/lock contracts and native PDO ownership. No closure of all driver or deployment capabilities is asserted.
+
+B22 adds real Redis Cluster, MongoDB, S3-compatible and SFTP v3 scenarios; see detailed register for topology and protocol limitations.
