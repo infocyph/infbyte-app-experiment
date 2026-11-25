@@ -2,6 +2,10 @@
 set -Eeuo pipefail
 unset COMPOSER_NO_DEV
 case "$SCENARIO" in
+  browser-policy-cors|browser-policy-representation)
+    export LAB_BROWSER_POLICY="${SCENARIO#browser-policy-}"
+    export SCENARIO=browser
+    ;;
   browser-file|browser-database)
     export LAB_SESSION_DRIVER="${SCENARIO#browser-}"
     export SCENARIO=browser
@@ -167,6 +171,22 @@ if [[ "$SCENARIO" == transfer ]]; then
   stop_host
   start_host
   php "$GITHUB_WORKSPACE/qa/workloads/transfer-client.php" | tee "$EVIDENCE/transfer-replacement.log"
+  exit 0
+fi
+if [[ "$SCENARIO" == browser && -n "${LAB_BROWSER_POLICY:-}" ]]; then
+  client="$GITHUB_WORKSPACE/qa/workloads/browser-policy-client.php"
+  php "$client" | tee "$EVIDENCE/browser-policy.log"
+  pids=()
+  for worker in {1..4}; do
+    php "$client" > "$EVIDENCE/browser-policy-$worker.json" 2> "$EVIDENCE/browser-policy-$worker.log" &
+    pids+=("$!")
+  done
+  failed=0
+  for pid in "${pids[@]}"; do if ! wait "$pid"; then failed=1; fi; done
+  if (( failed )); then cat "$EVIDENCE"/browser-policy-*.log >&2; exit 1; fi
+  stop_host
+  start_host
+  php "$client" | tee "$EVIDENCE/browser-policy-replacement.log"
   exit 0
 fi
 if [[ "$SCENARIO" == browser ]]; then

@@ -82,6 +82,16 @@ final class Browser
         return Response::rangedFile($request, $asset->path, $asset->mimeType, ['Cache-Control' => 'public, max-age=60']);
     }
 
+    public static function policyReport(): Response
+    {
+        return self::compress()->withHeader('ETag', '"lab-report-v1"');
+    }
+
+    public static function policyPreflight(): Response
+    {
+        throw new \LogicException('Preflight reached application handler.');
+    }
+
     public static function stream(): Response
     {
         return Response::stream(static function (): \Generator {

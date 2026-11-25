@@ -1366,6 +1366,30 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: browser-policy-cors, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser-policy-cors, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser-policy-cors, backend: pgsql, host: fpm, matcher: fused, php: '8.4'}
+          - {scenario: browser-policy-cors, backend: pgsql, host: fpm, matcher: sharded, php: '8.4'}
+          - {scenario: browser-policy-cors, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser-policy-cors, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-policy-cors, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser-policy-cors, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-policy-cors, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
+          - {scenario: browser-policy-cors, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
+          - {scenario: browser-policy-cors, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
+          - {scenario: browser-policy-cors, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
+          - {scenario: browser-policy-representation, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser-policy-representation, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser-policy-representation, backend: pgsql, host: fpm, matcher: fused, php: '8.4'}
+          - {scenario: browser-policy-representation, backend: pgsql, host: fpm, matcher: sharded, php: '8.4'}
+          - {scenario: browser-policy-representation, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser-policy-representation, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-policy-representation, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser-policy-representation, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-policy-representation, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
+          - {scenario: browser-policy-representation, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
+          - {scenario: browser-policy-representation, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
+          - {scenario: browser-policy-representation, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
           - {scenario: browser-file, backend: pgsql, host: native, matcher: fused}
           - {scenario: browser-file, backend: pgsql, host: native, matcher: sharded}
           - {scenario: browser-file, backend: pgsql, host: fpm, matcher: fused, php: '8.4'}
