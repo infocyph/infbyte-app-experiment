@@ -1089,6 +1089,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-di-attribute-property-defaults-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-property-defaults-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-property-type-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-property-type-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-missing-input-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-missing-input-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-fallback-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-fallback-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-override-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-override-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-throw-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-throw-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-constructor-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-constructor-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-registration-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-registration-compiled, backend: pgsql}
           - {scenario: ecosystem-wire-http3-aggregate-drain, backend: pgsql}
           - {scenario: ecosystem-wire-http3-aggregate-reset, backend: pgsql}
           - {scenario: ecosystem-wire-http3-aggregate-isolation, backend: pgsql}

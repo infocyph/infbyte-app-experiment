@@ -82,6 +82,7 @@ require __DIR__ . '/ecosystem-array-boundaries.php';
 require __DIR__ . '/ecosystem-granular-contracts.php';
 require __DIR__ . '/ecosystem-di-factories.php';
 require __DIR__ . '/ecosystem-di-runtime-contracts.php';
+require __DIR__ . '/ecosystem-di-attribute-boundaries.php';
 require __DIR__ . '/ecosystem-grpc-inbound.php';
 require __DIR__ . '/ecosystem-validation-casts.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
@@ -172,6 +173,22 @@ match ($argv[1] ?? '') {
     'di-graph-failures' => diGraphFailuresWorkload(),
     'di-cache' => diCacheWorkload(),
     'di-cache-outage' => diCacheOutageWorkload(),
+    'di-attribute-property-defaults-dynamic' => diAttributeBoundaryContracts('dynamic', 'property-defaults'),
+    'di-attribute-property-defaults-compiled' => diAttributeBoundaryContracts('compiled', 'property-defaults'),
+    'di-attribute-property-type-dynamic' => diAttributeBoundaryContracts('dynamic', 'property-type'),
+    'di-attribute-property-type-compiled' => diAttributeBoundaryContracts('compiled', 'property-type'),
+    'di-attribute-missing-input-dynamic' => diAttributeBoundaryContracts('dynamic', 'missing-input'),
+    'di-attribute-missing-input-compiled' => diAttributeBoundaryContracts('compiled', 'missing-input'),
+    'di-attribute-method-fallback-dynamic' => diAttributeBoundaryContracts('dynamic', 'method-fallback'),
+    'di-attribute-method-fallback-compiled' => diAttributeBoundaryContracts('compiled', 'method-fallback'),
+    'di-attribute-method-override-dynamic' => diAttributeBoundaryContracts('dynamic', 'method-override'),
+    'di-attribute-method-override-compiled' => diAttributeBoundaryContracts('compiled', 'method-override'),
+    'di-attribute-method-throw-dynamic' => diAttributeBoundaryContracts('dynamic', 'method-throw'),
+    'di-attribute-method-throw-compiled' => diAttributeBoundaryContracts('compiled', 'method-throw'),
+    'di-attribute-constructor-dynamic' => diAttributeBoundaryContracts('dynamic', 'constructor'),
+    'di-attribute-constructor-compiled' => diAttributeBoundaryContracts('compiled', 'constructor'),
+    'di-attribute-registration-dynamic' => diAttributeBoundaryContracts('dynamic', 'registration'),
+    'di-attribute-registration-compiled' => diAttributeBoundaryContracts('compiled', 'registration'),
     'di-attributes' => diAttributesWorkload(),
     'di-ownership-input-identity-dynamic' => diOwnershipContracts('dynamic', 'input-identity'),
     'di-ownership-input-identity-compiled' => diOwnershipContracts('compiled', 'input-identity'),
