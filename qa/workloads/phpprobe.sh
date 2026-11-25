@@ -412,6 +412,80 @@ graph-root-boundary)
     expect_exit 0 graph-replaced.txt graph --root="$root/src" --exclude=src/nested --output="$evidence/graph-replaced.json" src
     php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);if($a["files_scanned"]!==1)exit(1);' "$evidence/graph-replaced.json"
     ;;
+check-report-*)
+    format="${PROBE_MODE##*-}"
+    fixture="${PROBE_MODE#check-report-}"
+    fixture="${fixture%-*}"
+    expected=1
+    rule=""
+    case "$fixture" in
+      clean)
+        expected=0
+        printf '%s\n' '<?php declare(strict_types=1); final class CleanFixture {}' > src/Clean.php
+        ;;
+      syntax)
+        rule=php_syntax_error
+        printf '%s\n' '<?php final class Broken {' > src/Broken.php
+        ;;
+      reference)
+        rule=reference_unknown_fqcn
+        printf '%s\n' '<?php final class ReferenceFixture { public \MissingFixtureContract $value; }' > src/ReferenceFixture.php
+        ;;
+      duplicates)
+        rule=duplicate_code_clone
+        cat > src/Alpha.php <<'PHP'
+<?php
+declare(strict_types=1);
+final class Alpha
+{
+    public function render(array $items): array
+    {
+        $result = [];
+        foreach ($items as $item) {
+            $result[] = strtoupper((string) $item);
+        }
+        return $result;
+    }
+}
+PHP
+        sed -e 's/Alpha/Beta/g' -e 's/render/build/g' -e 's/items/values/g' -e 's/result/output/g' -e 's/item/value/g' src/Alpha.php > src/Beta.php
+        ;;
+      comments)
+        rule=comment_marker
+        printf '%s\n' '<?php declare(strict_types=1);' '// SECURITY(auth): synthetic detector fixture' 'final class CommentFixture {}' > src/CommentFixture.php
+        ;;
+      *) exit 2 ;;
+    esac
+    expect_exit "$expected" combined.out check --format="$format" --fail-on=info --mode=gate --fuzzy --min-lines=5 --min-tokens=20 --no-cache --summary-json="$evidence/summary.json" --report-dir="$evidence/report" src
+    cmp "$evidence/summary.json" "$evidence/report/summary.json"
+    php -r '$s=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$expected=(int)$argv[2];$kind=$argv[3];$checks=["syntax"=>0,"reference"=>0,"duplicates"=>0,"comments"=>0];if($kind==="syntax"){$checks=["syntax"=>1];$skipped=["reference","duplicates","comments"];}else{$skipped=[];if($kind!=="clean")$checks[$kind]=1;}if($s["exit_code"]!==$expected||$s["checks"]!==$checks||$s["skipped"]!==$skipped)exit(1);' "$evidence/summary.json" "$expected" "$fixture"
+    php -r '$s=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$r=$s["runs"][0]["results"];if($s["version"]!=="2.1.0")exit(1);if($argv[2]===""){if($r!==[])exit(1);}else{if($r===[]||!in_array($argv[2],array_column($r,"ruleId"),true))exit(1);foreach($r as $f){$p=$f["locations"][0]["physicalLocation"];if(!str_starts_with($p["artifactLocation"]["uri"],"src/")||$p["region"]["startLine"]<1||$f["message"]["text"]==="")exit(1);}}' "$evidence/report/report.sarif" "$rule"
+    case "$format" in
+      text)
+        grep -Fx "Overall exit: $expected" "$evidence/combined.out"
+        if [[ "$fixture" == syntax ]]; then grep -F 'reference: skipped' "$evidence/combined.out"; fi
+        ;;
+      markdown)
+        cmp "$evidence/combined.out" "$evidence/report/summary.md"
+        grep -Fx "Overall exit code: \`$expected\`" "$evidence/combined.out"
+        ;;
+      sarif)
+        cmp "$evidence/combined.out" "$evidence/report/report.sarif"
+        ;;
+      github)
+        if [[ "$fixture" == clean ]]; then
+          test "$(grep -c '^::notice' "$evidence/combined.out")" = 4
+          test "$(grep -c '^::error' "$evidence/combined.out" || :)" = 0
+        else
+          test "$(grep -c '^::error' "$evidence/combined.out")" = 1
+          if [[ "$fixture" == syntax ]]; then test "$(wc -l < "$evidence/combined.out")" = 1; else test "$(grep -c '^::notice' "$evidence/combined.out")" = 3; fi
+        fi
+        ;;
+    esac
+    for checker in syntax reference duplicates comments; do
+      if [[ "$fixture" == syntax && "$checker" != syntax ]]; then test ! -e "$evidence/report/$checker.json"; else test -s "$evidence/report/$checker.json"; fi
+    done
+    ;;
 *)
     printf 'Unknown PHPProbe acceptance mode: %s\n' "$PROBE_MODE" >&2
     exit 2

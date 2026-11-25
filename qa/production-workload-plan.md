@@ -950,3 +950,7 @@ I: 24 independent lanes (two real six-node cluster topologies × complete loss o
 ## B221 — ReqShield granular parameter boundaries
 
 I: 24 independently executable rule-option lanes in both mutable and compiled validators, with positive/negative/reuse assertions: IP version aliases and global/private/reserved ranges, UUID explicit/reversed-range/exclusion versions, decimal exact range boundaries, fractional and negative multiples, leading-zero digit bounds, hex short/unprefixed forms and regex alternation. No network requests or external DNS dependence in these lanes. CORE-01, TYPE, SEC, EXEC-03: source and dispatch inspected; hosted execution pending. 1,953 routine entries, 1,166 distinct scenario names, 21 engineering modes.
+
+## B222 — PHPProbe combined detector report parity
+
+I: 20 independent engineering lanes (clean input, syntax gate, unresolved reference, duplicate clone and comment marker × text/Markdown/SARIF/GitHub output). Each lane uses a real published consumer CLI, checks actual exit code, exact checker/skip summary, artifact identity, SARIF finding IDs and file/line provenance, output-specific report contract and expected artifact presence. Deliberate detector fixtures do not change the playground's own quality policy. FLOW-01/02, OBS, EXEC-03: CLI contract and mode dispatch inspected; hosted execution pending. 1,953 routine rows, 1,166 distinct scenarios, 41 separate engineering modes.
