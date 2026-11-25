@@ -168,3 +168,96 @@ function foundationStorageProviderContracts(string $contract): void
     }
     echo "Foundation configured storage $contract passed\n";
 }
+
+function foundationNamedCacheOutage(string $backend, string $contract): void
+{
+    verify(in_array($contract, ['read', 'write', 'response'], true), 'Unknown provider outage contract.');
+    $root = (string) getenv('LAB_CACHE_FAULT_ROOT');
+    $store = ['driver' => $backend, 'security' => ['integrity_key' => str_repeat('o', 32)]] + match ($backend) {
+        'redis' => ['dsn' => 'redis://127.0.0.1:17389'],
+        'valkey' => ['dsn' => 'valkey://127.0.0.1:17389'],
+        'memcached' => ['servers' => [['127.0.0.1', 17389, 0]]],
+        default => throw new InvalidArgumentException('Unknown provider outage backend.'),
+    };
+    $overrides = ['cache' => ['default' => 'lab-closed', 'stores' => [
+        'lab-closed' => $store + ['namespace' => 'lab-outage-main', 'fail_open' => false],
+        'lab-open' => $store + ['namespace' => 'lab-outage-main', 'fail_open' => true],
+        'lab-foreign' => $store + ['namespace' => 'lab-outage-foreign', 'fail_open' => false],
+    ]]];
+    $app = foundationProviderApp($overrides, ['cache', 'database']);
+    $app->execution()->run(static function () use ($app, $root, $contract): void {
+        $manager = $app->make(CacheManager::class);
+        $closed = $manager->store();
+        $open = $manager->store('lab-open');
+        $foreign = $manager->store('lab-foreign');
+        $db = $app->make(\Infocyph\Foundation\Database\DBLayerFactory::class)->connection();
+        $db->statement('CREATE TABLE lab_provider_projection (id INTEGER PRIMARY KEY, revision INTEGER NOT NULL)');
+        verify($db->table('lab_provider_projection')->insert(['id' => 1, 'revision' => 1]), 'SQL projection seed failed.');
+        verify($closed === $app->make(\Psr\SimpleCache\CacheInterface::class)
+            && $closed->set('revision', 1, 600) && $open->get('revision') === 1
+            && $foreign->set('revision', 99, 600), 'Configured cache seed or alias failed.');
+        $middleware = new \Infocyph\Webrick\Middleware\ResponseCacheMiddleware(store: $closed, ttlSeconds: 600);
+        $request = \Infocyph\Webrick\Request\Request::fake(uri: 'https://lab.example/projection');
+        $calls = 0;
+        $origin = static function () use ($db, &$calls): \Infocyph\Webrick\Response\Response {
+            ++$calls;
+            return new \Infocyph\Webrick\Response\Response(200, (string) $db->table('lab_provider_projection')->find(1)['revision'],
+                ['Cache-Control' => 'public, max-age=600']);
+        };
+        if ($contract === 'response') {
+            verify($middleware($request, $origin)->getStringBody() === '1' && $middleware($request, $origin)->getStringBody() === '1'
+                && $calls === 1, 'Warm response did not reuse persisted projection.');
+        }
+        verify(touch($root . '/seeded'), 'Provider outage barrier failed.');
+        cacheWaitMarker($root . '/stopped');
+        $db->transaction(static function ($active): void {
+            verify($active->table('lab_provider_projection')->where('id', '=', 1)->update(['revision' => 2]) === 1,
+                'Durable source update failed during cache outage.');
+        });
+        $failure = \Infocyph\CacheLayer\Exceptions\CacheBackendException::class;
+        if ($contract === 'read') {
+            expectFailure(static fn() => $closed->get('revision'), $failure, 'Strict provider concealed outage.');
+            $cached = $open->get('revision', null);
+            verify($cached === null && (int) $db->table('lab_provider_projection')->find(1)['revision'] === 2,
+                'Application-owned SQL fallback did not observe durable source.');
+        } elseif ($contract === 'write') {
+            expectFailure(static fn() => $closed->set('offline-only', 2, 600), $failure, 'Strict provider reported false publication.');
+            verify(!$open->set('offline-only', 2, 600), 'Open provider reported false publication.');
+        } else {
+            verify($middleware($request, $origin)->getStringBody() === '2' && $middleware($request, $origin)->getStringBody() === '2'
+                && $calls === 3, 'Optional response cache concealed SQL update during outage.');
+        }
+        verify(touch($root . '/observed'), 'Provider outage observation barrier failed.');
+        cacheWaitMarker($root . '/restarted');
+    });
+    $replacement = foundationProviderApp($overrides, ['cache', 'database']);
+    $replacement->execution()->run(static function () use ($replacement, $backend, $contract): void {
+        $manager = $replacement->make(CacheManager::class);
+        $closed = $manager->store();
+        $foreign = $manager->store('lab-foreign');
+        $db = $replacement->make(\Infocyph\Foundation\Database\DBLayerFactory::class)->connection(fresh: true);
+        $expected = $backend === 'memcached' ? null : 1;
+        verify($closed->get('revision') === $expected && !$closed->has('offline-only')
+            && $foreign->get('revision') === ($backend === 'memcached' ? null : 99), 'Restart state did not match backend durability.');
+        verify((int) $db->table('lab_provider_projection')->find(1)['revision'] === 2, 'Durable SQL revision lost.');
+        // Reconcile explicitly: a durable cache can contain a valid but stale pre-outage representation.
+        // Do not claim automatic invalidation between independent cache and SQL transactions.
+        verify($closed->clear() && $closed->set('revision', 2, 600), 'Explicit recovery invalidation failed.');
+        $peer = $replacement->make(CacheLayerFactory::class)->make('lab-open');
+        verify($peer->get('revision') === 2 && $foreign->get('revision') === ($backend === 'memcached' ? null : 99),
+            'Reconciliation crossed named namespace.');
+        if ($contract === 'response') {
+            $middleware = new \Infocyph\Webrick\Middleware\ResponseCacheMiddleware(store: $closed, ttlSeconds: 600);
+            $request = \Infocyph\Webrick\Request\Request::fake(uri: 'https://lab.example/projection');
+            $calls = 0;
+            $origin = static function () use ($db, &$calls): \Infocyph\Webrick\Response\Response {
+                ++$calls;
+                return new \Infocyph\Webrick\Response\Response(200, (string) $db->table('lab_provider_projection')->find(1)['revision'],
+                    ['Cache-Control' => 'public, max-age=600']);
+            };
+            verify($middleware($request, $origin)->getStringBody() === '2' && $middleware($request, $origin)->getStringBody() === '2'
+                && $calls === 1, 'Response cache did not recover after explicit invalidation.');
+        }
+    });
+    echo "Configured Foundation $backend $contract outage, durable SQL source and named cache reconciliation passed\n";
+}

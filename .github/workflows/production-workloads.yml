@@ -1796,6 +1796,33 @@ jobs:
           - {scenario: ecosystem-http-redirect-cross-308-patch, backend: pgsql}
           - {scenario: ecosystem-http-redirect-cross-308-delete, backend: pgsql}
           - {scenario: ecosystem-http-redirect-cross-308-options, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-read-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-read-redis, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-read-redis, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-read-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-read-valkey, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-read-valkey, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-read-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-read-memcached, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-read-memcached, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-write-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-write-redis, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-write-redis, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-write-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-write-valkey, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-write-valkey, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-write-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-write-memcached, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-write-memcached, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-response-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-response-redis, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-response-redis, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-response-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-response-valkey, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-response-valkey, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: mariadb}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}
