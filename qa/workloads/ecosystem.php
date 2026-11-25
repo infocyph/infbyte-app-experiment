@@ -41,9 +41,16 @@ require __DIR__ . '/ecosystem-runtime.php';
 require __DIR__ . '/ecosystem-messaging.php';
 require __DIR__ . '/ecosystem-remote.php';
 require __DIR__ . '/ecosystem-http.php';
+require __DIR__ . '/ecosystem-contracts.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'uid-sequences' => uidSequencesWorkload(),
+    'closure' => closureWorkload(),
+    'config-layering' => configLayeringWorkload(),
+    'pki' => pkiWorkload(),
+    'crypto-algorithms' => cryptoAlgorithmsWorkload(),
+    'validation-registry' => validationRegistryWorkload(),
     'http-policy' => httpPolicyWorkload(),
     'redis-cluster' => redisClusterWorkload(),
     'mongodb' => mongoWorkload(),

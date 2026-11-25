@@ -15,6 +15,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-uid-sequences, backend: pgsql}
+          - {scenario: ecosystem-closure, backend: pgsql}
+          - {scenario: ecosystem-config-layering, backend: pgsql}
+          - {scenario: ecosystem-pki, backend: pgsql}
+          - {scenario: ecosystem-crypto-algorithms, backend: pgsql}
+          - {scenario: ecosystem-validation-registry, backend: pgsql}
           - {scenario: ecosystem-endurance, backend: mysql, matcher: fused}
           - {scenario: ecosystem-endurance, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-http-policy, backend: pgsql}

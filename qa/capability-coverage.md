@@ -91,3 +91,5 @@ B23 adds native TLS streaming acceptance, preserving the independent unary lane.
 B24 adds real HTTPS trust, retries, redirect credential boundaries, cookie path and timeout recovery acceptance.
 
 B25 adds sustained workload profiles, controlled host crash/replay and exact durable/cache reconciliation, with weekly soak and manual endurance. Hosted evidence pending.
+
+B26 expands shared UID sequence, signed closure, configuration precedence, PKI/AEAD and schema registry acceptance. Remaining detailed gaps are not closed.

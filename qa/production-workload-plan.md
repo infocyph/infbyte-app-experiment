@@ -151,3 +151,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B25 — sustained production load and crash recovery
 - [x] Two mandatory smoke lanes plus four separate scheduled/manual workload combinations; 64-client spike, exact ledger, cache and tenant reconciliation and uncertain-response crash.
 - [ ] Hosted results and production-equivalent resource/SLO qualification; remaining capabilities open.
+
+## B26 — native data, sequence, trust and schema contracts
+- [x] Six independent hosted lanes covering advanced UID, InterMix, ArrayKit, Epicrypt and ReqShield capabilities.
+- [ ] Hosted qualification; remaining specific API families still open.
