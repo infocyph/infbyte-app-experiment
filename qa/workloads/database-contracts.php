@@ -377,3 +377,125 @@ function repositoryScopeContracts(Connection $db): void
     check((new Connection(config()))->table('lab_records')->count() === 20, 'Repository scope operations mutated stored records.');
     echo "Repository scope composition, explicit reset and independent durable reconciliation passed\n";
 }
+
+function databaseRuntimePolicyContracts(Connection $db, string $contract): void
+{
+    setup($db);
+    $peer = new Connection(config());
+    $failure = static function (callable $operation): \Infocyph\DBLayer\Exceptions\ConnectionException {
+        try {
+            $operation();
+        } catch (\Infocyph\DBLayer\Exceptions\ConnectionException $exception) {
+            return $exception;
+        }
+        throw new LogicException('Expected connection-policy failure was not reported.');
+    };
+    $write = static fn() => $db->update('UPDATE lab_balances SET balance = ? WHERE id = ?', [200, 1]);
+    $invalid = static fn() => $db->select('SELECT id FROM lab_missing_policy_table WHERE id = ?', [42]);
+    switch ($contract) {
+        case 'nested-cancellation':
+            $cancel = false;
+            $db->withQueryCancellation(static fn(): bool => false, static function () use ($db, $peer, $write, $failure, &$cancel): void {
+                $db->withQueryCancellation(static function () use (&$cancel): bool { return $cancel; }, static function () use ($db, $peer, $write, $failure, &$cancel): void {
+                    check(balance($db, 1) === 100, 'Uncancelled nested read failed.');
+                    $cancel = true;
+                    $failure($write);
+                    check(balance($peer, 1) === 100, 'Cancelled mutation reached independent connection.');
+                });
+                check(balance($db, 1) === 100, 'Inner cancellation leaked into outer policy.');
+            });
+            $db->withQueryCancellation(static fn(): bool => true, static function () use ($db, $write, $failure): void {
+                $failure(static fn() => $db->withQueryCancellation(static fn(): bool => false, $write));
+            });
+            check($write() === 1 && balance($peer, 1) === 200, 'Cancellation was not restored after nesting.');
+            break;
+        case 'nested-deadline':
+            $db->withQueryDeadline(5.0, static function () use ($db, $peer, $write, $failure): void {
+                $db->withQueryDeadline(0.0, static function () use ($db, $write, $failure): void {
+                    usleep(1000);
+                    $failure(static fn() => $db->withQueryDeadline(30.0, $write));
+                });
+                check(balance($peer, 1) === 100 && balance($db, 1) === 100, 'Nested deadline expanded or leaked.');
+            });
+            $db->setQueryTimeoutMs(5000);
+            try {
+                $db->withQueryTimeoutMs(2500, static function () use ($db): void {
+                    check($db->getQueryTimeoutMs() === 2500, 'Outer timeout not applied.');
+                    try {
+                        $db->withQueryTimeoutMs(null, static function () use ($db): never {
+                            check($db->getQueryTimeoutMs() === null, 'Temporary timeout removal failed.');
+                            throw new DomainException('intentional timeout scope failure');
+                        });
+                    } catch (DomainException $exception) {
+                        check($exception->getMessage() === 'intentional timeout scope failure', 'Unexpected scope failure.');
+                    }
+                    check($db->getQueryTimeoutMs() === 2500, 'Exception did not restore outer timeout.');
+                    throw new DomainException('intentional outer failure');
+                });
+            } catch (DomainException $exception) {
+                check($exception->getMessage() === 'intentional outer failure', 'Unexpected outer failure.');
+            }
+            check($db->getQueryTimeoutMs() === 5000 && $write() === 1 && balance($peer, 1) === 200, 'Original timeout or healthy mutation not restored.');
+            $db->setQueryTimeoutMs(null);
+            break;
+        case 'retry-boundary':
+            $attempts = [];
+            $failed = [];
+            \Infocyph\DBLayer\Events\Events::listen('db.query.failed', static function (\Infocyph\DBLayer\Events\DatabaseEvents\QueryFailed $event) use (&$failed): void { $failed[] = $event; });
+            try {
+                $failure(static fn() => $db->withQueryRetryPolicy(static function (Throwable $error, int $attempt, string $sql, array $bindings) use (&$attempts): bool {
+                    check($error instanceof PDOException && str_contains($sql, 'lab_missing_policy_table') && $bindings === [42], 'Retry callback metadata differs.');
+                    $attempts[] = $attempt;
+                    return true;
+                }, $invalid));
+                check($attempts === [1, 2, 3, 4] && count($failed) === 1 && $failed[0]->attempts === 5, 'Unbounded retry or duplicate final failure event.');
+                $failure($invalid);
+                check(count($failed) === 2 && $failed[1]->attempts === 1, 'Temporary retry policy leaked.');
+                $calls = 0;
+                $db->beginTransaction();
+                try {
+                    $failure(static fn() => $db->withQueryRetryPolicy(static function () use (&$calls): bool { ++$calls; return true; }, $invalid));
+                    check($calls === 0 && $failed[2]->attempts === 1, 'Query retry executed inside managed transaction.');
+                } finally {
+                    $db->rollbackTransaction();
+                }
+                check(balance($peer, 1) === 100 && $db->transactionLevel() === 0 && $write() === 1, 'Failed retry contaminated transaction or connection.');
+            } finally {
+                \Infocyph\DBLayer\Events\Events::forgetAll();
+            }
+            break;
+        case 'event-ownership':
+            $events = [];
+            foreach (['executing', 'executed', 'failed'] as $kind) {
+                \Infocyph\DBLayer\Events\Events::listen('db.query.' . $kind, static function (object $event) use (&$events, $kind): void {
+                    $events[] = [$kind, $event];
+                });
+            }
+            try {
+                check($write() === 1, 'Observed update failed.');
+                check(array_column($events, 0) === ['executing', 'executed'] && $events[1][1]->rowsAffected === 1 && $events[1][1]->bindings === [200, 1], 'Write event ordering or provenance differs.');
+                $events = [];
+                $db->withoutQueryEvents(static function () use ($db, $failure, $invalid): void {
+                    check(balance($db, 1) === 200, 'Quiet read failed.');
+                    $db->withoutQueryEvents(static function () use ($db): void {
+                        check(balance($db, 2) === 100, 'Nested quiet read failed.');
+                    });
+                    $failure($invalid);
+                });
+                check($events === [], 'Quiet scope emitted query events.');
+                $failure($invalid);
+                check(array_column($events, 0) === ['executing', 'failed'] && $events[1][1]->attempts === 1 && $events[1][1]->bindings === [42], 'Failure event metadata differs after quiet scope.');
+                $events = [];
+                \Infocyph\DBLayer\Events\Events::listen('db.query.executed', static function (): never { throw new DomainException('intentional observer failure'); });
+                check(balance($db, 1) === 200 && array_column($events, 0) === ['executing', 'executed'], 'Observer failure changed successful query.');
+                $diagnostics = \Infocyph\DBLayer\Events\Events::getDiagnostics();
+                check(array_any($diagnostics, static fn(array $item): bool => $item['event'] === 'db.query.executed' && str_contains($item['error'], 'intentional observer failure')), 'Observer failure diagnostic missing.');
+            } finally {
+                \Infocyph\DBLayer\Events\Events::forgetAll();
+            }
+            break;
+        default:
+            throw new InvalidArgumentException('Unknown DB runtime policy contract.');
+    }
+    echo "DBLayer $contract runtime policy assertions completed\n";
+}

@@ -279,6 +279,10 @@ require __DIR__ . '/database-query-advanced-contracts.php';
 
 $db = new Connection(config(($argv[1] ?? '') === 'mysql-physical-verify' ? ['port' => 3308] : []));
 match ($argv[1] ?? '') {
+    'runtime-nested-cancellation' => databaseRuntimePolicyContracts($db, 'nested-cancellation'),
+    'runtime-nested-deadline' => databaseRuntimePolicyContracts($db, 'nested-deadline'),
+    'runtime-retry-boundary' => databaseRuntimePolicyContracts($db, 'retry-boundary'),
+    'runtime-event-ownership' => databaseRuntimePolicyContracts($db, 'event-ownership'),
     'window-query' => windowQueryContracts($db),
     'recursive-query' => recursiveQueryContracts($db),
     'generated-identity' => generatedIdentityContracts($db),

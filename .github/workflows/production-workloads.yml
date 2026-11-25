@@ -16,6 +16,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-runtime-nested-cancellation, backend: pgsql}
+          - {scenario: db-runtime-nested-cancellation, backend: mysql}
+          - {scenario: db-runtime-nested-cancellation, backend: mariadb}
+          - {scenario: db-runtime-nested-cancellation, backend: sqlite}
+          - {scenario: db-runtime-nested-cancellation, backend: mssql}
+          - {scenario: db-runtime-nested-deadline, backend: pgsql}
+          - {scenario: db-runtime-nested-deadline, backend: mysql}
+          - {scenario: db-runtime-nested-deadline, backend: mariadb}
+          - {scenario: db-runtime-nested-deadline, backend: sqlite}
+          - {scenario: db-runtime-nested-deadline, backend: mssql}
+          - {scenario: db-runtime-retry-boundary, backend: pgsql}
+          - {scenario: db-runtime-retry-boundary, backend: mysql}
+          - {scenario: db-runtime-retry-boundary, backend: mariadb}
+          - {scenario: db-runtime-retry-boundary, backend: sqlite}
+          - {scenario: db-runtime-retry-boundary, backend: mssql}
+          - {scenario: db-runtime-event-ownership, backend: pgsql}
+          - {scenario: db-runtime-event-ownership, backend: mysql}
+          - {scenario: db-runtime-event-ownership, backend: mariadb}
+          - {scenario: db-runtime-event-ownership, backend: sqlite}
+          - {scenario: db-runtime-event-ownership, backend: mssql}
           - {scenario: db-window-query, backend: pgsql}
           - {scenario: db-window-query, backend: mysql}
           - {scenario: db-window-query, backend: mariadb}
