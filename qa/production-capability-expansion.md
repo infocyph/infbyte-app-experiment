@@ -171,3 +171,7 @@ I: native Cassandra-extension Scylla lane for binary/bulk values, TTL, tag inval
 ## B40 — RoadRunner and FrankenPHP worker hosts
 
 I: four browser lanes on actual RoadRunner and FrankenPHP worker processes with fused/sharded compiled releases, explicit Runwire host drivers and Foundation trusted release factory, existing 200-cycle concurrent browser contract and generation replacement. No native-host substitution. Scylla/Redis HA now fail closed on backend exceptions. Hosted verification pending; host-specific advanced capabilities and protocol variants remain open.
+
+## B41 — HTTP/3 and mutual TLS
+
+I: two independent wire lanes: real native ext-quic HTTP/3 with aioquic independent client, eight connections × five batches × sixteen streams; actual TLS client certificates with missing/foreign certificate rejection and 160 authenticated HTTP/1.1 requests. No protocol fallback or extension bypass. Native ext-quic installation on hosted runner is a mandatory prerequisite; verification pending. Outbound QUIC and full network fault/flow-control coverage remain open.

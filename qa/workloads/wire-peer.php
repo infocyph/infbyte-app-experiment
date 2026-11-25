@@ -54,6 +54,8 @@ $server = match ($mode) {
         $listener->sendTo($datagram->payload, $datagram->peerAddress);
     }, options: new DatagramOptions(maxDatagramBytes: 512)),
     'websocket' => Server::http('127.0.0.1:18785', $http),
+    'http3' => (new Server('quic', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')))->withHttp3(),
+    'mtls' => new Server('mutual-tls', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem', extraContext: ['cafile' => $root . '/ca.pem'], requireClientCertificate: true)),
     'http2' => new Server('tls', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')),
     default => throw new InvalidArgumentException('Unknown wire workload.'),
 };

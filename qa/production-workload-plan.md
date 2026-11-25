@@ -211,3 +211,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B40 — RoadRunner and FrankenPHP worker parity
 - [x] Four actual hosted browser lanes with compiled releases and host replacement.
 - [ ] Hosted verification and remaining runtime-specific contracts.
+
+## B41 — secure wire protocols
+- [x] Add actual HTTP/3 multiplexing and required-client-certificate acceptance.
+- [ ] Hosted qualification, outbound QUIC and remaining protocol variants.
