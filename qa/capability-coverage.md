@@ -291,3 +291,7 @@ I: extend four existing native/FPM fused/sharded OAuth HTTP lanes using a real p
 ## B93 — InterMix real definition cache outage
 
 I: reuse disposable Redis AOF stop/restart fixture for a dedicated definition-cache lane. Pre-outage separate builders demonstrate strict rejection without factory execution, fail-open local singleton fallback, new generation computation during outage, exact original durable value after restart, non-publication of failed writes, replacement singleton persistence and unrelated key preservation. 344 routine rows; hosted qualification pending.
+
+## B94 — Broker acknowledgement uncertainty and durable effects
+
+I: two additional actual RabbitMQ/SQS-compatible lanes inject a failure immediately before or after native acknowledgement at the application-owned adapter boundary. The Omnibus consumer must propagate uncertainty, preserve committed SQL effects, permit redelivery only when unsettled, and avoid classifying settlement failures as handler failures. Replacement consumes with an idempotent application effect and independent execution counts. This is deliberate boundary fault injection, not an actual packet-loss test or provider exactly-once guarantee. 346 routine rows; hosted qualification pending. CORE-01/DATA/OPS: preserve existing adapter behavior when fault callback absent, use disposable broker and bounded recovery; verification pending.

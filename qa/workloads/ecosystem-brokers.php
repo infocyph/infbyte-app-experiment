@@ -18,7 +18,7 @@ use PhpAmqpLib\Message\AMQPMessage;
 
 final readonly class LabAmqpBackend implements AmqpBackend
 {
-    public function __construct(private AMQPChannel $channel) {}
+    public function __construct(private AMQPChannel $channel, private ?Closure $ackFault = null) {}
 
     public function capabilities(): BrokerCapabilities
     {
@@ -46,7 +46,13 @@ final readonly class LabAmqpBackend implements AmqpBackend
 
     public function acknowledge(string $queue, string $receipt): void
     {
+        ($this->ackFault)?->__invoke('before');
         $this->channel->basic_ack((int) $receipt);
+        if ($this->ackFault !== null) {
+            // A synchronous broker round trip orders the earlier asynchronous ack.
+            $this->channel->queue_declare($queue, true);
+            ($this->ackFault)('after');
+        }
     }
 
     public function reject(string $queue, string $receipt): void
@@ -67,7 +73,7 @@ final readonly class LabAmqpBackend implements AmqpBackend
 
 final readonly class LabSqsBackend implements SqsBackend
 {
-    public function __construct(private SqsClient $client, private string $url, private bool $fifo = false) {}
+    public function __construct(private SqsClient $client, private string $url, private bool $fifo = false, private ?Closure $ackFault = null) {}
 
     public function capabilities(): BrokerCapabilities
     {
@@ -95,7 +101,9 @@ final readonly class LabSqsBackend implements SqsBackend
 
     public function acknowledge(string $queue, string $receipt): void
     {
+        ($this->ackFault)?->__invoke('before');
         $this->client->deleteMessage(['QueueUrl' => $this->url, 'ReceiptHandle' => $receipt]);
+        ($this->ackFault)?->__invoke('after');
     }
 
     public function reject(string $queue, string $receipt): void

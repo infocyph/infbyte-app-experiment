@@ -123,3 +123,92 @@ function sqsRedriveWorkload(): void
     }
     echo "SQS-compatible real redrive policy, receipt generations, dead-letter consumption and healthy recovery passed\n";
 }
+
+
+final class LabAcknowledgementUnknown extends RuntimeException {}
+
+function brokerAcknowledgementWorkload(string $provider): void
+{
+    [$db, $serializer, , $clock] = messagingSetup();
+    $db->statement('CREATE TABLE lab_job_attempts (id VARCHAR(100) PRIMARY KEY, attempts INTEGER NOT NULL)');
+    $invoker = new \Infocyph\Omnibus\Handler\HandlerInvoker(new \Infocyph\Omnibus\Handler\HandlerMap([
+        LabJob::class => static function (LabJob $job) use ($db): void {
+            // Application-owned idempotent effect; no exactly-once broker claim.
+            $db->transaction(static function ($connection) use ($job): void {
+                $connection->table('lab_job_attempts')->upsert([['id' => $job->id, 'attempts' => 0]], ['id'], ['id']);
+                $connection->update('UPDATE lab_job_attempts SET attempts = attempts + 1 WHERE id = ?', [$job->id]);
+                if (!$connection->table('lab_job_effects')->where('id', '=', $job->id)->exists()) {
+                    $connection->table('lab_job_effects')->insert(['id' => $job->id, 'step' => $job->step]);
+                }
+            });
+        },
+    ]));
+    $failures = new \Infocyph\Omnibus\Integration\DBLayer\DBLayerFailureStore($db, $serializer);
+    $consumer = static fn($transport) => new \Infocyph\Omnibus\Consumer\Consumer(
+        $transport, $invoker, new \Infocyph\Omnibus\Retry\ExponentialRetryStrategy(maximumAttempts: 1), $failures, $clock,
+    );
+    $connection = null;
+    $client = null;
+    $url = null;
+    if ($provider === 'sqs') {
+        $client = new SqsClient(['version' => 'latest', 'region' => 'us-east-1', 'endpoint' => 'http://127.0.0.1:19324',
+            'credentials' => ['key' => 'fixture', 'secret' => 'fixture'], 'http' => ['connect_timeout' => 3, 'timeout' => 10]]);
+        $url = $client->createQueue(['QueueName' => 'ack-contract'])['QueueUrl'];
+    }
+    $connect = static function (?Closure $fault = null) use ($provider, $serializer, $client, $url, &$connection) {
+        if ($provider === 'sqs') {
+            return new SqsTransport(new LabSqsBackend($client, $url, ackFault: $fault), $serializer);
+        }
+        $connection = new \PhpAmqpLib\Connection\AMQPStreamConnection('127.0.0.1', 15672, 'experiment', 'fixture-only-password');
+        $channel = $connection->channel();
+        $channel->queue_declare('ack-contract', false, true, false, false);
+        return new AmqpTransport(new LabAmqpBackend($channel, $fault), $serializer);
+    };
+    $disconnect = static function () use (&$connection): void {
+        if ($connection !== null) {
+            $connection->close();
+            $connection = null;
+        }
+    };
+    try {
+        foreach (['before', 'after'] as $phase) {
+            $transport = $connect(static function (string $boundary) use ($phase): void {
+                if ($phase === $boundary) {
+                    throw new LabAcknowledgementUnknown('Injected acknowledgement boundary failure.');
+                }
+            });
+            $transport->send(new Envelope(new LabJob($phase, 42)), 'ack-contract');
+            $worker = $consumer($transport);
+            expectFailure(static fn() => $worker->run('ack-contract', 1, 2.0), LabAcknowledgementUnknown::class, 'Consumer concealed unknown settlement.');
+            verify($db->table('lab_job_effects')->where('id', '=', $phase)->count() === 1, 'Durable effect lost before settlement.');
+            $disconnect();
+            $replacement = $connect();
+            $deadline = hrtime(true) + 12_000_000_000;
+            if ($phase === 'before') {
+                do {
+                    $result = $consumer($replacement)->run('ack-contract', 1, 3.0);
+                    if ($result->received === 0) { usleep(100000); }
+                } while ($result->received === 0 && hrtime(true) < $deadline);
+                verify($result->received === 1 && $result->succeeded === 1, 'Unsettled delivery was not recovered.');
+            } else {
+                // Wait past the SQS visibility timeout, rather than trusting a momentary empty queue.
+                $until = hrtime(true) + 4_000_000_000;
+                do {
+                    verify($consumer($replacement)->run('ack-contract', 1, 2.0)->received === 0, 'Already settled delivery reappeared.');
+                    usleep(100000);
+                } while (hrtime(true) < $until);
+            }
+            $attempts = (int) $db->table('lab_job_attempts')->where('id', '=', $phase)->value('attempts');
+            verify($attempts === ($phase === 'before' ? 2 : 1), 'Delivery execution count differs from actual settlement.');
+            verify($db->table('lab_job_effects')->where('id', '=', $phase)->count() === 1, 'Duplicate business effect after ambiguous acknowledgement.');
+            $disconnect();
+        }
+        verify($db->table('lab_job_effects')->count() === 2 && count($failures->all(100)) === 0, 'Settlement uncertainty misclassified as handler failure.');
+    } finally {
+        $disconnect();
+        if ($client !== null && $url !== null) {
+            $client->deleteQueue(['QueueUrl' => $url]);
+        }
+    }
+    echo "$provider actual broker settlement, injected before/after acknowledgement ambiguity, replacement and durable idempotent effects passed\n";
+}

@@ -162,6 +162,8 @@ jobs:
           - {scenario: ecosystem-auth-lifecycle, backend: pgsql}
           - {scenario: ecosystem-jwt-replay, backend: pgsql}
           - {scenario: ecosystem-amqp-dlq, backend: pgsql}
+          - {scenario: ecosystem-amqp-ack-uncertain, backend: pgsql}
+          - {scenario: ecosystem-sqs-ack-uncertain, backend: pgsql}
           - {scenario: ecosystem-amqp-tls, backend: pgsql}
           - {scenario: ecosystem-sqs-fifo, backend: pgsql}
           - {scenario: ecosystem-sqs-redrive, backend: pgsql}

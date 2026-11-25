@@ -92,6 +92,8 @@ match ($argv[1] ?? '') {
     'validation-casts' => validationCastsWorkload(),
     'http-transfer' => httpTransferWorkload(),
     'amqp-dlq' => amqpDlqWorkload(),
+    'amqp-ack-uncertain' => brokerAcknowledgementWorkload('amqp'),
+    'sqs-ack-uncertain' => brokerAcknowledgementWorkload('sqs'),
     'amqp-tls-seed' => amqpTlsSeed(),
     'amqp-tls-recover' => amqpTlsRecover(),
     'sqs-redrive' => sqsRedriveWorkload(),
