@@ -192,6 +192,7 @@ jobs:
           - {scenario: ecosystem-recovery, backend: pgsql, matcher: fused}
           - {scenario: ecosystem-recovery, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-active-recovery, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-remote-order-recovery, backend: pgsql}
           - {scenario: ecosystem-active-recovery, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-release-cutover, backend: mysql, matcher: fused}
           - {scenario: ecosystem-release-cutover, backend: mysql, matcher: sharded}

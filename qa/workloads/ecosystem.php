@@ -39,6 +39,7 @@ require __DIR__ . '/ecosystem-data.php';
 require __DIR__ . '/ecosystem-security.php';
 require __DIR__ . '/ecosystem-runtime.php';
 require __DIR__ . '/ecosystem-messaging.php';
+require __DIR__ . '/ecosystem-remote-order-recovery.php';
 require __DIR__ . '/ecosystem-remote.php';
 require __DIR__ . '/ecosystem-http.php';
 require __DIR__ . '/ecosystem-contracts.php';
@@ -194,6 +195,9 @@ match ($argv[1] ?? '') {
     'pathwise-download' => pathwiseDownloadWorkload(),
     'mail-mime' => mailMimeWorkload(),
     'omnibus-workflow' => omnibusWorkflowWorkload(),
+    'remote-order-seed' => remoteOrderRecovery('seed'),
+    'remote-order-offline' => remoteOrderRecovery('offline', (int) ($argv[2] ?? -1)),
+    'remote-order-recover' => remoteOrderRecovery('recover'),
     'omnibus-redis' => omnibusRedisWorkload(),
     'intermix' => intermixWorkload(),
     'array-config' => arrayConfigWorkload(),

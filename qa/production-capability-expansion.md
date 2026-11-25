@@ -401,3 +401,7 @@ I: independent lane reuses the physical standby fixture, verifies replay through
 ## B97 — Redis and Valkey counter primary election
 
 I: two disposable real Sentinel lanes wait for replica discovery and explicit replication acknowledgement, stop the old primary, observe Sentinel-selected promotion, reconnect the published counter factory to the promoted endpoint and verify exact signed values, fixed TTL, persistent state, cache namespace independence and 200 concurrent increments. One Sentinel is a fixture, not production quorum qualification. AtomicCounters accepts native Redis clients, not RedisCluster; automatic endpoint discovery is application-owned. 350 routine rows; hosted qualification pending (DATA, OPS, COMPAT).
+
+## B98 — Combined remote storage and broker outage with active database writers
+
+I: real disposable S3-compatible storage and RabbitMQ stop together after four confirmed persistent messages; eight independent PHP processes prove remote unavailability and commit 32 new SQL orders/outbox rows while both are stopped. Restart reconciles four old messages, relays 36 pending operations, checks all 40 remote receipt bytes, and consumes 41 deliveries including an intentional duplicate into exactly 40 SQL effects. SQL remains available during the outage; no provider exactly-once guarantee or active backup claim. 351 routine rows; hosted verification pending (CORE-01, DATA, OPS).

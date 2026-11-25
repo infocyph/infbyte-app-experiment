@@ -41,17 +41,19 @@ final readonly class LabJob
 }
 
 /** @return array{Connection,JsonEnvelopeSerializer,HandlerInvoker,SystemClock} */
-function messagingSetup(): array
+function messagingSetup(bool $initialize = true): array
 {
     $driver = (string) getenv('DB_BACKEND');
     $db = new Connection(ConnectionConfig::fromArray([
         'driver' => $driver, 'host' => '127.0.0.1', 'port' => $driver === 'pgsql' ? 5432 : 3306,
         'database' => 'experiment', 'username' => 'experiment', 'password' => 'experiment',
     ]));
-    foreach (QueueSchema::statements($driver) as $statement) {
-        $db->statement($statement);
+    if ($initialize) {
+        foreach (QueueSchema::statements($driver) as $statement) {
+            $db->statement($statement);
+        }
+        $db->statement('CREATE TABLE lab_job_effects (id VARCHAR(100) PRIMARY KEY, step INTEGER NOT NULL)');
     }
-    $db->statement('CREATE TABLE lab_job_effects (id VARCHAR(100) PRIMARY KEY, step INTEGER NOT NULL)');
     $serializer = new JsonEnvelopeSerializer(
         new MessageCodecRegistry([
             new CallbackMessageCodec('lab.job.v1', LabJob::class,
