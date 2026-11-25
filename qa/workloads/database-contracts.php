@@ -156,3 +156,137 @@ function batchBoundaries(Connection $db): void
         && (int) $fresh->table('lab_batches')->sum('amount') === 10712 && !$fresh->table('lab_batches')->where('id', '=', 104)->exists(), 'Batch durable reconciliation or rollback failed.');
     echo "Parameter budget, eleven bounded batches, commit callbacks and rollback reconciliation passed\n";
 }
+
+function derivedQueryContracts(Connection $db): void
+{
+    seedRows($db, 20);
+    $sub = $db->table('lab_records')->select('id', 'amount')->where('tenant_id', '=', 1);
+    $query = $db->query()->fromSub($sub, 'selected')->where('selected.amount', '>=', 6)->orderBy('selected.id');
+    check($query->getBindings() === [1, 6], 'Derived binding order changed.');
+    check(array_map('intval', $query->pluck('selected.id')) === [6, 8, 16, 18], 'Derived filter escaped scope.');
+    check($sub->count() === 10, 'Derived query mutated source.');
+    $db->statement('CREATE TABLE lab_flags (record_id INTEGER PRIMARY KEY, weight INTEGER NOT NULL)');
+    $db->table('lab_flags')->insert([['record_id' => 2, 'weight' => 5], ['record_id' => 4, 'weight' => 1], ['record_id' => 7, 'weight' => 8]]);
+    $flags = $db->table('lab_flags')->select('record_id', 'weight')->where('weight', '>=', 5);
+    $joined = $db->table('lab_records')->as('r')->leftJoinSub($flags, 'f', 'r.id', '=', 'f.record_id')
+        ->where('r.tenant_id', '=', 1)->select('r.id', 'f.weight')->orderBy('r.id')->get();
+    check(array_map('intval', array_column($joined, 'id')) === range(2, 20, 2), 'Left join lost or added rows.');
+    check((int) $joined[0]['weight'] === 5 && count(array_filter(array_column($joined, 'weight'), static fn($value): bool => $value === null)) === 9, 'Filtered outer join did not preserve unmatched rows.');
+    check($db->table('lab_records')->count() === 20, 'Read query mutated records.');
+    echo "Derived query bindings and filtered left join reconciliation passed\n";
+}
+
+function resultProjectionContracts(Connection $db): void
+{
+    seedRows($db, 20);
+    $base = $db->table('lab_records')->where('tenant_id', '=', 1);
+    check((int) $base->sum('amount') === 40 && (float) $base->avg('amount') === 4.0 && (int) $base->min('amount') === 0 && (int) $base->max('amount') === 8, 'Aggregate values diverged.');
+    check((int) $base->aggregate('COUNT', 'id') === 10 && $base->count() === 10, 'Aggregate mutated source.');
+    $distinct = $base->cloneBuilder()->select('amount')->distinct()->orderBy('amount')->get();
+    check(array_map('intval', array_column($distinct, 'amount')) === [0, 2, 4, 6, 8], 'Distinct projection differs.');
+    $ordered = $base->cloneBuilder()->orderBy('id');
+    $collection = $ordered->collect()->all();
+    check(array_map('intval', array_column($collection, 'id')) === range(2, 20, 2), 'Collection projection differs.');
+    $lazy = $base->lazyCollection(3);
+    foreach ([1, 2] as $pass) {
+        $ids = [];
+        foreach ($lazy as $row) {
+            $ids[] = (int) $row['id'];
+        }
+        check($ids === range(2, 20, 2), 'Lazy collection iteration or replay differs: ' . $pass);
+    }
+    $cursor = $ordered->cursor(PDO::FETCH_ASSOC);
+    $cursor->rewind();
+    check((int) $cursor->current()['id'] === 2, 'Cursor first row differs.');
+    unset($cursor);
+    check($base->count() === 10 && (int) $base->find(4)['amount'] === 4 && $base->find(1) === null, 'Cursor cleanup or scoped find failed.');
+    echo "Aggregate, distinct, eager/lazy collection and cursor ownership passed\n";
+}
+
+function repositoryHookContracts(Connection $db): void
+{
+    seedRows($db, 10);
+    $repo = new class($db) extends \Infocyph\DBLayer\Query\ConnectionRepository {
+        protected function table(): string
+        {
+            return 'lab_records';
+        }
+    };
+    $events = [];
+    $repo->forTenant(1)->setCasts(['id' => 'int', 'amount' => 'int', 'tenant_id' => 'int']);
+    $repo->beforeCreate(static function (array $payload) use (&$events): array {
+        $events[] = 'before-create';
+        $payload['label'] = 'created-by-hook';
+        return $payload;
+    })->afterCreate(static function (array $context) use (&$events): void {
+        check($context['row']['tenant_id'] === 1, 'Create hook saw foreign tenant.');
+        $events[] = 'after-create';
+    })->beforeUpdate(static function (array $payload) use (&$events): array {
+        $events[] = 'before-update';
+        $payload['amount'] = (int) $payload['amount'] + 1;
+        return $payload;
+    })->afterUpdate(static function () use (&$events): void {
+        $events[] = 'after-update';
+    })->beforeDelete(static function () use (&$events): void {
+        $events[] = 'before-delete';
+    })->afterDelete(static function (array $context) use (&$events): void {
+        check($context['affected'] === 1, 'Delete hook reported wrong count.');
+        $events[] = 'after-delete';
+    });
+    $created = $repo->firstOrCreate(['id' => 12], ['amount' => 20, 'label' => 'initial']);
+    check($created['tenant_id'] === 1 && $created['label'] === 'created-by-hook', 'Create hook transformation failed.');
+    check($repo->firstOrCreate(['id' => 12], ['amount' => 999])['amount'] === 20, 'Existing firstOrCreate modified value.');
+    check($repo->updateOrCreate(['id' => 12], ['amount' => 30])['amount'] === 31, 'Update hook transformation failed.');
+    check($repo->deleteById(12) === 1, 'Repository delete failed.');
+    check($events === ['before-create', 'after-create', 'before-update', 'after-update', 'before-delete', 'after-delete'], 'Mutation hooks repeated or reordered.');
+    $fresh = new Connection(config());
+    check($fresh->table('lab_records')->count() === 10 && !$fresh->table('lab_records')->where('id', '=', 12)->exists() && (int) $fresh->table('lab_records')->find(1)['amount'] === 1, 'Hook lifecycle durable reconciliation failed.');
+    echo "Repository first/update-or-create, payload hooks and delete lifecycle passed\n";
+}
+
+function schemaPrefixContracts(Connection $db): void
+{
+    $alpha = new Connection(config());
+    $beta = new Connection(config());
+    $alpha->setTablePrefix('alpha_');
+    $beta->setTablePrefix('beta_');
+    $a = new \Infocyph\DBLayer\Schema\SchemaManager($alpha);
+    $b = new \Infocyph\DBLayer\Schema\SchemaManager($beta);
+    $definition = static function (\Infocyph\DBLayer\Schema\Blueprint $table): void {
+        $table->integer('id')->primary();
+        $table->integer('amount');
+    };
+    $a->create('ledger', $definition);
+    $b->create('ledger', $definition);
+    check($a->hasTable('ledger') && $b->hasColumn('ledger', 'amount'), 'Prefixed schema missing.');
+    $alpha->table('ledger')->insert(['id' => 1, 'amount' => 100]);
+    $beta->table('ledger')->insert(['id' => 1, 'amount' => 200]);
+    check((int) $alpha->table('ledger')->value('amount') === 100 && (int) $beta->table('ledger')->value('amount') === 200, 'Prefix crossed storage.');
+    $a->rename('ledger', 'archive');
+    check(!$a->hasTable('ledger') && $a->hasTable('archive') && $b->hasTable('ledger'), 'Rename crossed prefix or left old table.');
+    check((int) $alpha->table('archive')->value('amount') === 100, 'Rename lost records.');
+    $a->dropIfExists('archive');
+    $a->dropIfExists('archive');
+    check(!$a->hasTable('archive') && (int) $beta->table('ledger')->value('amount') === 200, 'Drop crossed prefix.');
+    $fresh = new Connection(config());
+    check((int) $fresh->table('beta_ledger')->value('amount') === 200, 'Independent physical storage differs.');
+    echo "Schema prefix, independent data, rename and idempotent drop passed\n";
+}
+
+function executionPlanContracts(Connection $db): void
+{
+    seedRows($db, 20);
+    $query = $db->table('lab_records')->where('id', '=', 4);
+    $plan = $query->explain();
+    check($plan !== [] && is_array($plan[0]) && $plan[0] !== [], 'Native execution plan unavailable.');
+    rejected(static fn() => $db->explain('UPDATE lab_records SET amount = 999 WHERE id = 4'), 'Execution plan accepted mutation.');
+    check((int) $query->value('amount') === 4 && $db->table('lab_records')->count() === 20, 'Plan changed data or poisoned session.');
+    $db->resetStats();
+    check($db->getStats() === ['queries' => 0, 'writes' => 0, 'reads' => 0, 'errors' => 0], 'Statistics reset failed.');
+    check((int) $db->table('lab_records')->where('id', '=', 4)->value('amount') === 4, 'Read after statistics reset failed.');
+    $db->table('lab_records')->where('id', '=', 4)->update(['amount' => 44]);
+    $stats = $db->getStats();
+    check($stats['reads'] >= 1 && $stats['writes'] >= 1 && $stats['queries'] >= 2 && $stats['errors'] === 0, 'Read/write metrics diverged.');
+    check((int) (new Connection(config()))->table('lab_records')->where('id', '=', 4)->value('amount') === 44, 'Independent write reconciliation failed.');
+    echo "Native explain, mutation rejection, session recovery and query statistics passed\n";
+}

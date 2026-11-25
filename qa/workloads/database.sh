@@ -18,7 +18,7 @@ case "$SCENARIO" in
   db-migration-fault|db-connection-loss) php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-proxy-*) bash "$GITHUB_WORKSPACE/qa/workloads/database-proxy.sh" ;;
   db-binlog-replica|db-maxscale|db-maxscale-failover) bash "$GITHUB_WORKSPACE/qa/workloads/database-binlog.sh" ;;
-  db-predicate-contracts|db-pagination-contracts|db-chunk-checkpoint|db-connection-reuse|db-batch-boundaries)
+  db-derived-query|db-result-projections|db-repository-hooks|db-schema-prefix|db-execution-plan|db-predicate-contracts|db-pagination-contracts|db-chunk-checkpoint|db-connection-reuse|db-batch-boundaries)
     php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-driver|db-relations-advanced)
     php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;

@@ -16,6 +16,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-derived-query, backend: pgsql}
+          - {scenario: db-derived-query, backend: mysql}
+          - {scenario: db-derived-query, backend: mariadb}
+          - {scenario: db-derived-query, backend: sqlite}
+          - {scenario: db-derived-query, backend: mssql, php: '8.4'}
+          - {scenario: db-result-projections, backend: pgsql}
+          - {scenario: db-result-projections, backend: mysql}
+          - {scenario: db-result-projections, backend: mariadb}
+          - {scenario: db-result-projections, backend: sqlite}
+          - {scenario: db-result-projections, backend: mssql, php: '8.4'}
+          - {scenario: db-repository-hooks, backend: pgsql}
+          - {scenario: db-repository-hooks, backend: mysql}
+          - {scenario: db-repository-hooks, backend: mariadb}
+          - {scenario: db-repository-hooks, backend: sqlite}
+          - {scenario: db-repository-hooks, backend: mssql, php: '8.4'}
+          - {scenario: db-schema-prefix, backend: pgsql}
+          - {scenario: db-schema-prefix, backend: mysql}
+          - {scenario: db-schema-prefix, backend: mariadb}
+          - {scenario: db-schema-prefix, backend: sqlite}
+          - {scenario: db-schema-prefix, backend: mssql, php: '8.4'}
+          - {scenario: db-execution-plan, backend: pgsql}
+          - {scenario: db-execution-plan, backend: mysql}
+          - {scenario: db-execution-plan, backend: mariadb}
+          - {scenario: db-execution-plan, backend: sqlite}
+          - {scenario: db-execution-plan, backend: mssql, php: '8.4'}
           - {scenario: db-predicate-contracts, backend: mysql}
           - {scenario: db-predicate-contracts, backend: mariadb}
           - {scenario: db-predicate-contracts, backend: pgsql}

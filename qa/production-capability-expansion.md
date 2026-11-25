@@ -617,3 +617,7 @@ I: 27 independent matrix additions (three contracts × nine shared-store configu
 ## B151 — Cache TTL forms, mixed atomic contention and signed payload policy
 
 I: 27 independent matrix additions (three contracts × nine shared-store configurations). Absolute and interval TTLs, overflow/type rejection, expiry and replacement; 12-process mixed CAS/consume linearization with exact outcome conservation; signed/compressed payload round trips, strict object/closure/expanded-size rejection across atomic and ordinary writes, wrong-key read rejection and persisted-value reconciliation. Existing real stores and worker service conditions reused; no library edits. CORE-01, TYPE, DATA, SEC, MEM, EXEC-03: source and matrix wiring reviewed; hosted qualification pending. 609 routine rows.
+
+## B152 — Five-driver derived queries, projections, repository hooks, schema and diagnostics
+
+I: 25 independent jobs (five contracts × PostgreSQL, MySQL, MariaDB, SQLite and SQL Server). Bound derived query/outer join conservation, aggregate/distinct/collection replay and cursor cleanup, first-or-create/update-or-create mutation hooks, independent prefixed schema creation/rename/drop, native execution plans, write rejection, query statistics and independent durable reconciliation. Existing real driver fixtures retained, SQL Server uses its configured PHP 8.4 lane. CORE-01, TYPE, DATA, OBS, MEM, EXEC-03: source and dispatcher/matrix review done; hosted qualification pending. 634 routine rows; no upstream changes.
