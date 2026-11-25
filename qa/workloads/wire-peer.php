@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Infocyph\Runwire\DatagramServer;
+use Infocyph\Runwire\CancellationToken;
 use Infocyph\Runwire\Http\Headers;
+use Infocyph\Runwire\Http\Http2\Http2Limits;
 use Infocyph\Runwire\Http\HttpRequest;
 use Infocyph\Runwire\Http\ResponseWriterInterface;
 use Infocyph\Runwire\Network\Datagram;
@@ -47,6 +49,62 @@ $http = static function (HttpRequest $request, ResponseWriterInterface $writer):
     $writer->start(200, Headers::fromArray(['Content-Length' => (string) strlen($body), 'Content-Type' => 'text/plain']));
     $writer->end($body);
 };
+if ($mode === 'http2-flow') {
+    $ordinary = $http;
+    $http = static function (HttpRequest $request, ResponseWriterInterface $writer) use ($root, $ordinary): void {
+        $target = $request->target;
+        if ($target === '/flow-upload') {
+            $request->context->cancellation->onCancel(static function (CancellationToken $token) use ($root): void {
+                file_put_contents($root . '/upload-cancel', $token->reason()?->value . PHP_EOL, FILE_APPEND | LOCK_EX);
+            });
+            file_put_contents($root . '/upload-ready', '1', LOCK_EX);
+            return;
+        }
+        if (!in_array($target, ['/flow-stream', '/flow-cancel'], true)) {
+            $ordinary($request, $writer);
+            return;
+        }
+        $cancel = $target === '/flow-cancel';
+        if ($cancel) {
+            $request->context->cancellation->onCancel(static function (CancellationToken $token) use ($root): void {
+                file_put_contents($root . '/response-cancel', $token->reason()?->value . PHP_EOL, FILE_APPEND | LOCK_EX);
+            });
+        }
+        $size = 4096;
+        $count = 64;
+        $index = $pressure = $drains = $peak = 0;
+        if (!$writer->start(200, Headers::fromArray(['Content-Length' => (string) ($size * $count)]))->accepted()) {
+            throw new RuntimeException('Flow test response start rejected.');
+        }
+        if (!$cancel) {
+            $writer->onTerminal(static function () use ($root, &$index, &$pressure, &$drains, &$peak): void {
+                file_put_contents($root . '/flow-terminal', json_encode(['chunks' => $index, 'pressure' => $pressure, 'drains' => $drains, 'peak' => $peak], JSON_THROW_ON_ERROR) . PHP_EOL, FILE_APPEND | LOCK_EX);
+            });
+        }
+        $pump = static function (ResponseWriterInterface $response) use ($size, $count, &$index, &$pressure, &$peak): void {
+            while ($index < $count) {
+                $result = $response->write(str_repeat(chr($index), $size));
+                $peak = max($peak, $result->bufferedBytes);
+                if (!$result->accepted()) {
+                    throw new RuntimeException('Flow test bounded write rejected: ' . $result->state->value);
+                }
+                ++$index;
+                if ($result->pressured()) {
+                    ++$pressure;
+                    return;
+                }
+            }
+            if (!$response->end()->accepted()) {
+                throw new RuntimeException('Flow test response completion rejected.');
+            }
+        };
+        $writer->onDrain(static function (ResponseWriterInterface $response) use ($pump, &$drains): void {
+            ++$drains;
+            $pump($response);
+        });
+        $pump($writer);
+    };
+}
 $server = match ($mode) {
     'tcp' => StreamServer::tcp('127.0.0.1:18785', $codec, $echo),
     'unix' => StreamServer::unix($root . '/peer.sock', $codec, $echo),
@@ -57,6 +115,7 @@ $server = match ($mode) {
     'http3' => (new Server('quic', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')))->withHttp3(),
     'mtls' => new Server('mutual-tls', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem', extraContext: ['cafile' => $root . '/ca.pem'], requireClientCertificate: true)),
     'http2' => new Server('tls', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')),
+    'http2-flow' => new Server('tls-flow', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem'), http2: new Http2Limits(maxPendingResponseBytesPerStream: 32768, responseLowWatermarkBytes: 8192, responseHighWatermarkBytes: 16384, maxPendingResponseBytesPerConnection: 65536, streamIdleTimeoutSeconds: 15.0)),
     default => throw new InvalidArgumentException('Unknown wire workload.'),
 };
 Runtime::create()->listen($server)->run();

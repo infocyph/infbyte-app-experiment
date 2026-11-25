@@ -409,3 +409,7 @@ I: real disposable S3-compatible storage and RabbitMQ stop together after four c
 ## B99 — Consistent database backup under active writes
 
 I: independent PostgreSQL lane exports a repeatable-read snapshot of 100 paired orders/ledger rows, observes actual pg_dump lock wait, commits another 160 paired operations across eight PHP writers before releasing the dump, restores the exported snapshot into a separate database and compares exact ordered row digests and financial invariants. Original database retains all 260 operations. This tests consistent logical backup, not physical PITR or production RPO/RTO. 352 routine rows; hosted qualification pending (DATA, OPS).
+
+## B100 — Runwire native HTTP/2 flow control and cancellation
+
+I: independent TLS/ALPN H2 client constrains stream credit to 4 KiB, proves sibling progress while a 256 KiB response is stalled, reconciles exact chunks after credit release and requires bounded writer pressure/drain evidence. Resets an incomplete response and partial upload, requires one server cancellation per reset, and confirms same-connection recovery. 353 routine rows; hosted qualification pending (REQUEST, MEM, OPS).
