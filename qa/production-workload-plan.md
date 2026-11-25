@@ -557,3 +557,7 @@ I: three independent no-dev consumer lanes alter actual source configuration, as
 ## B126 — Multiplexed stream admission and recovery
 
 I: two independent native TLS/QUIC lanes use real H2 and H3 clients, hold two streams, assert overload status 503 and Retry-After without application entry, complete a held request, admit a sibling, reset the second stream, and admit another sibling on the same connection. Eight repeated waves reconcile handler and cancellation evidence. H3 requires ext-quic. Aggregate queued-byte and host-specific quotas remain open. 392 routine rows; hosted qualification pending (MEM, REQUEST, OPS, EXEC-03).
+
+## B127 — OTP enrollment and rotation contracts
+
+I: independent HOTP, TOTP and OCRA enrollment/import with type-specific algorithm, width, period/counter/suite, escaped label and extension fields; QR rendering, redacted debug views, duplicate/reserved parameter rejection, invalid labels and QR sizes, immediate and timed overlap, invalid and overflowing rotation, and Redis-backed generation-isolated replay rejection. Rotation orchestration remains caller-owned; no secret or QR artifact is published. 393 routine rows; hosted qualification pending (SEC, DATA, EXEC-03).

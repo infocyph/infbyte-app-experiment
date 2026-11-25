@@ -7,6 +7,9 @@ use Infocyph\CacheLayer\Cache\Cache;
 use Infocyph\CacheLayer\Cache\CacheOptions;
 use Infocyph\OTP\GenericOtp;
 use Infocyph\OTP\TOTP;
+use Infocyph\OTP\HOTP;
+use Infocyph\OTP\OCRA;
+use Infocyph\OTP\Support\ProvisioningUriParser;
 use Infocyph\OTP\ValueObjects\VerificationWindow;
 
 function otpBackendsWorkload(): void
@@ -76,4 +79,57 @@ function otpDriftWorkload(): void
         }
     }
     echo "TOTP drift/replay and planned secret rotation across algorithms/digit counts passed\n";
+}
+
+function otpEnrollmentWorkload(): void
+{
+    $secret = TOTP::generateSecret(32);
+    $next = TOTP::generateSecret(32);
+    $label = 'account + lab@example.test';
+    $issuer = 'Infbyte Lab';
+    $now = 1_800_000_000;
+    $extra = ['tenant' => 'alpha & beta', 'generation' => 7];
+    $suite = 'OCRA-1:HOTP-SHA256-8:C-QN08';
+    $cache = Cache::redis('otp-enrollment', options: new CacheOptions(failOpen: false));
+    $cases = [
+        'totp' => [new TOTP($secret, 8, 45, 'sha256'), ['period' => 45], []],
+        'hotp' => [new HOTP($secret, 8, 'sha256'), ['counter' => 42], ['initialCounter' => 42]],
+        'ocra' => [OCRA::fromBase32($suite, $secret), ['ocraSuite' => $suite], []],
+    ];
+    foreach ($cases as $type => [$factor, $expected, $options]) {
+        $payload = $factor->getEnrollmentPayload($label, $issuer, ...$options, additionalParameters: $extra, withQrSvg: true);
+        $parsed = ProvisioningUriParser::parse($payload->uri);
+        verify($parsed->type === $type && $parsed->secret === $secret && $parsed->label === $label && $parsed->issuer === $issuer, 'Enrollment identity mismatch.');
+        verify($parsed->digits === 8 && $parsed->algorithm === 'sha256' && $parsed->additionalParameters === ['tenant' => 'alpha & beta', 'generation' => '7'], 'Enrollment algorithm or extension mismatch.');
+        foreach ($expected as $key => $value) {
+            verify($parsed->$key === $value, 'Type-specific enrollment metadata mismatch.');
+        }
+        verify(is_string($payload->qrSvg) && str_contains($payload->qrSvg, '<svg'), 'QR rendering failed.');
+        verify($payload->__debugInfo()['secret'] === '[redacted]' && $payload->__debugInfo()['uri'] === '[redacted]' && $parsed->__debugInfo()['secret'] === '[redacted]', 'Enrollment debug leaked material.');
+        foreach (['&secret=' . $secret, '&Secret=' . $secret, '&bad=%ZZ', '#fragment', '&issuer=foreign'] as $suffix) {
+            expectFailure(static fn() => ProvisioningUriParser::parse($payload->uri . $suffix), InvalidArgumentException::class, 'Malformed provisioning accepted.');
+        }
+        foreach (['SECRET', 'issuer', 'digits', 'ocraSuite'] as $key) {
+            expectFailure(static fn() => $factor->getEnrollmentPayload($label, $issuer, ...$options, additionalParameters: [$key => 'invalid']), InvalidArgumentException::class, 'Reserved parameter overwritten.');
+        }
+        expectFailure(static fn() => $factor->getEnrollmentPayload('bad:label', $issuer, ...$options), InvalidArgumentException::class, 'Invalid label accepted.');
+        expectFailure(static fn() => $factor->getEnrollmentPayload($label, $issuer, ...$options, withQrSvg: true, imageSize: 63), InvalidArgumentException::class, 'Invalid QR size accepted.');
+        foreach ([null, 0, 60] as $grace) {
+            $rotation = $factor->planRotation($next, $label, $issuer, ...$options, gracePeriodInSeconds: $grace, now: $now, additionalParameters: $extra);
+            verify($rotation->requiresImmediateCutover() === ($grace !== 60), 'Rotation cutover mismatch.');
+            verify($rotation->isDualSecretActive(new DateTimeImmutable('@' . ($now + 59))) === ($grace === 60) && !$rotation->isDualSecretActive(new DateTimeImmutable('@' . ($now + 60))), 'Rotation overlap boundary mismatch.');
+            verify($rotation->nextEnrollment !== null && ProvisioningUriParser::parse($rotation->nextEnrollment->uri)->secret === $next, 'Replacement enrollment lost secret.');
+            verify($rotation->__debugInfo()['currentSecret'] === '[redacted]' && $rotation->__debugInfo()['nextSecret'] === '[redacted]', 'Rotation debug leaked secret.');
+        }
+        expectFailure(static fn() => $factor->planRotation($secret, $label, $issuer, ...$options), InvalidArgumentException::class, 'Identical rotation accepted.');
+        expectFailure(static fn() => $factor->planRotation($next, $label, $issuer, ...$options, gracePeriodInSeconds: 2, now: PHP_INT_MAX), InvalidArgumentException::class, 'Rotation timestamp overflow accepted.');
+        $verify = match ($type) {
+            'totp' => static fn(string $key, string $id): bool => (new TOTP($key, 8, 45, 'sha256'))->verifyWithWindow((new TOTP($key, 8, 45, 'sha256'))->generate($now), $now, new VerificationWindow(), $cache, $id)->matched,
+            'hotp' => static fn(string $key, string $id): bool => (new HOTP($key, 8, 'sha256'))->verifyWithResult((new HOTP($key, 8, 'sha256'))->generate(42), 42, cache: $cache, factorId: $id)->matched,
+            'ocra' => static fn(string $key, string $id): bool => OCRA::fromBase32($suite, $key)->verifyWithResult(OCRA::fromBase32($suite, $key)->generate('12345678', counter: 42), '12345678', counter: 42, cache: $cache, factorId: $id)->matched,
+        };
+        verify($verify($secret, "$type-old") && !$verify($secret, "$type-old"), 'Original generation replay mismatch.');
+        verify($verify($next, "$type-new") && !$verify($next, "$type-new"), 'Replacement generation replay mismatch.');
+    }
+    echo "HOTP/TOTP/OCRA provisioning, parsing, QR, redaction, rotation and shared generation replay boundaries passed\n";
 }

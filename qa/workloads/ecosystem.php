@@ -163,6 +163,7 @@ match ($argv[1] ?? '') {
     'validation-database' => validationDatabaseWorkload(),
     'otp-backends' => otpBackendsWorkload(),
     'otp-drift' => otpDriftWorkload(),
+    'otp-enrollment' => otpEnrollmentWorkload(),
     'scylla' => scyllaWorkload(),
     'redis-failover-seed' => redisFailoverWorkload(true),
     'redis-failover-verify' => redisFailoverWorkload(false),

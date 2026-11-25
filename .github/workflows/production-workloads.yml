@@ -251,6 +251,7 @@ jobs:
           - {scenario: ecosystem-otp-backends, backend: mysql}
           - {scenario: ecosystem-otp-backends, backend: pgsql}
           - {scenario: ecosystem-otp-drift, backend: pgsql}
+          - {scenario: ecosystem-otp-enrollment, backend: pgsql}
           - {scenario: ecosystem-supervisor, backend: pgsql}
           - {scenario: ecosystem-http-framing, backend: pgsql}
           - {scenario: ecosystem-http-backpressure, backend: pgsql}
