@@ -15,7 +15,7 @@ function configuration(): array
     $root = getenv('PROJECT');
     ensure(is_string($root) && is_dir($root), 'Missing isolated application.');
     $driver = getenv('DB_BACKEND');
-    ensure(in_array($driver, ['mysql', 'pgsql'], true), 'Unexpected database backend.');
+    ensure(in_array($driver, ['mysql', 'pgsql', 'mariadb'], true), 'Unexpected database backend.');
 
     $config = [
         'app' => ['base_path' => $root, 'load_env' => false, 'env' => 'local', 'capabilities' => [
@@ -28,7 +28,7 @@ function configuration(): array
             'connections' => ['main' => [
                 'driver' => $driver,
                 'host' => '127.0.0.1',
-                'port' => $driver === 'mysql' ? 3306 : 5432,
+                'port' => match ($driver) { 'mysql' => 3306, 'mariadb' => 3307, default => 5432 },
                 'database' => 'experiment',
                 'username' => 'experiment',
                 'password' => 'experiment',
@@ -145,11 +145,11 @@ function configuration(): array
         $config['app']['capabilities'] = ['cache', 'database', 'filesystem', 'validation', 'runwire'];
     }
 
-    if (in_array(getenv('SCENARIO'), ['oauth', 'refresh', 'oidc', 'dpop', 'oauth-http', 'ecosystem-jwt-replay', 'ecosystem-consent-lifecycle'], true)) {
+    if (in_array(getenv('SCENARIO'), ['oauth', 'refresh', 'oidc', 'dpop', 'oauth-http', 'ecosystem-jwt-replay', 'ecosystem-consent-lifecycle', 'ecosystem-consent-permissions', 'ecosystem-consent-scope-policy'], true)) {
         $keyRoot = $root . '/storage/lab-oauth-keys';
         $config['auth']['oauth'] = [
             'enabled' => true, 'issuer' => 'https://identity.example.test',
-            'resource_audiences' => ['https://api.example.test'], 'scope_permissions' => [],
+            'resource_audiences' => ['https://api.example.test'], 'scope_permissions' => getenv('SCENARIO') === 'ecosystem-consent-scope-policy' ? ['profile.read' => 'profile.read', 'profile.export' => 'profile.export', 'profile.alias' => 'profile.read'] : [],
             'grants' => ['authorization_code', 'client_credentials', 'refresh_token'],
             'signing' => [
                 'algorithm' => 'ES256', 'active_key_id' => 'lab-key',

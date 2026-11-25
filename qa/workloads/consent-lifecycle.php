@@ -77,6 +77,7 @@ $app->execution()->run(static function () use ($app, $phase): void {
     $oauth = $app->make(OAuthManager::class);
     if (str_starts_with($phase, 'permission-')) {
         $auth = $app->make(AuthServices::class);
+        $mapped = getenv('SCENARIO') === 'ecosystem-consent-scope-policy';
         $permissions = $auth->permissions();
         $roles = $auth->roles();
         $db = $app->make(DBLayerFactory::class)->connection();
@@ -85,7 +86,7 @@ $app->execution()->run(static function () use ($app, $phase): void {
             $account = $auth->accounts()->create('permission-owner@example.test')->account;
             $other = $auth->accounts()->create('permission-other@example.test')->account;
             ensure($account !== null && $other !== null, 'Permission accounts unavailable.');
-            $client = $oauth->clients()->register(OAuthClientType::Public, [OAuthGrantType::AuthorizationCode], ['https://client.example.test/callback'], ['profile.read'], [$api])->client;
+            $client = $oauth->clients()->register(OAuthClientType::Public, [OAuthGrantType::AuthorizationCode], ['https://client.example.test/callback'], $mapped ? ['profile.read', 'profile.export', 'profile.alias'] : ['profile.read'], [$api])->client;
             $read = $permissions->create('profile.read');
             $export = $permissions->create('profile.export');
             $role = $roles->create('profile-exporter');
@@ -95,9 +96,24 @@ $app->execution()->run(static function () use ($app, $phase): void {
             $state = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
         }
         $principal = consentPrincipal($state['account']);
-        $request = consentRequest($oauth, $state['client'], 'profile.read', $api, bin2hex(random_bytes(32)));
-        // Explicit required-permission request tests consent enforcement, not config scope mapping.
-        $request = new AuthorizationRequest($request->client, $request->redirectUri, $request->codeChallenge, $request->scopes, $request->audiences, ['profile.read', 'profile.export']);
+        $request = consentRequest($oauth, $state['client'], $mapped ? 'profile.read profile.export profile.alias' : 'profile.read', $api, bin2hex(random_bytes(32)));
+        if ($mapped) {
+            $required = $request->requiredPermissions;
+            sort($required);
+            ensure($required === ['profile.export', 'profile.read'], 'Configured scope permissions were not mapped and deduplicated.');
+            $narrow = consentRequest($oauth, $state['client'], 'profile.alias', $api, bin2hex(random_bytes(32)));
+            ensure($narrow->requiredPermissions === ['profile.read'], 'Scope alias did not map to exact permission.');
+            foreach (['profile.unknown', 'profile.read profile.read'] as $invalid) {
+                try {
+                    consentRequest($oauth, $state['client'], $invalid, $api, bin2hex(random_bytes(32)));
+                    throw new \RuntimeException('Invalid scope request accepted.');
+                } catch (\InvalidArgumentException|\Infocyph\Foundation\Auth\Exception\OAuthException) {
+                    // Scope validation must fail before a consent row can be created.
+                }
+            }
+        } else {
+            $request = new AuthorizationRequest($request->client, $request->redirectUri, $request->codeChallenge, $request->scopes, $request->audiences, ['profile.read', 'profile.export']);
+        }
         $denied = static function () use ($oauth, $principal, $request): void {
             ensure(!$oauth->hasConsent($principal, $request), 'Denied permission retained usable consent.');
             try {
@@ -116,6 +132,9 @@ $app->execution()->run(static function () use ($app, $phase): void {
             $roles->assign($state['account'], $state['role']);
             $grant = $oauth->grantConsent($principal, $request);
             ensure($grant->active() && $oauth->hasConsent($principal, $request) && !$oauth->hasConsent(consentPrincipal($state['other']), $request) && $count() === 1, 'Combined role/direct grant or account isolation failed.');
+            if ($mapped) {
+                ensure(!$oauth->hasConsent($principal, $narrow), 'Mapped alias reused consent with a different scope fingerprint.');
+            }
             $state['consent'] = $grant->id;
             ensure(file_put_contents($path, json_encode($state, JSON_THROW_ON_ERROR), LOCK_EX) !== false, 'Permission state unavailable.');
         } elseif ($phase === 'permission-revoke') {

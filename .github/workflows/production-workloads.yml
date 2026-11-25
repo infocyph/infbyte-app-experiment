@@ -239,6 +239,27 @@ jobs:
           - {scenario: ecosystem-auth-lifecycle, backend: mysql}
           - {scenario: ecosystem-jwt-replay, backend: mysql}
           - {scenario: ecosystem-auth-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-amqp-ack-uncertain, backend: mysql}
+          - {scenario: ecosystem-amqp-ack-uncertain, backend: sqlite}
+          - {scenario: ecosystem-amqp-ack-uncertain, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-amqp-wire-ack, backend: mysql}
+          - {scenario: ecosystem-amqp-wire-ack, backend: sqlite}
+          - {scenario: ecosystem-amqp-wire-ack, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sqs-ack-uncertain, backend: mysql}
+          - {scenario: ecosystem-sqs-ack-uncertain, backend: sqlite}
+          - {scenario: ecosystem-sqs-ack-uncertain, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sqs-wire-ack, backend: mysql}
+          - {scenario: ecosystem-sqs-wire-ack, backend: sqlite}
+          - {scenario: ecosystem-sqs-wire-ack, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-amqp-consumer-failures, backend: sqlite}
+          - {scenario: ecosystem-amqp-consumer-failures, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sqs-consumer-failures, backend: sqlite}
+          - {scenario: ecosystem-sqs-consumer-failures, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-consent-scope-policy, backend: pgsql}
+          - {scenario: ecosystem-consent-scope-policy, backend: mysql}
+          - {scenario: ecosystem-consent-scope-policy, backend: mariadb}
+          - {scenario: ecosystem-consent-lifecycle, backend: mariadb}
+          - {scenario: ecosystem-consent-permissions, backend: mariadb}
           - {scenario: ecosystem-consent-lifecycle, backend: pgsql}
           - {scenario: ecosystem-consent-lifecycle, backend: mysql}
           - {scenario: ecosystem-jwt-replay, backend: pgsql}
