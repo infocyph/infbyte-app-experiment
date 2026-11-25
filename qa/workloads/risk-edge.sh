@@ -10,11 +10,14 @@ export LAB_EDGE_AUTHORITY="$(php -r 'echo bin2hex(random_bytes(32));')"
 export LAB_EDGE_TELEMETRY="$(php -r 'echo bin2hex(random_bytes(32));')"
 export LAB_EDGE_TIME="$(date +%s)"
 export APP_ENV=production APP_DEBUG=false
+export LAB_EDGE_MEASURE_JA4=0
+if [[ "$SCENARIO" == ecosystem-risk-ja4 ]]; then export LAB_EDGE_MEASURE_JA4=1; fi
 root="$(mktemp -d "$RUNNER_TEMP/risk-edge.XXXXXXXX")"
 cleanup() {
   docker logs lab-risk-fpm > "$EVIDENCE/risk-fpm.log" 2>&1 || :
   docker logs lab-risk-nginx > "$EVIDENCE/risk-nginx.log" 2>&1 || :
-  docker rm -f lab-risk-nginx lab-risk-fpm >/dev/null 2>&1 || :
+  docker logs lab-risk-ja4 > "$EVIDENCE/risk-ja4.log" 2>&1 || :
+  docker rm -f lab-risk-ja4 lab-risk-nginx lab-risk-fpm >/dev/null 2>&1 || :
   rm -rf "$root"
 }
 trap cleanup EXIT
@@ -85,11 +88,14 @@ http {
 CONF
 docker run -d --name lab-risk-fpm --network host --user "$(id -u):$(id -g)" -v "$PROJECT:$PROJECT" -v "$root:/fixture:ro" -w "$PROJECT" \
   -e APP_ENV -e APP_DEBUG -e AUTH_TOKEN_SECRET -e AUTH_OTP_RECOVERY_HMAC_KEY -e AUTH_OTP_PROTECTION_KEY \
-  -e LAB_EDGE_PASSWORD -e LAB_EDGE_AUTHORITY -e LAB_EDGE_TELEMETRY -e LAB_EDGE_TIME \
+  -e LAB_EDGE_PASSWORD -e LAB_EDGE_AUTHORITY -e LAB_EDGE_TELEMETRY -e LAB_EDGE_TIME -e LAB_EDGE_MEASURE_JA4 \
   -e INFOCYPH_FOUNDATION_RELEASE_ROOT -e INFOCYPH_FOUNDATION_RELEASE_MANIFEST_SHA256 \
   infbyte-lab-fpm php-fpm -F -y /fixture/fpm.conf
 docker run -d --name lab-risk-nginx --network host -v "$root:/fixture:ro" -v "$root/nginx.conf:/etc/nginx/nginx.conf:ro" nginx:alpine
 edge=https://localhost:18782
+if [[ "$LAB_EDGE_MEASURE_JA4" == 1 ]]; then
+  source "$GITHUB_WORKSPACE/qa/workloads/risk-ja4-start.sh"
+fi
 for attempt in {1..40}; do
   if curl -fsS --max-time 2 --cacert "$root/cert.pem" "$edge/api/lab/ordinary" > "$root/ordinary.json"; then break; fi
   sleep 1
@@ -98,15 +104,28 @@ php -r '$r=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERRO
 direct="$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H 'X-Lab-Client-IP: 127.0.0.1' http://127.0.0.1:18781/api/lab/login)"
 [[ "$direct" == 403 ]]
 login() {
-  local expected="$1" password="$2" status
-  status="$(curl -sS --max-time 15 --cacert "$root/cert.pem" -o "$root/login.json" -D "$root/headers" -w '%{http_code}' \
+  local expected="$1" password="$2" status version="${3:-1.3}"
+  local tls=()
+  if [[ "$LAB_EDGE_MEASURE_JA4" == 1 ]]; then tls+=(--http1.1 "--tlsv$version" --tls-max "$version"); fi
+  status="$(curl -sS "${tls[@]}" --max-time 15 --cacert "$root/cert.pem" -o "$root/login.json" -D "$root/headers" -w '%{http_code}' \
     -H 'X-Lab-Client-IP: 198.51.100.1' -H 'X-Lab-JA4: forged' -H 'X-Lab-ASN: 64500' \
     --data-urlencode "password=$password" "$edge/api/lab/login")"
   [[ "$status" == "$expected" ]]
   grep -Eiq '^cache-control:.*no-store' "$root/headers"
+  if [[ "$LAB_EDGE_MEASURE_JA4" == 1 ]]; then
+    local observed
+    observed="$(awk 'tolower($1)=="x-lab-observed-ja4:" {gsub(/\r/, "", $2); print $2}' "$root/headers")"
+    [[ "$observed" == t"${version/./}"d* ]]
+    printf '%s\n' "$observed" >> "$root/observed-ja4"
+  fi
 }
+if [[ "$LAB_EDGE_MEASURE_JA4" == 1 ]]; then login 200 "$LAB_EDGE_PASSWORD" 1.2; fi
 login 200 "$LAB_EDGE_PASSWORD"
 login 401 wrong
 login 429 "$LAB_EDGE_PASSWORD"
 for i in {1..20}; do curl -fsS --max-time 3 --cacert "$root/cert.pem" "$edge/api/lab/ordinary" | grep -q '"pool":"ordinary"'; done
-echo 'Actual verified TLS edge, direct origin rejection, overwritten client identity, absent JA4/ASN, isolated FPM pools and login-only challenge passed.'
+if [[ "$LAB_EDGE_MEASURE_JA4" == 1 ]]; then
+  docker logs lab-risk-ja4 > "$EVIDENCE/risk-ja4.log" 2>&1
+  php "$GITHUB_WORKSPACE/qa/workloads/risk-ja4-verify.php" "$root/observed-ja4" "$EVIDENCE/risk-ja4.log"
+fi
+echo 'Actual verified TLS edge, direct origin rejection, overwritten identity, isolated FPM pools and login-only challenge passed.'
