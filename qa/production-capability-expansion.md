@@ -264,3 +264,8 @@ I: reuse the released Runwire 3.1 independent interoperability fixtures (adapted
 ## B63 — TLS-only Redis and concurrent cold-key computation
 
 I: isolated Redis TLS-only listener; application-injected verified phpredis client (the built-in Redis DSN parser does not advertise TLS); wrong CA and plaintext rejection, 12 independent connections racing on a cold key, exactly one compute callback, fresh-client read and strict atomic claim/CAS/consume. Hosted verification pending. Other backend-specific TLS and stampede variants remain open.
+
+
+## B64 — actual PostgreSQL TLS
+
+I: enable SSL on the isolated PostgreSQL service with a generated certificate, verify-full using native libpq trust, assert pg_stat_ssl transport evidence, committed transfer and reconnect, wrong hostname/CA rejection, and required-TLS policy rejecting sslmode=disable. No private key artifact. Hosted verification pending. Other SQL driver TLS variants remain open.

@@ -267,9 +267,11 @@ require __DIR__ . '/database-binlog.php';
 require __DIR__ . '/database-proxy.php';
 require __DIR__ . '/database-faults.php';
 require __DIR__ . '/database-uncertain.php';
+require __DIR__ . '/database-tls.php';
 
 $db = new Connection(config());
 match ($argv[1] ?? '') {
+    'tls' => databaseTlsWorkload(),
     'commit-uncertain' => uncertainCommitWorkload($db),
     'migration-fault' => migrationFault($db),
     'connection-loss' => connectionLoss($db),

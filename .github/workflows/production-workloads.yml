@@ -26,6 +26,7 @@ jobs:
           - {scenario: ecosystem-amqp-dlq, backend: pgsql}
           - {scenario: ecosystem-sqs-fifo, backend: pgsql}
           - {scenario: db-commit-uncertain, backend: pgsql}
+          - {scenario: db-tls, backend: pgsql}
           - {scenario: ecosystem-remote-jwks, backend: pgsql}
           - {scenario: ecosystem-uid-provider-boundaries, backend: pgsql}
           - {scenario: ecosystem-di-contextual, backend: pgsql}
