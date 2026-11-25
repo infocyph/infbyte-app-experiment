@@ -16,6 +16,9 @@ function sharedAtomicCache(string $backend, string $namespace, string $root, ?Ca
         default => throw new InvalidArgumentException('Unknown shared cache database.'),
     };
     return match ($backend) {
+        'redis-cluster' => Cache::redisCluster($namespace, ['127.0.0.1:17379', '127.0.0.1:17380', '127.0.0.1:17381'], options: $options),
+        'mongodb' => Cache::mongodb($namespace, database: 'experiment', options: $options),
+        'scylla' => Cache::scylla($namespace, options: $options),
         'redis' => Cache::redis($namespace, options: $options),
         'valkey' => Cache::valkey($namespace, 'valkey://127.0.0.1:6380', options: $options),
         'memcached' => Cache::memcached($namespace, options: $options),

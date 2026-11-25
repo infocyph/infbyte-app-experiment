@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$PROJECT"
 script="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
-if [[ "$SCENARIO" == ecosystem-scylla ]]; then
+if [[ "$SCENARIO" == ecosystem-scylla || "$SCENARIO" == ecosystem-cache-scylla-* ]]; then
   php -r 'if (!class_exists("Cassandra")) {fwrite(STDERR, "Native Cassandra PHP driver unavailable\n"); exit(1);}'
   docker run -d --name lab-scylla -p 127.0.0.1:9042:9042 scylladb/scylla:6.2 --smp 2 --memory 1G --overprovisioned 1 --developer-mode 1
   trap 'docker logs lab-scylla > "$EVIDENCE/scylla.log" 2>&1; docker rm -f lab-scylla >/dev/null' EXIT
@@ -12,7 +12,7 @@ if [[ "$SCENARIO" == ecosystem-scylla ]]; then
     sleep 2
   done
   test "$ready" = 1
-  php "$script" scylla | tee "$EVIDENCE/ecosystem.log"
+  php "$script" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
   exit
 fi
 ports=(17379 17380 17381 17382 17383 17384)

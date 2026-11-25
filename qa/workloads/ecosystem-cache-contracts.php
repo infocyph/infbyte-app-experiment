@@ -178,3 +178,43 @@ function cachePayloadPolicyWorkload(string $backend): void
     verify($atomic->getAndDelete('signed') === ['version' => 2] && !$peer->has('signed'), 'Signed atomic consumption failed.');
     echo "Shared $backend signed/compressed payload and atomic policy contracts passed\n";
 }
+
+function cacheRemoteCapabilityContracts(string $backend): void
+{
+    [$cache, $peer, $foreign] = cacheContractPeers($backend, 'remote-capabilities');
+    verify($cache->isAuthoritative() && !$cache->isFailOpen(), 'Expected authoritative store missing.');
+    verify(($cache->atomic() !== null) === ($backend !== 'scylla'), 'Native atomic capability differs from published adapter.');
+    verify($cache->authenticationStateLock() === null, 'Adapter claimed native authentication-state lock without an explicit provider.');
+    verify($cache->set('key', false, 600) && $peer->has('key') && $peer->get('key') === false, 'Independent remote value differs.');
+    verify($foreign->set('key', 'foreign', 600) && $cache->clear() && !$peer->has('key') && $foreign->get('key') === 'foreign', 'Namespace clear crossed boundary.');
+    echo "$backend explicit native capability and namespace contracts passed\n";
+}
+
+function scyllaPayloadContracts(): void
+{
+    $root = evidenceDirectory() . '/scylla-payload';
+    verify(mkdir($root, 0700), 'Scylla fixture root unavailable.');
+    $options = new \Infocyph\CacheLayer\Cache\CacheOptions(integrityKey: 'lab-scylla-signing-key', maxPayloadBytes: 4096, compressionThreshold: 256, failOpen: false);
+    $cache = sharedAtomicCache('scylla', 'scylla-payload', $root, $options);
+    $peer = sharedAtomicCache('scylla', 'scylla-payload', $root, $options);
+    verify($cache->hasPayloadIntegrity() && $cache->atomic() === null && $cache->authenticationStateLock() === null, 'Scylla native capability differed.');
+    $value = ['binary' => "a\0\xff", 'repeat' => str_repeat('r', 1200)];
+    verify($cache->set('signed', $value, new DateInterval('PT10M')) && $peer->get('signed') === $value, 'Signed/compressed Scylla interval value failed.');
+    verify($cache->set('absolute', $value, new DateTimeImmutable('+10 minutes')) && $peer->get('absolute') === $value, 'Absolute expiry record failed.');
+    $exception = \Infocyph\CacheLayer\Exceptions\CacheBackendException::class;
+    expectFailure(static fn() => $cache->set('signed', str_repeat('x', 8192), 600), $exception, 'Expanded size policy bypassed.');
+    expectFailure(static fn() => $cache->set('signed', new stdClass(), 600), $exception, 'Object policy bypassed.');
+    expectFailure(static fn() => $cache->set('closure', static fn(): int => 1, 600), $exception, 'Closure policy bypassed.');
+    verify($peer->get('signed') === $value && !$peer->has('closure'), 'Rejected publication mutated Scylla record.');
+    verify($cache->set('wrong-key', $value, 600), 'Wrong-key seed failed.');
+    $wrong = sharedAtomicCache('scylla', 'scylla-payload', $root, new \Infocyph\CacheLayer\Cache\CacheOptions(integrityKey: 'different-key', failOpen: false));
+    verify(!$wrong->has('wrong-key'), 'Wrong key authenticated persisted record.');
+    verify($cache->set('absolute', 'past', new DateTimeImmutable('-1 minute')) && !$peer->has('absolute'), 'Past expiry did not delete record.');
+    verify($cache->set('short', 5, new DateInterval('PT2S')), 'Short interval seed failed.');
+    $deadline = hrtime(true) + 10_000_000_000;
+    while ($peer->has('short')) {
+        verify(hrtime(true) < $deadline, 'Scylla short interval did not expire.');
+        usleep(50_000);
+    }
+    echo "Scylla ordinary signed/compressed records, payload rejection and TTL contracts passed\n";
+}

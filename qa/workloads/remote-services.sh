@@ -11,6 +11,8 @@ cleanup() {
 trap cleanup EXIT
 provision="$SCENARIO"
 case "$SCENARIO" in
+  ecosystem-cache-redis-cluster-*) provision=ecosystem-redis-cluster ;;
+  ecosystem-cache-mongodb-*) provision=ecosystem-mongodb ;;
   ecosystem-ftp-outage|ecosystem-ftp-copy-contracts|ecosystem-ftp-staged-contracts|ecosystem-webdav-outage|ecosystem-webdav-copy-contracts|ecosystem-webdav-staged-contracts|ecosystem-gridfs-outage|ecosystem-gridfs-copy-contracts|ecosystem-gridfs-staged-contracts|ecosystem-sftp2-outage|ecosystem-sftp2-copy-contracts|ecosystem-sftp2-staged-contracts|ecosystem-async-s3-outage|ecosystem-async-s3-copy-contracts|ecosystem-async-s3-staged-contracts|ecosystem-azure-outage|ecosystem-azure-copy-contracts|ecosystem-azure-staged-contracts|ecosystem-gcs-outage|ecosystem-gcs-copy-contracts|ecosystem-gcs-staged-contracts)
     provision="${SCENARIO%-outage}"
     provision="${provision%-copy-contracts}"

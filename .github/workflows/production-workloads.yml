@@ -742,6 +742,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-cache-redis-cluster-bulk, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-tags, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-remember, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-metrics, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-remote-capabilities, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-atomic, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-ttl-forms, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-mixed-atomic, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-payload-policy, backend: pgsql}
+          - {scenario: ecosystem-cache-mongodb-bulk, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-tags, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-remember, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-metrics, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-remote-capabilities, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-atomic, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-ttl-forms, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-mixed-atomic, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-payload-policy, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-bulk, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-tags, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-remember, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-metrics, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-remote-capabilities, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-payload-contracts, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-invalidation-sql, backend: mariadb}
           - {scenario: ecosystem-ftp-outage, backend: pgsql}
           - {scenario: ecosystem-ftp-copy-contracts, backend: pgsql}
           - {scenario: ecosystem-ftp-staged-contracts, backend: pgsql}

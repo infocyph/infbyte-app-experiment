@@ -67,7 +67,12 @@ function invalidateCommon(InvalidationTransportInterface $transport): void
 function invalidationSqlWorkload(): void
 {
     $driver = (string) getenv('DB_BACKEND');
-    $dsn = $driver === 'pgsql' ? 'pgsql:host=127.0.0.1;port=5432;dbname=experiment' : 'mysql:host=127.0.0.1;port=3306;dbname=experiment';
+    $dsn = match ($driver) {
+        'pgsql' => 'pgsql:host=127.0.0.1;port=5432;dbname=experiment',
+        'mysql' => 'mysql:host=127.0.0.1;port=3306;dbname=experiment',
+        'mariadb' => 'mysql:host=127.0.0.1;port=3307;dbname=experiment',
+        default => throw new InvalidArgumentException('Unsupported SQL invalidation backend.'),
+    };
     $pdo = new PDO($dsn, 'experiment', 'experiment', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     $transport = new PdoInvalidationTransport($pdo);
     invalidateCommon($transport);
