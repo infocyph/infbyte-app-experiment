@@ -67,6 +67,7 @@ require __DIR__ . '/ecosystem-storage-boundaries.php';
 require __DIR__ . '/ecosystem-storage-outage.php';
 require __DIR__ . '/ecosystem-utility-boundaries.php';
 require __DIR__ . '/ecosystem-http-semantics.php';
+require __DIR__ . '/ecosystem-http-policy-contracts.php';
 require __DIR__ . '/ecosystem-file-lifecycle.php';
 require __DIR__ . '/ecosystem-file-queue-audit.php';
 require __DIR__ . '/ecosystem-utility-contracts.php';
@@ -148,6 +149,24 @@ match ($argv[1] ?? '') {
     'file-rollback-failure' => fileRollbackFailureWorkload(),
     'file-queue-audit' => fileQueueAuditWorkload(),
     'file-watch' => fileWatchWorkload(),
+    'response-cache-freshness-redis' => responseCacheFreshnessContracts('redis'),
+    'response-cache-freshness-valkey' => responseCacheFreshnessContracts('valkey'),
+    'response-cache-freshness-memcached' => responseCacheFreshnessContracts('memcached'),
+    'response-cache-freshness-file' => responseCacheFreshnessContracts('file'),
+    'response-cache-freshness-phpfiles' => responseCacheFreshnessContracts('phpfiles'),
+    'response-cache-freshness-sqlite' => responseCacheFreshnessContracts('sqlite'),
+    'response-cache-freshness-pdo' => responseCacheFreshnessContracts('pdo'),
+    'response-cache-bypass-redis' => responseCacheBypassContracts('redis'),
+    'response-cache-bypass-valkey' => responseCacheBypassContracts('valkey'),
+    'response-cache-bypass-memcached' => responseCacheBypassContracts('memcached'),
+    'response-cache-bypass-file' => responseCacheBypassContracts('file'),
+    'response-cache-bypass-phpfiles' => responseCacheBypassContracts('phpfiles'),
+    'response-cache-bypass-sqlite' => responseCacheBypassContracts('sqlite'),
+    'response-cache-bypass-pdo' => responseCacheBypassContracts('pdo'),
+    'conditional-precedence' => conditionalPrecedenceContracts(),
+    'route-cors-contracts' => routeCorsContracts(),
+    'outbound-cookie-contracts' => outboundCookieContracts(),
+    'cancellation-ownership' => cancellationOwnershipContracts(),
     'http-representations' => httpRepresentationsWorkload(),
     'http-signatures' => httpSignaturesWorkload(),
     'uid-families' => uidFamiliesWorkload(),

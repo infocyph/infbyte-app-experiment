@@ -531,3 +531,7 @@ I: 25 independent jobs (five contracts × PostgreSQL, MySQL, MariaDB, SQLite and
 ## B153 — Foundation risk telemetry, consent permission and resource contracts
 
 I: 21 independent jobs: two risk telemetry contracts across nine shared-store configurations, two SQL consent permission lifecycle lanes and one JSON resource contract. Verify tenant/purpose/account isolation, fixed-window boundaries, trust and qualified absence, 12-process atomic failure accounting, durable direct/role permission assignment and revocation across three processes, and lazy resource projection/error propagation. Consent uses explicit required permissions; config-derived scope mapping is not claimed. Transport claims are synthetic, not a real edge measurement. CORE-01, SEC, DATA, OBS, MEM, EXEC-03: source and matrix/dispatcher review done; hosted qualification pending. 655 routine rows; no upstream changes.
+
+## B154 — Shared HTTP cache policy and runtime boundary contracts
+
+I: 22 independent lanes: nine stores each for response-cache HEAD/freshness and unsafe request/response bypass, conditional precedence/range and creation, route-specific CORS, outbound cookie storage security and structured cancellation/deadline ownership. Uses real stores with independent peers; direct policy calls are not wire-level or compiled-host coverage. Existing HTTP host/matcher and transport workloads remain. CORE-01, REQUEST, DATA, SEC, MEM, OPS-02, EXEC-03: source and matrix/dispatcher review done; hosted qualification pending. 677 routine rows; no upstream changes.

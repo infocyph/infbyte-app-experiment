@@ -452,6 +452,28 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-response-cache-freshness-redis, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-valkey, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-memcached, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-file, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-sqlite, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-pdo, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-pdo, backend: mysql}
+          - {scenario: ecosystem-response-cache-freshness-pdo, backend: mariadb}
+          - {scenario: ecosystem-response-cache-bypass-redis, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-valkey, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-memcached, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-file, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-sqlite, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-pdo, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-pdo, backend: mysql}
+          - {scenario: ecosystem-response-cache-bypass-pdo, backend: mariadb}
+          - {scenario: ecosystem-conditional-precedence, backend: pgsql}
+          - {scenario: ecosystem-route-cors-contracts, backend: pgsql}
+          - {scenario: ecosystem-outbound-cookie-contracts, backend: pgsql}
+          - {scenario: ecosystem-cancellation-ownership, backend: pgsql}
           - {scenario: ecosystem-otp-durable, backend: mysql}
           - {scenario: ecosystem-otp-durable, backend: pgsql}
           - {scenario: ecosystem-otp-backends, backend: mysql}
