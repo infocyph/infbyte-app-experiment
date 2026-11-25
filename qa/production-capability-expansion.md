@@ -215,3 +215,7 @@ I: middleware composition for gzip, all ETag encoding modes, content/language ne
 ## B51 — authenticated multi-tenant checkout
 
 I: four independent production HTTP combinations (MySQL/PostgreSQL × fused/sharded). Two equally authorized tenants reuse request keys independently; eight clients exercise 320 orders, replay, missing token, wrong-tenant permission, unprivileged account, cross-tenant ID reads, SQL inventory conservation, cache and local document integrity. Ownership is derived from the authenticated account and application membership table, not trusted route input. Existing connected outbox/mail workload remains separate. Hosted verification pending, including known upstream production-auth readiness issues.
+
+## B52 — live release coexistence and rollback
+
+I: four MySQL/PostgreSQL × fused/sharded native combinations; old compiled generation serves continuous requests across additive DDL and new compilation, two live generations coexist, wrong trusted digest rejected, active pointer rolls back, fresh old workers and already-running new workers retain correct contracts. Separate ports intentionally model blue/green deployment; no external load-balancer SLA claimed. Hosted verification pending.

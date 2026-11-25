@@ -15,6 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-release-cutover, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-release-cutover, backend: mysql, matcher: sharded}
+          - {scenario: ecosystem-release-cutover, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-release-cutover, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-tenants, backend: mysql, matcher: fused}
           - {scenario: ecosystem-tenants, backend: mysql, matcher: sharded}
           - {scenario: ecosystem-tenants, backend: pgsql, matcher: fused}

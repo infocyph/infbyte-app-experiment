@@ -29,6 +29,7 @@ if (getenv('SCENARIO') === 'operations') {
 $route = $root . '/routes/api.php';
 $original = file_get_contents($route);
 $addition = file_get_contents(__DIR__ . match (getenv('SCENARIO')) {
+    'ecosystem-release-cutover' => '/release-routes.php',
     'ecosystem-tenants' => '/tenant-routes.php',
     'browser' => '/browser-routes.php',
     'ecosystem-connected' => '/connected-routes.php',

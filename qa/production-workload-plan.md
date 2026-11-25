@@ -255,3 +255,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B51 — authenticated multi-tenant application
 - [x] Four backend/matcher combinations with real auth, checkout and tenant isolation.
 - [ ] Hosted verification and expanded tenancy messaging/identity variants.
+
+## B52 — live deployment cutover and rollback
+- [x] Four backend/matcher combinations with live generation coexistence, additive schema and trusted activation rollback.
+- [ ] Hosted verification; destructive migration and external deployment orchestration remain separate.
