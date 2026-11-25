@@ -1426,6 +1426,10 @@ jobs:
           - {scenario: ecosystem-array-facade-rejection, backend: pgsql}
           - {scenario: ecosystem-config-typed-defaults, backend: pgsql}
           - {scenario: ecosystem-config-lazy-defaults, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-get, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-patch, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-delete, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-options, backend: pgsql}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}
@@ -1679,6 +1683,22 @@ jobs:
           - {scenario: ecosystem-host-budget-head, backend: pgsql, host: roadrunner}
           - {scenario: ecosystem-host-budget-head, backend: pgsql, host: swoole, php: '8.5'}
           - {scenario: ecosystem-host-budget-head, backend: pgsql, host: openswoole, php: '8.6'}
+          - {scenario: ecosystem-http-redirect-301-get, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-301-patch, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-301-delete, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-301-options, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-302-get, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-302-patch, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-302-delete, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-302-options, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-303-get, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-303-patch, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-303-delete, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-303-options, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-307-get, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-307-patch, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-307-delete, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-307-options, backend: pgsql}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

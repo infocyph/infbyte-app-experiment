@@ -19,7 +19,8 @@ function httpRedirectMethodContracts(int $status, string $method): void
     $path = '/redirect-contract/' . $status . '/' . $method;
     $payload = "order\x00receipt\xff";
     $request = labHttpBoundaryRequest($path, $method)->followRedirects(true, 2)->withBearerToken('fixture-only');
-    if ($method !== 'head') {
+    $bodyMethods = ['post', 'put', 'patch', 'delete'];
+    if (in_array($method, $bodyMethods, true)) {
         $request = $request->raw($payload, 'application/octet-stream');
     }
     $result = $client->send($request);
@@ -29,7 +30,7 @@ function httpRedirectMethodContracts(int $status, string $method): void
         in_array($status, [301, 302], true) && $method === 'post' => 'GET',
         default => strtoupper($method),
     };
-    $body = in_array($expected, ['POST', 'PUT'], true) ? $payload : '';
+    $body = in_array(strtolower($expected), $bodyMethods, true) ? $payload : '';
     $response = $result->response;
     verify($response->headerLine('X-Lab-Method') === $expected, 'Redirect method changed incorrectly.');
     verify($response->headerLine('X-Lab-Bytes') === (string) strlen($body)

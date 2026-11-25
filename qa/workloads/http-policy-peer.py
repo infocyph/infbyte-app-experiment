@@ -52,6 +52,9 @@ class Handler(BaseHTTPRequestHandler):
             _, _, status, method = path.split("/")
             assert self.command.lower() == method
             assert status in ("301", "302", "303", "307", "308")
+            assert body == (b"order\x00receipt\xff" if method in ("post", "put", "patch", "delete") else b"")
+            assert bool(self.headers.get("Authorization"))
+            assert self.headers.get("Content-Type", "absent") == ("application/octet-stream" if body else "absent")
             self.send_response(int(status))
             self.send_header("Location", f"/redirect-target/{status}/{method}")
             self.send_header("Content-Length", "0")
@@ -112,15 +115,15 @@ class Handler(BaseHTTPRequestHandler):
         return True
 
     def do_PATCH(self):
-        if not self.retry_matrix():
+        if not self.retry_matrix() and not self.boundary_redirect():
             self.send_error(404)
 
     def do_DELETE(self):
-        if not self.retry_matrix():
+        if not self.retry_matrix() and not self.boundary_redirect():
             self.send_error(404)
 
     def do_OPTIONS(self):
-        if not self.retry_matrix():
+        if not self.retry_matrix() and not self.boundary_redirect():
             self.send_error(404)
 
     def do_HEAD(self):
