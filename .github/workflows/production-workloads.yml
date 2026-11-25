@@ -1945,6 +1945,28 @@ jobs:
           - {scenario: ecosystem-runwire-outbound-h2-disconnect, backend: pgsql}
           - {scenario: ecosystem-runwire-outbound-h2-deadline, backend: pgsql}
           - {scenario: ecosystem-runwire-outbound-h2-cancel, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-redirect-301-get, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-redirect-301-head, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-redirect-302-get, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-redirect-302-head, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-redirect-303-get, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-redirect-303-head, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-redirect-307-get, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-redirect-307-head, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-redirect-308-get, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-redirect-308-head, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-query, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-relative, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-cross-allow, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-cross-deny, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-unsafe-post, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-loop, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-ambiguous, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-downgrade, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-retry-success, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-retry-exhausted, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-retry-post, backend: pgsql}
+          - {scenario: ecosystem-runwire-h1-policy-retry-after-head, backend: pgsql}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

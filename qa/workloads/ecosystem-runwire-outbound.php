@@ -7,6 +7,8 @@ use Infocyph\Runwire\Exception\CancelledException;
 use Infocyph\Runwire\Executor\ProcessExecutor;
 use Infocyph\Runwire\Http\Client\ClientProtocolPolicy;
 use Infocyph\Runwire\Http\Client\ClientRequest;
+use Infocyph\Runwire\Http\Client\ClientRedirectRetryPolicy;
+use Infocyph\Runwire\Http\Client\Http1PolicyClient;
 use Infocyph\Runwire\Http\Client\Http1OutboundClient;
 use Infocyph\Runwire\Http\Client\Http2OutboundClient;
 use Infocyph\Runwire\Http\Enum\ProtocolVersion;
@@ -119,4 +121,78 @@ function runwireOutboundContracts(string $protocol, string $contract): void
     verify($diagnostics->readWatchers === 0 && $diagnostics->writeWatchers === 0 && $diagnostics->timersActive === 0,
         'Outbound exchange leaked loop resources.');
     echo "Native $protocol $contract and healthy replacement exchange passed\n";
+}
+
+function runwireH1PolicyContracts(string $contract): void
+{
+    $loop = new SelectLoop();
+    $executor = new ProcessExecutor($loop, 1, 2);
+    $numeric = new Dialer($loop);
+    $dialer = new HappyEyeballsDialer($loop, $numeric, new AsyncDnsResolver($executor));
+    $tls = $contract === 'downgrade';
+    $host = '127.0.0.1';
+    $base = ($tls ? 'https' : 'http') . '://' . $host . ':' . (int) getenv($tls ? 'LAB_POLICY_TLS_PORT' : 'LAB_POLICY_PORT');
+    $policy = new ClientProtocolPolicy(ProtocolVersion::HTTP_1_1, [ProtocolVersion::HTTP_1_1], allowPlaintext: true);
+    $method = str_ends_with($contract, '-head') ? 'HEAD' : (in_array($contract, ['unsafe-post', 'retry-post'], true) ? 'POST' : 'GET');
+    $path = match ($contract) {
+        'query' => '/query?seed=1',
+        'relative' => '/relative/base/start',
+        default => '/' . $contract,
+    };
+    $request = new ClientRequest($method, $base . $path, Headers::fromArray([
+        'authorization' => 'Bearer fixture', 'cookie' => 'fixture=yes', 'x-tenant' => 'private-fixture', 'accept' => 'text/plain',
+    ]), protocol: $policy);
+    $statuses = [];
+    $body = '';
+    $failure = null;
+    $complete = 0;
+    $target = null;
+    $client = new Http1PolicyClient(
+        $loop, $dialer, $request,
+        new ClientRedirectRetryPolicy(maxRedirects: 1, maxRetries: 1, allowCrossOrigin: in_array($contract, ['cross-allow', 'downgrade'], true)),
+        static function (int $status, Headers $headers) use (&$statuses, &$target): void {
+            $statuses[] = $status;
+            $target = $headers->first('x-lab-target');
+        },
+        static function (string $part) use (&$body): void { $body .= $part; },
+        static function (?Connection $connection, ?Throwable $error) use (&$complete, &$failure, $loop): void {
+            ++$complete;
+            $failure = $error;
+            $connection?->abort();
+            $loop->stop();
+        },
+        new DialOptions(connectTimeoutSeconds: 3.0, tls: $tls ? new TlsClientOptions($host, caFile: (string) getenv('LAB_POLICY_CA'),
+            alpnProtocols: ['http/1.1']) : null),
+    );
+    $watchdog = $loop->delay(10.0, static fn() => $loop->stop());
+    try {
+        $client->start();
+        $loop->run();
+        verify($complete === 1 && $dialer->pendingCount() === 0 && $numeric->pendingCount() === 0, 'Policy terminal or dial ownership failed.');
+        $expected = match ($contract) {
+            'cross-deny' => 'Cross-origin',
+            'unsafe-post' => 'Unsafe HTTP redirect',
+            'loop' => 'budget',
+            'ambiguous' => 'Ambiguous',
+            'downgrade' => 'plaintext',
+            'retry-exhausted', 'retry-post', 'retry-after-head' => '',
+            default => null,
+        };
+        if ($expected !== null) {
+            verify($failure instanceof Throwable && ($expected === '' || str_contains($failure->getMessage(), $expected)), 'Invalid policy outcome reported success or wrong failure.');
+            verify($statuses === ($contract === 'retry-after-head' ? [200] : []) && $body === ($contract === 'retry-after-head' ? 'part' : ''), 'Intermediate or failed response leaked callbacks.');
+        } else {
+            verify($failure === null && $statuses === [200] && $body === ($method === 'HEAD' ? '' : 'settled'),
+                'Policy lost final response or exposed intermediate body.');
+            verify($target === ($contract === 'cross-allow' ? 'other' : 'primary'), 'Final response origin differed.');
+        }
+    } finally {
+        $loop->cancel($watchdog);
+        $dialer->close();
+        $numeric->close();
+        $executor->close();
+    }
+    $diagnostics = $loop->diagnostics();
+    verify($diagnostics->readWatchers === 0 && $diagnostics->writeWatchers === 0 && $diagnostics->timersActive === 0, 'Policy run leaked loop resources.');
+    echo "Native H1 policy $contract passed\n";
 }
