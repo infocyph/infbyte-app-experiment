@@ -742,6 +742,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-compiled-policy-negotiation, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-compiled-policy-negotiation, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-compiled-policy-cors, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-compiled-policy-cors, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-compiled-policy-preflight, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-compiled-policy-preflight, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-compiled-policy-middleware, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-compiled-policy-middleware, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-compiled-policy-method-domain, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-compiled-policy-method-domain, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-cache-redis-cluster-bulk, backend: pgsql}
           - {scenario: ecosystem-cache-redis-cluster-tags, backend: pgsql}
           - {scenario: ecosystem-cache-redis-cluster-remember, backend: pgsql}

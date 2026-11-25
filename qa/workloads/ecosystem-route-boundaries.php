@@ -120,3 +120,137 @@ function compressionCodingsWorkload(): void
     }
     echo "All four content codings, independent decode, negotiation, rejection and bypass boundaries passed\n";
 }
+
+final class LabCompiledPolicyController
+{
+    public function report(Request $request, int $id): Response
+    {
+        return new Response(200, 'report:' . $id, [
+            'X-Lab-Negotiated' => (string) $request->getAttribute('negotiated.type', 'none'),
+            'X-Lab-Charset' => (string) $request->getAttribute('negotiated.charset', 'none'),
+            'X-Lab-Trace' => (string) $request->getAttribute('lab.trace', ''),
+        ]);
+    }
+
+    public function preflight(): Response
+    {
+        throw new LogicException('Preflight reached business controller.');
+    }
+}
+
+final class LabCompiledOuterMiddleware
+{
+    public function __invoke(Request $request, Closure $next): Response
+    {
+        return $next($request->withAttribute('lab.trace', 'outer'))
+            ->withHeader('X-Lab-Outer', 'complete');
+    }
+}
+
+final class LabCompiledInnerMiddleware
+{
+    public function __invoke(Request $request, Closure $next): Response
+    {
+        return $next($request->withAttribute('lab.trace', $request->getAttribute('lab.trace', '') . ':inner'))
+            ->withHeader('X-Lab-Inner', 'complete');
+    }
+}
+
+function compiledRoutePolicyWorkload(string $contract): void
+{
+    $dir = evidenceDirectory() . '/compiled-policy';
+    verify(mkdir($dir, 0700), 'Cannot create release directory.');
+    $cors = new \Infocyph\Webrick\Router\Definition\Attribute\Cors(
+        origins: ['https://client.example.test'],
+        methods: 'GET, HEAD',
+        headers: ['X-Lab-Request'],
+        exposeHeaders: ['X-Lab-Trace'],
+        maxAgeSeconds: 120,
+        allowCredentials: true,
+    );
+    $produces = new \Infocyph\Webrick\Router\Definition\Attribute\Produces(['text/plain'], ['utf-8']);
+    $register = static function (Registrar $routes) use ($cors, $produces): void {
+        $routes->group('/v2', 'api.example.test', [LabCompiledOuterMiddleware::class], 'v2.', static function (Registrar $group) use ($cors, $produces): void {
+            $group->get('/reports/{id:int}', [LabCompiledPolicyController::class, 'report'], [
+                'as' => 'report',
+                'aliases' => ['legacy'],
+                'middleware' => [
+                    LabCompiledInnerMiddleware::class,
+                    \Infocyph\Webrick\Middleware\CorsMiddleware::class,
+                    \Infocyph\Webrick\Middleware\NegotiationMiddleware::class,
+                ],
+                'attributes' => ['cors' => $cors, 'produces' => $produces],
+            ]);
+            $group->options('/reports/{id:int}', [LabCompiledPolicyController::class, 'preflight'], [
+                'middleware' => [\Infocyph\Webrick\Middleware\CorsMiddleware::class],
+                'attributes' => ['cors' => $cors],
+            ]);
+        });
+        $routes->get('/public/{id:int}', [LabCompiledPolicyController::class, 'report'], ['as' => 'public']);
+    };
+    $builder = ContainerBuilder::create('lab-compiled-policy');
+    $release = new ReleaseCompiler()->compile(
+        builder: $builder,
+        register: $register,
+        environment: 'production',
+        configFingerprint: hash('xxh128', 'compiled-policy'),
+        intermixPath: $dir . '/intermix.php',
+        routerPath: $dir . '/webrick.php',
+        releaseManifestPath: $dir . '/release.json',
+    );
+    $kernel = CompiledRouterKernel::fromPrevalidatedArtifact(
+        log: new NullLogger(),
+        matcher: match (getenv('LAB_MATCHER')) {
+            'fused' => FusedMatcher::make(),
+            'sharded' => ShardedMatcher::make(),
+            default => throw new RuntimeException('Unexpected matcher.'),
+        },
+        container: $builder->productionPrevalidated($release['intermix']['path'], $release['intermix']['digest']),
+        artifactPath: $release['webrick']['path'],
+        trustedArtifactFingerprint: $release['webrick']['fingerprint'],
+        environment: 'production',
+        configFingerprint: $release['config_fingerprint'],
+    );
+    $uri = 'https://api.example.test/v2/reports/42';
+    $request = static fn(string $method, string $target, array $headers = []): Response => $kernel->handle(Request::fake(method: $method, uri: $target, headers: $headers));
+    $valid = ['Accept' => 'text/plain', 'Accept-Charset' => 'utf-8', 'Origin' => 'https://client.example.test'];
+    $response = $request('GET', $uri, $valid);
+    verify($response->getStatusCode() === 200 && $response->getStringBody() === 'report:42', 'Compiled dispatch failed.');
+    switch ($contract) {
+        case 'negotiation':
+            verify($response->getHeaderLine('X-Lab-Negotiated') === 'text/plain' && $response->getHeaderLine('X-Lab-Charset') === 'utf-8', 'Compiled representation metadata lost.');
+            verify(str_starts_with($response->getHeaderLine('Content-Type'), 'text/plain'), 'Negotiated content type missing.');
+            verify($request('GET', $uri, ['Accept' => 'application/json'])->getStatusCode() === 406, 'Route-specific media rejection missing.');
+            verify($request('GET', $uri, ['Accept' => 'text/plain', 'Accept-Charset' => 'utf-8;q=0'])->getStatusCode() === 406, 'Route-specific charset rejection missing.');
+            break;
+        case 'cors':
+            verify($response->getHeaderLine('Access-Control-Allow-Origin') === $valid['Origin'] && $response->getHeaderLine('Access-Control-Allow-Credentials') === 'true', 'Compiled CORS override lost.');
+            $foreign = $request('GET', $uri, ['Origin' => 'https://foreign.example.test', 'Accept' => 'text/plain']);
+            verify($foreign->getHeaderLine('Access-Control-Allow-Origin') === '', 'Foreign origin received authorization.');
+            verify(str_contains(strtolower($foreign->getHeaderLine('Vary')), 'origin'), 'Foreign origin cache variation missing.');
+            break;
+        case 'preflight':
+            $headers = ['Origin' => $valid['Origin'], 'Access-Control-Request-Method' => 'GET', 'Access-Control-Request-Headers' => 'X-Lab-Request'];
+            $preflight = $request('OPTIONS', $uri, $headers);
+            verify($preflight->getStatusCode() === 204 && $preflight->getHeaderLine('Access-Control-Max-Age') === '120', 'Compiled preflight metadata lost.');
+            verify($request('OPTIONS', $uri, array_replace($headers, ['Access-Control-Request-Method' => 'DELETE']))->getStatusCode() === 403, 'Disallowed method accepted.');
+            verify($request('OPTIONS', $uri, array_replace($headers, ['Access-Control-Request-Headers' => 'X-Foreign']))->getStatusCode() === 403, 'Disallowed header accepted.');
+            break;
+        case 'middleware':
+            verify($response->getHeaderLine('X-Lab-Trace') === 'outer:inner', 'Group/route middleware order changed.');
+            verify($response->getHeaderLine('X-Lab-Outer') === 'complete' && $response->getHeaderLine('X-Lab-Inner') === 'complete', 'Middleware return pipeline incomplete.');
+            $public = $request('GET', 'https://api.example.test/public/42', $valid);
+            verify($public->getStatusCode() === 200 && $public->getHeaderLine('X-Lab-Outer') === '' && $public->getHeaderLine('Access-Control-Allow-Origin') === '', 'Group middleware or metadata leaked.');
+            break;
+        case 'method-domain':
+            verify($request('GET', 'https://foreign.example.test/v2/reports/42', $valid)->getStatusCode() === 404, 'Compiled host boundary escaped.');
+            verify($request('GET', 'https://api.example.test/v2/reports/abc', $valid)->getStatusCode() === 404, 'Compiled constraint escaped.');
+            verify($request('DELETE', $uri, $valid)->getStatusCode() === 405, 'Compiled method boundary escaped.');
+            $head = $request('HEAD', $uri, $valid);
+            verify($head->getStatusCode() === 200 && $head->getStringBody() === '', 'HEAD fallback body leaked.');
+            break;
+        default:
+            throw new InvalidArgumentException('Unknown compiled policy contract.');
+    }
+    echo "Compiled route policy {$contract} assertions completed\n";
+}

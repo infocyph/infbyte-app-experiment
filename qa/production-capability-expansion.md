@@ -669,3 +669,7 @@ I: four topology-specific jobs, not multiplied artificially: real three-member M
 ## B164 — Remote cache parity and transactional invalidation expansion
 
 I: 25 new lanes: nine contract families each for actual Redis Cluster and MongoDB, six for native ScyllaDB, and MariaDB SQL invalidation/outbox. Reuse previously isolated independent assertions for bulk, tags, resolver generation overlap, metrics, strict atomic and payload/TTL contracts where supported. Separate Scylla ordinary signed/compressed payload and TTL contract; explicit absence of native atomic CAS and authentication-state lock, as declared by the published implementation. MongoDB/Scylla use PHP 8.4 native extension lanes. No fallback or mocked optional extension. CORE-01, DATA, SEC, OBS, EXEC-03: source/matrix wiring reviewed; hosted outcomes deferred. 877 routine rows; no upstream changes.
+
+## B165 — Compiled route policy integration
+
+I: ten matcher-specific lanes for five independent contracts: per-route media/charset negotiation and rejection, credentialed CORS and foreign-origin isolation, explicit OPTIONS preflight and rejected method/header, grouped middleware ordering and unrelated-route isolation, method/domain/typed constraint and HEAD fallback. Actual coordinated InterMix/Webrick compilation and compiled kernel dispatch; synthetic requests, not a new network-host qualification. CORE-01, EXEC-03, SEC: source/matrix wiring reviewed; hosted outcomes deferred. 887 routine rows; no upstream changes.
