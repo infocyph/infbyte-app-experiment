@@ -231,3 +231,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B45 — validation rule and database matrix
 - [x] Representative fixtures for every current built-in rule token and three real database lanes.
 - [ ] Hosted verification; expanded parameter/cast/sanitizer and wildcard variations remain open.
+
+## B46 — cache fault and process coherence
+- [x] Actual Redis outage policies/restart and multiprocess distributed cache invalidation.
+- [ ] Hosted verification and remaining backend-specific failure contracts.

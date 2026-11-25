@@ -191,3 +191,7 @@ I: five independent lanes: actual Foundation recovery-code store on MySQL/Postgr
 ## B45 — ReqShield built-in rule inventory
 
 I: representative positive/negative or exclusion fixtures for every current BuiltinRule enum token (108 at authoring), including dynamic/compiled parity, repeated validation, real upload-content spoof checks and callback/bail behavior. Separate MySQL/PostgreSQL/SQLite database-rule lanes run 260 exists and 260 unique candidates, concrete error correlation, ignore and soft-delete semantics, missing provider and real dropped-table failure. Active URL uses public example.com DNS and reserved .invalid; no HTTP request. The executable enum comparison fails on added/removed tokens, not a claim of every parameter combination. Hosted verification pending.
+
+## B46 — cache outage and independent process coherence
+
+I: real disposable Redis AOF stop/restart with existing fail-open/fail-closed clients and replacement-client durable reconciliation; eight independent SQLite-backed local node processes consuming real Redis Stream key/tag invalidations, checking unrelated entries and cursor persistence. No transparent reconnection guarantee asserted. TLS and remaining backend-specific failure contracts remain open. Hosted verification pending.

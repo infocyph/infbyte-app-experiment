@@ -51,9 +51,12 @@ require __DIR__ . '/ecosystem-storage-adapters.php';
 require __DIR__ . '/ecosystem-cache-ha.php';
 require __DIR__ . '/ecosystem-otp-boundaries.php';
 require __DIR__ . '/ecosystem-validation-matrix.php';
+require __DIR__ . '/ecosystem-cache-faults.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'cache-outage' => cacheOutageWorkload(),
+    'invalidation-processes' => invalidationProcessesWorkload(),
     'validation-rules' => validationRulesWorkload(),
     'validation-database' => validationDatabaseWorkload(),
     'otp-backends' => otpBackendsWorkload(),

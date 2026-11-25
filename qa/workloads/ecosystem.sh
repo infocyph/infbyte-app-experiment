@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 case "$SCENARIO" in
+  ecosystem-cache-outage) bash "$GITHUB_WORKSPACE/qa/workloads/cache-outage.sh" ;;
   ecosystem-otp-durable) bash "$GITHUB_WORKSPACE/qa/workloads/otp-durable.sh" ;;
   ecosystem-supervisor|ecosystem-http-framing) bash "$GITHUB_WORKSPACE/qa/workloads/runtime-boundaries.sh" ;;
   ecosystem-scylla|ecosystem-redis-failover) bash "$GITHUB_WORKSPACE/qa/workloads/cache-ha.sh" ;;
