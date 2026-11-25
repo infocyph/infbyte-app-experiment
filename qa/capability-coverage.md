@@ -427,3 +427,7 @@ I: two independent native TLS/QUIC lanes use real H2 and H3 clients, hold two st
 ## B127 — OTP enrollment and rotation contracts
 
 I: independent HOTP, TOTP and OCRA enrollment/import with type-specific algorithm, width, period/counter/suite, escaped label and extension fields; QR rendering, redacted debug views, duplicate/reserved parameter rejection, invalid labels and QR sizes, immediate and timed overlap, invalid and overflowing rotation, and Redis-backed generation-isolated replay rejection. Rotation orchestration remains caller-owned; no secret or QR artifact is published. 393 routine rows; hosted qualification pending (SEC, DATA, EXEC-03).
+
+## B128 — Webrick maintenance, input, security and response policy contracts
+
+I: two middleware-level lanes cover atomic maintenance sentinel publication and recovery across independent middleware instances, no-handler 503 and retry metadata, 24 opt-in form/JSON/query normalization permutations with excluded credentials and immutable request, UTF-8 byte boundary, HTTP/HTTPS HSTS and explicit security header preservation; Vary deduplication, inferred preflight/encoding/language requirements, star and request isolation, legal HEAD/304/205 and strict linter failure cases. These are middleware contract tests, not host cancellation evidence. 395 routine rows; hosted qualification pending (SEC, REQUEST, DATA, EXEC-03).

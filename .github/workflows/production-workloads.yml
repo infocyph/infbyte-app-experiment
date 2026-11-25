@@ -301,6 +301,8 @@ jobs:
           - {scenario: ecosystem-jwt-jws, backend: pgsql}
           - {scenario: ecosystem-jwe, backend: pgsql}
           - {scenario: ecosystem-gateway, backend: pgsql}
+          - {scenario: ecosystem-middleware-policies, backend: pgsql}
+          - {scenario: ecosystem-vary-linter, backend: pgsql}
           - {scenario: ecosystem-telemetry-risk, backend: pgsql}
           - {scenario: ecosystem-risk-edge, backend: pgsql, host: fpm, php: '8.4', matcher: fused}
           - {scenario: ecosystem-risk-edge, backend: pgsql, host: fpm, php: '8.4', matcher: sharded}

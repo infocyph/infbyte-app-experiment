@@ -12,6 +12,12 @@ use Infocyph\Webrick\Middleware\GatewayHardeningMiddleware;
 use Infocyph\Webrick\Middleware\RequestLimitsMiddleware;
 use Infocyph\Webrick\Middleware\ResponseCacheMiddleware;
 use Infocyph\Webrick\Middleware\ThrottleMiddleware;
+use Infocyph\Webrick\Middleware\MaintenanceModeMiddleware;
+use Infocyph\Webrick\Middleware\InputSanitizerMiddleware;
+use Infocyph\Webrick\Middleware\ResponseLinterMiddleware;
+use Infocyph\Webrick\Middleware\SecurityPolicyMiddleware;
+use Infocyph\Webrick\Middleware\VaryAccumulatorMiddleware;
+use Infocyph\Webrick\Support\InputSanitizer;
 use Infocyph\Webrick\Request\Request;
 use Infocyph\Webrick\Request\Core\Uri;
 use Infocyph\Webrick\Response\Response;
@@ -152,4 +158,117 @@ function cookieProtectionWorkload(): void
     $oversized = $issue($two, $large);
     verify(count($oversized) === 1 && $read($one, $oversized) === $large, 'Redis backed oversized cookie roundtrip failed.');
     echo "Encrypted cookie rotation, tamper rejection, secure attributes and real Redis storage fallback passed\n";
+}
+
+function middlewarePolicyWorkload(): void
+{
+    $root = evidenceDirectory() . '/maintenance';
+    $file = $root . '/down';
+    verify(mkdir($root, 0700), 'Maintenance root unavailable.');
+    $one = new MaintenanceModeMiddleware(file: $file, retryAfter: 17, refreshMilliseconds: 0);
+    $two = new MaintenanceModeMiddleware(file: $file, retryAfter: 17, refreshMilliseconds: 0);
+    $calls = 0;
+    $next = static function (Request $request) use (&$calls): Response {
+        ++$calls;
+        return Response::plaintext('ready');
+    };
+    $request = Request::fake(uri: 'https://lab.example.test/orders');
+    verify($one($request, $next)->getStatusCode() === 200, 'Healthy maintenance gate blocked.');
+    foreach (['deployment in progress', ''] as $message) {
+        verify(file_put_contents($file . '.tmp', $message) !== false && rename($file . '.tmp', $file), 'Maintenance sentinel publication failed.');
+        clearstatcache(true, $file);
+        foreach ([$one, $two] as $gate) {
+            try {
+                $gate($request, $next);
+                throw new LogicException('Maintenance reached handler.');
+            } catch (HttpException $failure) {
+                verify($failure->getStatusCode() === 503 && (string) $failure->getHeaders()['Retry-After'] === '17', 'Maintenance response metadata mismatch.');
+                verify(str_contains($failure->getMessage(), $message === '' ? 'Service is down for maintenance.' : $message), 'Maintenance message mismatch.');
+            }
+        }
+    }
+    verify($calls === 1, 'Maintenance executed application.');
+    verify(unlink($file), 'Maintenance sentinel removal failed.');
+    clearstatcache(true, $file);
+    verify($one($request, $next)->getStatusCode() === 200 && $two($request, $next)->getStatusCode() === 200 && $calls === 3, 'Worker-local maintenance recovery failed.');
+
+    $payload = ['name' => "  A\u{200B}  B  ", 'empty' => '  ', 'password' => '  preserve  ', 'nested' => ['raw_token' => '  raw  ', 'value' => "  C\u{00A0}D  "], 'number' => 0, 'flag' => false];
+    $normalized = ['name' => 'A B', 'empty' => null, 'password' => '  preserve  ', 'nested' => ['raw_token' => '  raw  ', 'value' => 'C D'], 'number' => 0, 'flag' => false];
+    $sanitizer = new InputSanitizer(collapseWs: true, normalizeUnicode: true, skipKeys: ['password'], skipKeyPatterns: ['/^raw_/']);
+    $read = static fn(Request $r): Response => Response::json(['query' => $r->getQueryParams(), 'body' => $r->getParsedBody()]);
+    foreach (['application/json', 'application/x-www-form-urlencoded', 'text/plain'] as $contentType) {
+        $incoming = Request::fake(method: 'POST', headers: ['Content-Type' => $contentType])->withQueryParams($payload)->withParsedBody($payload);
+        $default = new InputSanitizerMiddleware($sanitizer);
+        verify(json_decode((string) $default($incoming, $read)->getStringBody(), true, flags: JSON_THROW_ON_ERROR) === ['query' => $payload, 'body' => $payload], 'Default middleware changed input.');
+        foreach ([false, true] as $query) {
+            foreach ([false, true] as $form) {
+                foreach ([false, true] as $json) {
+                    $middleware = new InputSanitizerMiddleware($sanitizer, touchQuery: $query, touchFormBodies: $form, touchJsonBodies: $json);
+                    $result = json_decode((string) $middleware($incoming, $read)->getStringBody(), true, flags: JSON_THROW_ON_ERROR);
+                    $touch = ($form && $contentType === 'application/x-www-form-urlencoded') || ($json && $contentType === 'application/json');
+                    verify($result === ['query' => $query ? $normalized : $payload, 'body' => $touch ? $normalized : $payload], 'Opt-in normalization boundary mismatch.');
+                    verify($incoming->getQueryParams() === $payload && $incoming->getParsedBody() === $payload, 'Original request was mutated.');
+                }
+            }
+        }
+    }
+    verify((new InputSanitizer(maxBytes: 4))->sanitizeString('€€') === '€', 'UTF-8 byte bound cut a code point.');
+
+    $security = new SecurityPolicyMiddleware(hstsIncludeSubdomains: false, acceptCh: ['Sec-CH-UA'], timingAllowOrigins: ['https://client.example.test']);
+    foreach (['http', 'https'] as $scheme) {
+        $incoming = Request::fake(uri: "$scheme://lab.example.test/orders");
+        $response = $security($incoming, static fn(): Response => Response::plaintext('ready')->withHeader('Content-Security-Policy', "default-src 'none'"));
+        verify($response->getHeaderLine('Strict-Transport-Security') === ($scheme === 'https' ? 'max-age=31536000' : ''), 'HSTS crossed scheme boundary.');
+        verify($response->getHeaderLine('Content-Security-Policy') === "default-src 'none'" && $response->getHeaderLine('X-Content-Type-Options') === 'nosniff' && $response->getHeaderLine('Accept-CH') === 'Sec-CH-UA' && $response->getHeaderLine('Timing-Allow-Origin') === 'https://client.example.test', 'Security policy defaults or preservation mismatch.');
+    }
+    echo "Maintenance publication/recovery, 24 input policy combinations and scheme-aware response protection passed\n";
+}
+
+function varyLinterWorkload(): void
+{
+    $vary = new VaryAccumulatorMiddleware();
+    $linter = new ResponseLinterMiddleware(true);
+    $request = Request::fake(method: 'OPTIONS', headers: ['Access-Control-Request-Method' => 'GET', 'Access-Control-Request-Headers' => 'X-Client']);
+    $response = $vary($request, static function (Request $r): Response {
+        $r = VaryAccumulatorMiddleware::add($r, 'accept', 'ACCEPT', 'X-Client');
+        verify(VaryAccumulatorMiddleware::peek($r) === ['Accept', 'X-Client'], 'Vary context deduplication failed.');
+        return new Response(200, 'abc', ['Content-Type' => 'text/plain', 'Content-Length' => '3', 'Vary' => 'accept, ACCEPT', 'Content-Encoding' => 'gzip', 'Content-Language' => 'en', 'Access-Control-Allow-Origin' => 'https://client.example.test']);
+    });
+    $tokens = array_map(static fn(string $token): string => strtolower(trim($token)), explode(',', $response->getHeaderLine('Vary')));
+    sort($tokens);
+    verify($tokens === ['accept', 'accept-encoding', 'accept-language', 'access-control-request-headers', 'access-control-request-method', 'origin', 'x-client'], 'Vary composition lost requirements.');
+    verify($linter($request, static fn(): Response => $response) === $response, 'Valid composed response rejected.');
+    $star = $vary(Request::fake(), static function (Request $r): Response {
+        VaryAccumulatorMiddleware::add($r, 'Origin');
+        return new Response(200, '', ['Vary' => '*']);
+    });
+    verify($star->getHeaderLine('Vary') === '*', 'Wildcard variation overwritten.');
+    verify($vary(Request::fake(), static fn(): Response => new Response(200))->getHeaderLine('Vary') === '', 'Vary leaked to next request.');
+
+    $get = Request::fake(method: 'GET');
+    $head = Request::fake(method: 'HEAD');
+    $valid = [
+        [$get, new Response(200, 'abc', ['Content-Type' => 'text/plain', 'Content-Length' => '3'])],
+        [$head, new Response(200, '', ['Content-Length' => '100'])],
+        [$get, new Response(304, '', ['Content-Length' => '100'])],
+        [$get, new Response(205, '', ['Content-Length' => '0'])],
+        [$get, new Response(204)],
+        [$get, new Response(200, 'abc', ['Content-Type' => 'text/plain', 'Content-Encoding' => 'gzip', 'Vary' => 'Accept-Encoding', 'ETag' => '"encoded"'])],
+    ];
+    foreach ($valid as [$r, $res]) {
+        verify($linter($r, static fn(): Response => $res) === $res, 'Valid response rejected.');
+    }
+    foreach ([
+        new Response(200, 'abc'),
+        new Response(204, 'abc'),
+        new Response(204, '', ['Content-Length' => '0']),
+        new Response(205, '', ['Content-Length' => '2']),
+        new Response(200, 'abc', ['Content-Type' => 'text/plain', 'Content-Length' => '2']),
+        new Response(200, 'abc', ['Content-Type' => 'text/plain', 'Content-Length' => 'invalid']),
+        new Response(200, 'abc', ['Content-Type' => 'text/plain', 'Content-Encoding' => 'gzip']),
+    ] as $invalid) {
+        expectFailure(static fn() => $linter($get, static fn(): Response => $invalid), RuntimeException::class, 'Linter accepted invalid response.');
+        verify((new ResponseLinterMiddleware(false))($get, static fn(): Response => $invalid) === $invalid, 'Disabled linter altered response.');
+    }
+    echo "Vary composition and isolation, strict response linter and legal HEAD/304/205/encoded ETag cases passed\n";
 }

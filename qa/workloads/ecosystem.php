@@ -184,6 +184,8 @@ match ($argv[1] ?? '') {
     'jwt-jws' => jwtJwsWorkload(),
     'jwe' => jweWorkload(),
     'gateway' => gatewayWorkload(),
+    'middleware-policies' => middlewarePolicyWorkload(),
+    'vary-linter' => varyLinterWorkload(),
     'telemetry-risk' => telemetryRiskWorkload(),
     'telemetry-otel' => telemetryOtelWorkload(),
     'response-cache' => responseCacheWorkload(),
