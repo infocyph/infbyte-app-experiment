@@ -15,6 +15,7 @@ trap cleanup EXIT
 provision="$SCENARIO"
 case "$SCENARIO" in
   ecosystem-*-remote-order-recovery) provision="${SCENARIO%-remote-order-recovery}" ;;
+  ecosystem-*-order-http-publication-*) provision="${SCENARIO%-order-http-publication-*}" ;;
   ecosystem-*-archive-*) provision="${SCENARIO%-archive-*}" ;;
   ecosystem-gridfs-publication-before|ecosystem-gridfs-publication-after) provision=ecosystem-gridfs ;;
   ecosystem-ftp-rename-before|ecosystem-ftp-rename-after|ecosystem-ftp-interrupted-upload) provision=ecosystem-ftp ;;
@@ -128,7 +129,7 @@ case "$provision" in
     ;;
   *) exit 1 ;;
 esac
-if [[ "$SCENARIO" == *-remote-order-recovery ]]; then
+if [[ "$SCENARIO" == *-remote-order-recovery || "$SCENARIO" == *-order-http-publication-* ]]; then
   containers+=(lab-remote-orders-broker)
   composer require php-amqplib/php-amqplib --no-interaction --prefer-dist --no-progress
   docker run -d --name lab-remote-orders-broker -p 127.0.0.1:15672:5672 -e RABBITMQ_DEFAULT_USER=experiment -e RABBITMQ_DEFAULT_PASS=fixture-only-password rabbitmq:4
@@ -185,7 +186,13 @@ elif [[ "$SCENARIO" == *-http-publication-* ]]; then
     sleep 0.1
   done
   test -f "$EVIDENCE/storage-http-ready"
-  timeout 180s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
+  if [[ "$SCENARIO" == *-order-http-publication-* ]]; then
+    for phase in seed fault recover consume; do
+      timeout 180s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" remote-publication-order "$backend" "$mode" "$phase" | tee "$EVIDENCE/publication-order-$phase.log"
+    done
+  else
+    timeout 180s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
+  fi
 elif [[ "$SCENARIO" == ecosystem-s3-publication-fault ]]; then
   python3 "$GITHUB_WORKSPACE/qa/workloads/s3-publication-peer.py" "$EVIDENCE" > "$EVIDENCE/s3-peer.log" 2>&1 &
   storage_peer=$!

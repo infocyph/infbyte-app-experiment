@@ -289,22 +289,30 @@ function sftpRenameFaultWorkload(string $phase, string $mode): void
     echo "SFTP $mode rename reconciliation passed\n";
 }
 
-function remoteHttpPublicationContracts(string $backend, string $mode): void
+function remoteHttpPublicationContracts(string $backend, string $mode, string $phase = 'all'): void
 {
     verify(in_array($mode, ['before', 'after'], true), 'Unknown publication fault mode.');
-    $context = additionalStorageContext($backend, true);
-    $direct = $context->filesystem();
-    $foreign = $context->filesystem('foreign');
     $final = 'receipts/final.bin';
     $stage = 'receipts/fault-stage.bin';
     $payload = str_repeat("receipt\0\xff\n", 16384);
     $digest = hash('sha256', $payload);
-    $direct->write($final, 'previous');
-    $foreign->write($final, 'foreign-final');
-    $foreign->write($stage, 'foreign-stage');
-    verify(!$direct->fileExists($stage), 'Stage already existed before fault.');
-    $fault = additionalStorageContext($backend, false, 19002)->filesystem();
-    expectFailure(static fn() => $fault->write($stage, $payload), FilesystemException::class, 'Unconfirmed storage write reported success.');
+    verify(in_array($phase, ['all', 'seed', 'fault', 'recover'], true), 'Unknown publication phase.');
+    if ($phase === 'all' || $phase === 'seed') {
+        $context = additionalStorageContext($backend, true);
+        $direct = $context->filesystem();
+        $foreign = $context->filesystem('foreign');
+        $direct->write($final, 'previous');
+        $foreign->write($final, 'foreign-final');
+        $foreign->write($stage, 'foreign-stage');
+        verify(!$direct->fileExists($stage), 'Stage already existed before fault.');
+        if ($phase === 'seed') {
+            return;
+        }
+    }
+    if ($phase === 'all' || $phase === 'fault') {
+        $fault = additionalStorageContext($backend, false, 19002)->filesystem();
+        expectFailure(static fn() => $fault->write($stage, $payload), FilesystemException::class, 'Unconfirmed storage write reported success.');
+    }
     $marker = evidenceDirectory() . '/storage-http-fault.json';
     verify(is_file($marker), 'Expected origin-facing fault was never reached.');
     $evidence = json_decode((string) file_get_contents($marker), true, flags: JSON_THROW_ON_ERROR);
@@ -313,6 +321,13 @@ function remoteHttpPublicationContracts(string $backend, string $mode): void
         verify($evidence['forwarded'] < $evidence['length'], 'Before fault did not interrupt origin body.');
     } else {
         verify($evidence['forwarded'] === $evidence['length'] && $evidence['status'] >= 200 && $evidence['status'] < 300, 'After fault lacked a successful origin response.');
+    }
+    if ($phase === 'fault') {
+        $peer = additionalStorageContext($backend);
+        verify($peer->filesystem()->read($final) === 'previous'
+            && $peer->filesystem('foreign')->read($stage) === 'foreign-stage'
+            && $peer->filesystem('foreign')->read($final) === 'foreign-final', 'Fault exposed a final or foreign mutation.');
+        return;
     }
     $directContext = additionalStorageContext($backend);
     $direct = $directContext->filesystem();

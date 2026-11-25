@@ -896,6 +896,7 @@ match ($argv[1] ?? '') {
     'omnibus-workflow' => omnibusWorkflowWorkload(),
     'omnibus-middleware' => omnibusMiddlewareWorkload(),
     'omnibus-events' => omnibusEventsWorkload(),
+    'remote-publication-order' => remotePublicationOrder((string) ($argv[2] ?? ''), (string) ($argv[3] ?? ''), (string) ($argv[4] ?? '')),
     'remote-order-seed' => remoteOrderRecovery('seed'),
     'remote-order-offline' => remoteOrderRecovery('offline', (int) ($argv[2] ?? -1)),
     'remote-order-recover' => remoteOrderRecovery('recover'),

@@ -124,3 +124,85 @@ function remoteOrderRecovery(string $phase, int $worker = -1): void
         $connection->close();
     }
 }
+
+function remotePublicationOrder(string $backend, string $mode, string $phase): void
+{
+    verify(in_array($phase, ['seed', 'fault', 'recover', 'consume'], true), 'Unknown order publication phase.');
+    [$db, $serializer] = messagingSetup($phase === 'seed');
+    $id = 'receipt-publication';
+    $digest = hash('sha256', str_repeat("receipt\0\xff\n", 16384));
+    $queue = 'publication-orders';
+    if ($phase === 'seed') {
+        $db->statement('CREATE TABLE lab_publication_outbox (id VARCHAR(100) PRIMARY KEY, digest VARCHAR(64) NOT NULL, relayed INTEGER NOT NULL)');
+        $db->transaction(static function (Connection $active) use ($id, $digest): void {
+            verify($active->table('lab_publication_outbox')->insert(['id' => $id, 'digest' => $digest, 'relayed' => 0]), 'Durable intent insert failed.');
+        });
+        remoteHttpPublicationContracts($backend, $mode, 'seed');
+    }
+    $intent = $db->table('lab_publication_outbox')->find($id);
+    verify($intent !== null && $intent['digest'] === $digest && $db->table('lab_publication_outbox')->count() === 1,
+        'Durable publication intent lost or changed.');
+    verify((int) $intent['relayed'] === ($phase === 'consume' ? 1 : 0)
+        && $db->table('lab_job_effects')->count() === 0, 'Publication or business effect settled too early.');
+    $connection = remoteOrderBroker();
+    try {
+        $channel = $connection->channel();
+        $channel->queue_declare($queue, false, true, false, false);
+        $transport = new AmqpTransport(new LabAmqpBackend($channel), $serializer);
+        if ($phase === 'seed') {
+            verify($transport->size($queue) === 0, 'Publication queue not empty at seed.');
+            return;
+        }
+        if ($phase === 'fault') {
+            remoteHttpPublicationContracts($backend, $mode, 'fault');
+            verify($transport->size($queue) === 0 && (int) $db->table('lab_publication_outbox')->find($id)['relayed'] === 0
+                && $db->table('lab_job_effects')->count() === 0, 'Uncertain storage write incorrectly settled durable intent.');
+            echo "Unconfirmed write left outbox pending and broker empty\n";
+            return;
+        }
+        if ($phase === 'recover') {
+            verify($transport->size($queue) === 0, 'Unexpected publication before reconciliation.');
+            remoteHttpPublicationContracts($backend, $mode, 'recover');
+            $channel->confirm_select();
+            $confirmed = 0;
+            $channel->set_ack_handler(static function () use (&$confirmed): void { ++$confirmed; });
+            $channel->set_nack_handler(static function (): never { throw new RuntimeException('Broker rejected receipt publication.'); });
+            $channel->set_return_listener(static function (): never { throw new RuntimeException('Receipt publication was unrouted.'); });
+            // Simulate relay retry before the durable outbox is marked settled.
+            $envelope = new Envelope(new LabJob($id, 1), [new MessageIdStamp($id)]);
+            foreach ([1, 2] as $attempt) {
+                $transport->send($envelope, $queue);
+                $channel->wait_for_pending_acks_returns(5.0);
+                verify($confirmed === $attempt, 'Receipt publication confirmation missing.');
+            }
+            verify($db->table('lab_publication_outbox')->where('id', '=', $id)->where('relayed', '=', 0)->update(['relayed' => 1]) === 1,
+                'Durable publication settlement failed.');
+            verify($transport->size($queue) === 2, 'Confirmed duplicate publication missing.');
+            return;
+        }
+        $peer = additionalStorageContext($backend);
+        $disk = $peer->filesystem();
+        $foreign = $peer->filesystem('foreign');
+        verify($transport->size($queue) === 2, 'Replacement consumer did not observe both confirmed deliveries.');
+        $deliveries = 0;
+        foreach ($transport->receive($queue, 2) as $delivery) {
+            $job = $delivery->envelope()->message;
+            verify($job instanceof LabJob && $job->id === $id && $job->step === 1 && $delivery->messageId === $id,
+                'Unexpected receipt publication identity.');
+            verify(hash('sha256', $disk->read('receipts/final.bin')) === $digest && !$disk->fileExists('receipts/fault-stage.bin'),
+                'Consumer observed partial or missing publication.');
+            brokerRecordEffect($db, $job);
+            $transport->acknowledge($delivery);
+            ++$deliveries;
+        }
+        $channel->queue_declare($queue, true);
+        verify($deliveries === 2 && $transport->size($queue) === 0 && $db->table('lab_job_effects')->count() === 1
+            && (int) $db->table('lab_job_effects')->find($id)['step'] === 1
+            && (int) $db->table('lab_publication_outbox')->find($id)['relayed'] === 1, 'Durable reconciliation mismatch.');
+        verify($foreign->read('receipts/final.bin') === 'foreign-final' && $foreign->read('receipts/fault-stage.bin') === 'foreign-stage',
+            'Publication crossed tenant boundary.');
+        echo "$backend $mode: four fresh processes, confirmed retry and one durable effect reconciled\n";
+    } finally {
+        $connection->close();
+    }
+}

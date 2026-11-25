@@ -53,6 +53,7 @@ case "$SCENARIO" in
     composer check-platform-reqs --no-dev
     composer show --format=json > "$EVIDENCE/packages.json"
     php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log" ;;
+  ecosystem-*-order-http-publication-*) bash "$GITHUB_WORKSPACE/qa/workloads/remote-services.sh" ;;
   ecosystem-*-remote-order-recovery) bash "$GITHUB_WORKSPACE/qa/workloads/remote-services.sh" ;;
   ecosystem-remote-order-recovery) bash "$GITHUB_WORKSPACE/qa/workloads/remote-order-recovery.sh" ;;
   ecosystem-connected|ecosystem-recovery|ecosystem-active-recovery) bash "$GITHUB_WORKSPACE/qa/workloads/connected.sh" ;;

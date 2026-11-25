@@ -1485,6 +1485,46 @@ jobs:
           - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: mariadb}
           - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: sqlite}
           - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: mssql}
+          - {scenario: ecosystem-webdav-order-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-webdav-order-http-publication-before, backend: mysql}
+          - {scenario: ecosystem-webdav-order-http-publication-before, backend: mariadb}
+          - {scenario: ecosystem-webdav-order-http-publication-before, backend: sqlite}
+          - {scenario: ecosystem-webdav-order-http-publication-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-webdav-order-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-webdav-order-http-publication-after, backend: mysql}
+          - {scenario: ecosystem-webdav-order-http-publication-after, backend: mariadb}
+          - {scenario: ecosystem-webdav-order-http-publication-after, backend: sqlite}
+          - {scenario: ecosystem-webdav-order-http-publication-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-async-s3-order-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-async-s3-order-http-publication-before, backend: mysql}
+          - {scenario: ecosystem-async-s3-order-http-publication-before, backend: mariadb}
+          - {scenario: ecosystem-async-s3-order-http-publication-before, backend: sqlite}
+          - {scenario: ecosystem-async-s3-order-http-publication-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-async-s3-order-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-async-s3-order-http-publication-after, backend: mysql}
+          - {scenario: ecosystem-async-s3-order-http-publication-after, backend: mariadb}
+          - {scenario: ecosystem-async-s3-order-http-publication-after, backend: sqlite}
+          - {scenario: ecosystem-async-s3-order-http-publication-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-azure-order-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-azure-order-http-publication-before, backend: mysql}
+          - {scenario: ecosystem-azure-order-http-publication-before, backend: mariadb}
+          - {scenario: ecosystem-azure-order-http-publication-before, backend: sqlite}
+          - {scenario: ecosystem-azure-order-http-publication-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-azure-order-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-azure-order-http-publication-after, backend: mysql}
+          - {scenario: ecosystem-azure-order-http-publication-after, backend: mariadb}
+          - {scenario: ecosystem-azure-order-http-publication-after, backend: sqlite}
+          - {scenario: ecosystem-azure-order-http-publication-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-gcs-order-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-gcs-order-http-publication-before, backend: mysql}
+          - {scenario: ecosystem-gcs-order-http-publication-before, backend: mariadb}
+          - {scenario: ecosystem-gcs-order-http-publication-before, backend: sqlite}
+          - {scenario: ecosystem-gcs-order-http-publication-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-gcs-order-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-gcs-order-http-publication-after, backend: mysql}
+          - {scenario: ecosystem-gcs-order-http-publication-after, backend: mariadb}
+          - {scenario: ecosystem-gcs-order-http-publication-after, backend: sqlite}
+          - {scenario: ecosystem-gcs-order-http-publication-after, backend: mssql, php: '8.4'}
           - {scenario: ecosystem-closure-boundary-exact-bound, backend: pgsql}
           - {scenario: ecosystem-closure-boundary-prefix, backend: pgsql}
           - {scenario: ecosystem-closure-boundary-encoding, backend: pgsql}
