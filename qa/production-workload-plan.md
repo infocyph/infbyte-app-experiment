@@ -1,0 +1,33 @@
+# Production workload laboratory — rolling acceptance plan
+
+Goal: independently qualify real published Infbyte/Foundation applications, not library-only unit tests. GitHub hosted workers only; disposable services and synthetic accounts; correctness before speed. No upstream changes or production dependency pins. Each batch one commit. Use native library contracts. Record exact dependency graph, failures, operation counts, wall time, concurrency and latency percentiles. Shared runner numbers are diagnostic, not a controlled throughput baseline (PERF-01/03/05/07).
+
+## Capability inventory and execution tracker
+
+| Area | Production scenario | Status |
+|---|---|---|
+| Core DB-independent auth, identity, account, session, token, reset, verification | Persistent account onboarding and password/refresh replay rejection, SQL storage, Redis | B1 implemented; hosted pending |
+| DBLayer | Concurrent inventory/orders, multi-table transactions, joins/aggregates, rollback, integrity; real PostgreSQL and MySQL | B1 implemented; hosted pending; joins, migrations/replicas/deadlocks still extend |
+| CacheLayer | Shared Redis claim/replay + file state | B1 implemented; hosted pending; locks, TTL, outbox, cluster/Valkey, cache failure still extend |
+| ReqShield | Real exists/range checks before database changes | B1 implemented; hosted pending; complex nested/unique/conditional payloads still extend |
+| Pathwise | Receipt persistence/readback | B1 implemented; hosted pending; upload/download streaming, traversal, chunking, remote disks still extend |
+| Epicrypt | Selected password hashing through auth | B1 implemented; hosted pending; JWT, keys, encryption, OAuth/OIDC/DPoP still extend |
+| TalkingBytes / notifications | Parallel SMTP via real Mailpit, exact unique receipt count | B1 implemented; hosted pending; attachments, retries, HTTP, signed webhook, gRPC, email receive still extend |
+| OTP MFA | Real TOTP/HOTP/AOTP, recovery, replay, concurrent step-up | Pending B2 |
+| WebAuthn passkeys | Signed software authenticator registration/assertion, one-time challenge, counter contention | Pending B2 |
+| Omnibus | Durable SQL/Redis jobs, after-commit, idempotent business handler, parallel drain, retries, dead letters, kill/restart | Pending B2 |
+| Authorization and browser | Roles, permission grants, tenant isolation, cookie/CSRF, session locks, risk admission and OAuth flows | Pending B2/B3 |
+| Webrick and Runwire | Real business API routes, validation/auth middleware, mixed load, native and FPM hosts, persistent worker isolation, cancellation, slow client | Pending B3 |
+| InterMix, ArrayKit, UID, Core resource/logging | Scope isolation, typed config, unique IDs, contextual logs and correlation, bounded memory | Pending B3 |
+| CLI, scheduling, operations | Real migrations, singleton scheduling, worker restart, release/rollback, backup and restore | Pending B4 |
+| Stress and failure qualification | Repeat concurrency 1/4/8/16+; contention, sustained soak, service restart and resource limits; verify all domain invariants | B1 bounded load implemented; sustained/chaos pending |
+
+## B1 acceptance
+- [x] Inventory public capability documentation and implementation examples at published Foundation 4.0.1.
+- [x] Install all eight optional features via real create-project no-dev, verify dependency isolation.
+- [x] Add five independent jobs on PHP 8.6: orders and persisted auth on MySQL/PostgreSQL, SMTP on Mailpit. Parallel independent processes with repeated execution scopes; 1/4/8 concurrency, 520 order or mail operations per job and 104 password-heavy account operations per job. Each phase reconciles cumulative state and reports timings.
+- [ ] Hosted results; repair API/fixture errors separately from real upstream failures. No skipped failures.
+- [ ] Complete remaining B2–B4 scenarios in batches; add full application-level HTTP stress (B1 is CLI business-operation load, not HTTP RPM).
+
+## Limits
+The B1 workers use application composition and native services, not a compiled HTTP host. Disposable backend credentials, loopback only. No production secrets or real email recipients. Schema/records reset by fresh hosted service containers. No production-equivalent throughput claim or arbitrary latency gate. CI cannot establish every library capability by mere package installation; every untested capability remains open in the tracker.
