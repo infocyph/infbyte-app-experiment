@@ -119,3 +119,7 @@ I: six independent lanes: UID 12-process filesystem reservation/fork/replacement
 ## B27 — MySQL and MariaDB binary-log replication
 
 I: two additional hosted jobs with real isolated source/reader servers, unique server IDs, row binlogs, replica SQL-thread pause/resume, read-only reader, actual stale reads and sticky primary writes, stopped reader fallback and restart/catchup. This is single-replica binary-log replication, not physical storage replication or automatic primary election. Disposable credentials are not included in artifacts. Hosted verification pending; proxies, HA, per-driver and API gaps remain open.
+
+## B28 — Webrick production middleware contracts
+
+I: four independent native middleware jobs: HTTPS/host and CORS policy, header/body framing and count limits; real Redis response-cache reuse and host/query/language isolation plus authenticated and no-store bypass; 12-process atomic throttle exact five admissions with weighted cost and identity isolation; encrypted cookie rotation, tampering, secure attributes and oversized Redis fallback. These exercise public middleware invocation, not full socket-level framing. Existing native/FPM routing lanes remain mandatory. Correct HTTPS negative assertion to require both forbidden requests absent; isolate MySQL X Protocol port and verify binlog readiness via TCP, restore reader read-only after restart. Hosted evidence pending.

@@ -159,3 +159,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B27 — real MySQL/MariaDB replication
 - [x] Two source/reader jobs with actual binary-log lag, fallback, catchup and recovery.
 - [ ] Hosted qualification and remaining proxy/driver/HA cases.
+
+## B28 — Webrick middleware contracts and fixture review
+- [x] Four independent native middleware jobs; harden HTTPS evidence and binlog fixtures.
+- [ ] Hosted qualification; remaining middleware, deployment and library capabilities remain open.

@@ -42,9 +42,14 @@ require __DIR__ . '/ecosystem-messaging.php';
 require __DIR__ . '/ecosystem-remote.php';
 require __DIR__ . '/ecosystem-http.php';
 require __DIR__ . '/ecosystem-contracts.php';
+require __DIR__ . '/ecosystem-webrick.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'gateway' => gatewayWorkload(),
+    'response-cache' => responseCacheWorkload(),
+    'throttle' => throttleWorkload(),
+    'cookie-protection' => cookieProtectionWorkload(),
     'uid-sequences' => uidSequencesWorkload(),
     'closure' => closureWorkload(),
     'config-layering' => configLayeringWorkload(),

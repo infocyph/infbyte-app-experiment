@@ -6,6 +6,8 @@ case "$DB_BACKEND" in
   mariadb) image=mariadb:11.4; command=mariadb; root_env=MARIADB_ROOT_PASSWORD; status='SHOW MASTER STATUS'; start='START SLAVE'; pause='STOP SLAVE SQL_THREAD'; resume='START SLAVE SQL_THREAD' ;;
   *) exit 1 ;;
 esac
+extra=()
+if [[ "$DB_BACKEND" == mysql ]]; then extra+=(--mysqlx=0); fi
 root_password="$(php -r 'echo bin2hex(random_bytes(24));')"
 replica_password="$(php -r 'echo bin2hex(random_bytes(24));')"
 cleanup() {
@@ -17,10 +19,12 @@ for spec in source:23306:41 reader:23307:42; do
   docker run -d --name "lab-binlog-$role" --network host \
     -e "$root_env=$root_password" "$image" \
     --port="$port" --bind-address=127.0.0.1 --server-id="$id" \
-    --log-bin=lab-binlog --binlog-format=ROW --relay-log=lab-relay
+    --log-bin=lab-binlog --binlog-format=ROW --relay-log=lab-relay "${extra[@]}"
 done
 sql() {
-  docker exec -e MYSQL_PWD="$root_password" "lab-binlog-$1" "$command" -uroot -N -B -e "$2"
+  local port=23306
+  if [[ "$1" == reader ]]; then port=23307; fi
+  docker exec -e MYSQL_PWD="$root_password" "lab-binlog-$1" "$command" -h 127.0.0.1 -P "$port" -uroot -N -B -e "$2"
 }
 for role in source reader; do
   for attempt in $(seq 1 90); do
@@ -52,4 +56,5 @@ for attempt in $(seq 1 90); do
   sleep 1
 done
 sql reader 'SELECT 1' | grep -qx 1
+sql reader 'SET GLOBAL read_only=ON;'
 php "$probe" binlog-recover | tee "$EVIDENCE/binlog-recover.log"

@@ -95,3 +95,5 @@ B25 adds sustained workload profiles, controlled host crash/replay and exact dur
 B26 expands shared UID sequence, signed closure, configuration precedence, PKI/AEAD and schema registry acceptance. Remaining detailed gaps are not closed.
 
 B27 adds actual MySQL and MariaDB binlog source/reader routing, lag, outage and restart; not automatic HA election.
+
+B28 adds native Webrick gateway/CORS/limits, Redis response cache, atomic throttle and protected cookie scenarios; fixes HTTPS negative evidence and binlog fixture isolation. Wire-level coverage remains separate.

@@ -40,6 +40,6 @@ function httpPolicyWorkload(): void
     $slow = $client->send($request('/slow')->timeout(1));
     verify(!$slow->successful && $client->send($request('/health'))->successful, 'Timeout or subsequent recovery failed.');
     $counts = $client->send($request('/counts'))->response->json();
-    verify($counts['/retry'] === 3 && $counts['/missing'] === 1 && !isset($counts['/private-denied'], $counts['/untrusted']), 'Actual wire request counts violated security or retry policy.');
+    verify($counts['/retry'] === 3 && $counts['/missing'] === 1 && !isset($counts['/private-denied']) && !isset($counts['/untrusted']), 'Actual wire request counts violated security or retry policy.');
     echo "Real HTTPS trust, retry, redirect credentials, SSRF policy, cookie path, timeout and recovery passed\n";
 }

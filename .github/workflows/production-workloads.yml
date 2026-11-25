@@ -15,6 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-gateway, backend: pgsql}
+          - {scenario: ecosystem-response-cache, backend: pgsql}
+          - {scenario: ecosystem-throttle, backend: pgsql}
+          - {scenario: ecosystem-cookie-protection, backend: pgsql}
           - {scenario: db-binlog-replica, backend: mysql}
           - {scenario: db-binlog-replica, backend: mariadb}
           - {scenario: ecosystem-uid-sequences, backend: pgsql}
