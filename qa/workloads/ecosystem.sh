@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 case "$SCENARIO" in
+  ecosystem-module-*) bash "$GITHUB_WORKSPACE/qa/workloads/module-matrix.sh" ;;
   ecosystem-amqp|ecosystem-sqs) bash "$GITHUB_WORKSPACE/qa/workloads/brokers.sh" ;;
   ecosystem-imap|ecosystem-pop3) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox.sh" ;;
   ecosystem-redis-cluster|ecosystem-mongodb|ecosystem-s3|ecosystem-sftp) bash "$GITHUB_WORKSPACE/qa/workloads/remote-services.sh" ;;

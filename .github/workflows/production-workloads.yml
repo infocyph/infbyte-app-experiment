@@ -15,6 +15,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-module-0, backend: pgsql}
+          - {scenario: ecosystem-module-1, backend: pgsql}
+          - {scenario: ecosystem-module-2, backend: pgsql}
+          - {scenario: ecosystem-module-3, backend: pgsql}
+          - {scenario: ecosystem-module-4, backend: pgsql}
+          - {scenario: ecosystem-module-5, backend: pgsql}
+          - {scenario: ecosystem-module-6, backend: pgsql}
+          - {scenario: ecosystem-module-7, backend: pgsql}
+          - {scenario: ecosystem-module-lifecycle, backend: pgsql}
           - {scenario: ecosystem-amqp, backend: pgsql}
           - {scenario: ecosystem-sqs, backend: pgsql}
           - {scenario: ecosystem-imap, backend: pgsql}

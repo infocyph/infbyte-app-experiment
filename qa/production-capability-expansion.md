@@ -139,3 +139,7 @@ I: two independent hosted jobs using real Dovecot IMAP/POP3, twelve synthetic me
 ## B32 — broker integration boundaries
 
 I: real RabbitMQ and ElasticMQ SQS-compatible services using application-owned adapters implementing Omnibus AmqpBackend/SqsBackend (library exposes contracts, not concrete vendor clients). AMQP requeue, acknowledgement, rejection, unsupported delayed delivery and 50-message reconciliation; SQS delay, visibility, receipt replacement, batch limit and 50-message reconciliation. AMQP test adapter represents first/redelivered attempt only; SQS emulator is not AWS production certification. FIFO, DLQ policy, TLS and outage remain open. No upstream fixes; hosted evidence pending.
+
+## B33 — Foundation module selection and lifecycle
+
+I: eight Gray-code shards × 32 distinct masks cover all 256 explicit optional-feature selections with default specialist dependencies inactive, using real module enable/disable, exact selected topology, production config validation, release compilation, readiness and manifest digest. Separate lifecycle lane checks shared OTP ownership when MFA is removed while passkey remains enabled, blocked removal of enabled feature, idempotent activation, all-to-core removal and reinstall, and no-dev dependency isolation. This is selection topology, not all conditional driver or business-operation permutations; existing specialized business workloads remain mandatory. Hosted verification pending.

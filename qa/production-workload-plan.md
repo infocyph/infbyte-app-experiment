@@ -179,3 +179,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B32 — broker integration
 - [x] RabbitMQ and SQS-compatible real backend lanes.
 - [ ] Hosted verification and advanced provider policy/HA.
+
+## B33 — Foundation module topology and lifecycle
+- [x] 256 selection masks across eight hosted shards, plus actual removal/reinstall lifecycle.
+- [ ] Hosted verification and conditional dependency/business permutation scenarios.
