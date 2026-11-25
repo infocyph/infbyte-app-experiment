@@ -132,3 +132,26 @@ Authoritative [production defect register](production-defect-register.md) record
 Owner-approved change: retain all 2,177 scenario/backend/host/matcher tuples, 1,336 distinct routine scenarios, 41 PHPProbe modes, both native gRPC modes and the external HA lane. All current execution uses PHP 8.5, including FPM, FrankenPHP, MongoDB/Scylla, SQL Server, Swoole/OpenSwoole and native gRPC; do not fall back to a different PHP series. Native-extension availability must be verified on hosted runners and failures classified rather than skipped. Historical PHP 8.4/8.6 evidence remains historical, not current acceptance. Consumer acceptance now contains 12 jobs (four core/all mode jobs plus eight specialist profiles). The ten logical routine group selectors remain; application is physically split into three, giving 12 routine matrices under the 256-job limit.
 
 Dedicated workers: database (334), ecosystem (1,647), HTTP (158), business (37), operations (1), native gRPC (2 modes). Each supports manual dispatch and reusable calls with cancellation scoped to its exact workload tuple or gRPC mode, not unrelated workloads. Shared setup uses a local composite action. Database/application workers provision their selected SQL backend and required supporting services; ecosystem retains its existing cross-library service topology. Static inventory preservation and dispatch wiring checked; hosted service, extension, cancellation and runtime qualification pending. No assertions or upstream package constraints changed. External HA retains its non-cancellation safety boundary while fencing is active.
+
+
+## Capability-owned execution topology
+
+Replace the generic ecosystem worker with nine capability workers. All 2,177 frozen routine tuples and 1,336 distinct routine names remain unchanged on PHP 8.5; 2 native gRPC modes, 41 PHPProbe modes, endurance and the external HA lane remain separate. 16 routine matrix shards, each at most 256 entries. Capability ownership is explicit in `qa/workload-worker-types.json`; the inventory auditor and shared preparation action reject missing or ambiguous ownership. Choose a capability (or all/application/ecosystem compatibility umbrella) in the laboratory dispatch; each dedicated worker also supports individual tuple dispatch and cancels only an older identical tuple. Native gRPC retains mode-scoped cancellation. The old ecosystem shard selectors are replaced by capability selectors.
+
+| Worker | Routine entries | Matrix shards |
+| --- | ---: | ---: |
+| database | 334 | 256 + 78 |
+| cache | 197 | 197 |
+| authentication | 200 | 200 |
+| cryptography | 44 | 44 |
+| storage | 280 | 256 + 24 |
+| messaging | 180 | 180 |
+| runtime | 307 | 256 + 51 |
+| routing | 99 | 99 |
+| foundation | 156 | 156 |
+| utilities | 184 | 184 |
+| http | 158 | 158 |
+| business | 37 | 37 |
+| operations | 1 | 1 |
+
+Provisioning: pure utility/crypto/runtime paths no longer start the generic SQL/Redis/mail topology; explicitly integrated variants retain required supporting services. Integrated cache, auth, storage, messaging, routing and Foundation contracts retain conservative SQL/Redis topology where cross-driver or provider behavior is under test. Optional Valkey/Memcached and native extensions preserve the previous scenario conditions, restricted to each capability. Unrelated Mailpit service definitions removed or gated except where cross-layer tests may need it. Shared application installation and original workload assertions remain unchanged. CORE-01/STRUCT/OPS/FLOW: ownership, tuple equivalence, matrix cap, manual dispatch and cancellation verified by source inspection; hosted service/runtime and auditor execution pending. No PHP fallback or dependency pin added. External HA remains manually authorized and non-cancellable during fencing.

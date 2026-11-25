@@ -1,0 +1,125 @@
+name: Production worker - storage
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: Exact scenario name from the frozen workload matrix
+        required: true
+        type: string
+      backend:
+        description: Database backend
+        required: true
+        type: choice
+        default: pgsql
+        options: [pgsql, mysql, mariadb, sqlite, mssql]
+      host:
+        description: Runtime (match the matrix entry)
+        required: true
+        type: choice
+        default: worker
+        options: [worker, native, fpm, roadrunner, frankenphp, swoole, openswoole]
+      matcher:
+        description: Route matcher
+        required: true
+        type: choice
+        default: fused
+        options: [fused, sharded]
+  workflow_call:
+    inputs:
+      scenario:
+        required: true
+        type: string
+      backend:
+        required: true
+        type: string
+      host:
+        type: string
+        default: worker
+      matcher:
+        type: string
+        default: fused
+permissions:
+  contents: read
+jobs:
+  execute:
+    name: Execute workload
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    concurrency:
+      group: production-worker-storage-${{ github.ref }}-${{ inputs.scenario }}-${{ inputs.backend }}-${{ inputs.host || 'worker' }}-${{ inputs.matcher || 'fused' }}
+      cancel-in-progress: true
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: experiment
+          POSTGRES_USER: experiment
+          POSTGRES_PASSWORD: experiment
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U experiment -d experiment" --health-interval 5s --health-timeout 5s --health-retries 15
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: experiment
+          MYSQL_USER: experiment
+          MYSQL_PASSWORD: experiment
+          MYSQL_ROOT_PASSWORD: experiment-root
+        ports: ['3306:3306']
+        options: --health-cmd "mysqladmin ping -h localhost --silent" --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:8
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 15
+      mariadb:
+        image: ${{ inputs.backend == 'mariadb' && 'mariadb:11.4' || '' }}
+        env:
+          MARIADB_DATABASE: experiment
+          MARIADB_USER: experiment
+          MARIADB_PASSWORD: experiment
+          MARIADB_ROOT_PASSWORD: experiment-root
+        ports: ['3307:3306']
+        options: --health-cmd "healthcheck.sh --connect --innodb_initialized" --health-interval 5s --health-timeout 5s --health-retries 20
+      mssql:
+        image: ${{ inputs.backend == 'mssql' && 'mcr.microsoft.com/mssql/server:2022-latest' || '' }}
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_PID: Developer
+          MSSQL_ENABLE_HADR: ${{ inputs.scenario == 'db-sqlserver-ag' && '1' || '0' }}
+          MSSQL_SA_PASSWORD: 'Experiment-Only-42!'
+        ports: ['1433:1433']
+      mailpit:
+        image: ${{ (startsWith(inputs.scenario, 'ecosystem-remote-order') || inputs.scenario == 'ecosystem-async-s3-remote-order-recovery' || inputs.scenario == 'ecosystem-azure-remote-order-recovery' || inputs.scenario == 'ecosystem-ftp-remote-order-recovery' || inputs.scenario == 'ecosystem-gcs-remote-order-recovery' || inputs.scenario == 'ecosystem-gridfs-remote-order-recovery' || inputs.scenario == 'ecosystem-remote-order-recovery' || inputs.scenario == 'ecosystem-s3-remote-order-recovery' || inputs.scenario == 'ecosystem-sftp-remote-order-recovery' || inputs.scenario == 'ecosystem-sftp2-remote-order-recovery' || inputs.scenario == 'ecosystem-webdav-remote-order-recovery' || inputs.scenario == 'ecosystem-async-s3-order-http-publication-after' || inputs.scenario == 'ecosystem-async-s3-order-http-publication-before' || inputs.scenario == 'ecosystem-azure-order-http-publication-after' || inputs.scenario == 'ecosystem-azure-order-http-publication-before' || inputs.scenario == 'ecosystem-ftp-order-rename-after' || inputs.scenario == 'ecosystem-ftp-order-rename-before' || inputs.scenario == 'ecosystem-gcs-order-http-publication-after' || inputs.scenario == 'ecosystem-gcs-order-http-publication-before' || inputs.scenario == 'ecosystem-gridfs-order-publication-after' || inputs.scenario == 'ecosystem-gridfs-order-publication-before' || inputs.scenario == 'ecosystem-s3-order-http-publication-after' || inputs.scenario == 'ecosystem-s3-order-http-publication-before' || inputs.scenario == 'ecosystem-sftp-order-rename-after' || inputs.scenario == 'ecosystem-sftp-order-rename-before' || inputs.scenario == 'ecosystem-sftp2-order-rename-after' || inputs.scenario == 'ecosystem-sftp2-order-rename-before' || inputs.scenario == 'ecosystem-webdav-order-http-publication-after' || inputs.scenario == 'ecosystem-webdav-order-http-publication-before') && 'axllent/mailpit:latest' || '' }}
+        ports: ['1025:1025', '8025:8025']
+    env:
+      SCENARIO: ${{ inputs.scenario }}
+      HOST_MODE: ${{ inputs.host || 'worker' }}
+      LAB_MATCHER: ${{ inputs.matcher || 'fused' }}
+      DB_BACKEND: ${{ inputs.backend }}
+      PHP_SERIES: '8.5'
+      SOAK: ${{ inputs.scenario == 'http' && inputs.host == 'native' && inputs.backend == 'pgsql' && '1' || '0' }}
+      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/prepare-production-workload
+        with:
+          worker_type: storage
+          scenario: ${{ inputs.scenario }}
+          backend: ${{ inputs.backend }}
+          host: ${{ inputs.host || 'worker' }}
+          extensions: pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, sqlite3, redis, curl, mbstring, intl, sodium, zip, fileinfo, apcu, shmop, sysvsem${{ inputs.backend == 'mssql' && ', pdo_sqlsrv' || '' }}${{ startsWith(inputs.scenario, 'ecosystem-ftp') && ', ftp' || '' }}${{ startsWith(inputs.scenario, 'ecosystem-gridfs') && ', mongodb' || '' }}
+      - name: Exercise storage capability contracts
+        env:
+          POSTGRES_SERVICE: ${{ job.services.postgres.id }}
+          REDIS_SERVICE: ${{ job.services.redis.id }}
+          MAIL_SERVICE: ${{ job.services.mailpit.id }}
+        shell: bash
+        run: bash qa/workloads/ecosystem.sh
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: workload-${{ inputs.scenario }}-${{ inputs.backend }}-${{ inputs.host || 'worker' }}-${{ inputs.matcher || 'fused' }}
+          path: ${{ runner.temp }}/workload-evidence/
+          if-no-files-found: error
+          retention-days: 30

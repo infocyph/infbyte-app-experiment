@@ -7,7 +7,7 @@ on:
         type: choice
         required: true
         default: all
-        options: [all, database, database-expansion, ecosystem, ecosystem-extra, ecosystem-residual, ecosystem-expansion, ecosystem-closure, ecosystem-final, ecosystem-specialist, application, grpc]
+        options: [all, database, cache, authentication, cryptography, storage, messaging, runtime, routing, foundation, utilities, http, business, operations, application, ecosystem, grpc]
 permissions:
   contents: read
 concurrency:
@@ -270,20 +270,6 @@ jobs:
           - {scenario: db-pool, backend: mariadb}
           - {scenario: db-pool, backend: pgsql}
           - {scenario: db-replicas, backend: pgsql}
-    uses: ./.github/workflows/production-worker-database.yml
-    with:
-      scenario: ${{ matrix.scenario }}
-      backend: ${{ matrix.backend }}
-      host: ${{ matrix.host || 'worker' }}
-      matcher: ${{ matrix.matcher || 'fused' }}
-
-  database-expansion:
-    if: inputs.group == 'all' || inputs.group == 'database-expansion'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
           - {scenario: db-right-outer-join, backend: pgsql}
           - {scenario: db-right-outer-join, backend: mysql}
           - {scenario: db-right-outer-join, backend: mariadb}
@@ -291,6 +277,20 @@ jobs:
           - {scenario: db-right-outer-join, backend: mssql}
           - {scenario: db-chained-cte, backend: pgsql}
           - {scenario: db-chained-cte, backend: mysql}
+    uses: ./.github/workflows/production-worker-database.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  database-2:
+    if: inputs.group == 'all' || inputs.group == 'database'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - {scenario: db-chained-cte, backend: mariadb}
           - {scenario: db-chained-cte, backend: sqlite}
           - {scenario: db-chained-cte, backend: mssql}
@@ -376,8 +376,8 @@ jobs:
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
 
-  ecosystem:
-    if: inputs.group == 'all' || inputs.group == 'ecosystem'
+  cache:
+    if: inputs.group == 'all' || inputs.group == 'cache' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -386,11 +386,6 @@ jobs:
           - {scenario: ecosystem-cache-mongodb-tls-trust, backend: pgsql}
           - {scenario: ecosystem-cache-mongodb-tls-atomic, backend: pgsql}
           - {scenario: ecosystem-cache-mongodb-tls-restart, backend: pgsql}
-          - {scenario: ecosystem-sqs-tls-contracts, backend: pgsql}
-          - {scenario: ecosystem-sqs-tls-contracts, backend: mysql}
-          - {scenario: ecosystem-sqs-tls-contracts, backend: mariadb}
-          - {scenario: ecosystem-sqs-tls-contracts, backend: sqlite}
-          - {scenario: ecosystem-wire-outbound-h3, backend: pgsql}
           - {scenario: ecosystem-cache-tls, backend: pgsql}
           - {scenario: ecosystem-valkey-tls, backend: pgsql}
           - {scenario: ecosystem-counter-restart, backend: pgsql}
@@ -400,123 +395,6 @@ jobs:
           - {scenario: ecosystem-valkey-counter-uncertain, backend: pgsql}
           - {scenario: ecosystem-counter-election, backend: pgsql}
           - {scenario: ecosystem-valkey-counter-election, backend: pgsql}
-          - {scenario: ecosystem-otp-valkey, backend: pgsql}
-          - {scenario: ecosystem-otp-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-otp-file, backend: pgsql}
-          - {scenario: ecosystem-otp-sqlite, backend: pgsql}
-          - {scenario: ecosystem-otp-redis, backend: pgsql}
-          - {scenario: ecosystem-otp-pdo, backend: pgsql}
-          - {scenario: ecosystem-otp-pdo, backend: mysql}
-          - {scenario: ecosystem-otp-pdo, backend: mariadb}
-          - {scenario: ecosystem-http-pool, backend: pgsql}
-          - {scenario: ecosystem-grpc-inbound, backend: pgsql}
-          - {scenario: ecosystem-validation-casts, backend: pgsql}
-          - {scenario: ecosystem-validation-cast-composition, backend: pgsql}
-          - {scenario: ecosystem-validation-sanitizers, backend: pgsql}
-          - {scenario: ecosystem-http-transfer, backend: pgsql}
-          - {scenario: ecosystem-http-retry-safety, backend: pgsql}
-          - {scenario: ecosystem-http-proxy, backend: pgsql}
-          - {scenario: ecosystem-auth-lifecycle, backend: mysql}
-          - {scenario: ecosystem-jwt-replay, backend: mysql}
-          - {scenario: ecosystem-auth-lifecycle, backend: pgsql}
-          - {scenario: ecosystem-amqp-ack-uncertain, backend: mysql}
-          - {scenario: ecosystem-amqp-ack-uncertain, backend: sqlite}
-          - {scenario: ecosystem-amqp-ack-uncertain, backend: mssql}
-          - {scenario: ecosystem-amqp-wire-ack, backend: mysql}
-          - {scenario: ecosystem-amqp-wire-ack, backend: sqlite}
-          - {scenario: ecosystem-amqp-wire-ack, backend: mssql}
-          - {scenario: ecosystem-sqs-ack-uncertain, backend: mysql}
-          - {scenario: ecosystem-sqs-ack-uncertain, backend: sqlite}
-          - {scenario: ecosystem-sqs-ack-uncertain, backend: mssql}
-          - {scenario: ecosystem-sqs-wire-ack, backend: mysql}
-          - {scenario: ecosystem-sqs-wire-ack, backend: sqlite}
-          - {scenario: ecosystem-sqs-wire-ack, backend: mssql}
-          - {scenario: ecosystem-amqp-consumer-failures, backend: sqlite}
-          - {scenario: ecosystem-amqp-consumer-failures, backend: mssql}
-          - {scenario: ecosystem-sqs-consumer-failures, backend: sqlite}
-          - {scenario: ecosystem-sqs-consumer-failures, backend: mssql}
-          - {scenario: ecosystem-consent-scope-policy, backend: pgsql}
-          - {scenario: ecosystem-consent-scope-policy, backend: mysql}
-          - {scenario: ecosystem-consent-scope-policy, backend: mariadb}
-          - {scenario: ecosystem-consent-lifecycle, backend: mariadb}
-          - {scenario: ecosystem-consent-permissions, backend: mariadb}
-          - {scenario: ecosystem-consent-lifecycle, backend: pgsql}
-          - {scenario: ecosystem-consent-lifecycle, backend: mysql}
-          - {scenario: ecosystem-jwt-replay, backend: pgsql}
-          - {scenario: ecosystem-amqp-dlq, backend: pgsql}
-          - {scenario: ecosystem-amqp-ack-uncertain, backend: pgsql}
-          - {scenario: ecosystem-amqp-ack-uncertain, backend: mariadb}
-          - {scenario: ecosystem-amqp-wire-ack, backend: pgsql}
-          - {scenario: ecosystem-amqp-wire-ack, backend: mariadb}
-          - {scenario: ecosystem-sqs-ack-uncertain, backend: pgsql}
-          - {scenario: ecosystem-sqs-ack-uncertain, backend: mariadb}
-          - {scenario: ecosystem-sqs-wire-ack, backend: pgsql}
-          - {scenario: ecosystem-sqs-wire-ack, backend: mariadb}
-          - {scenario: ecosystem-amqp-tls, backend: pgsql}
-          - {scenario: ecosystem-sqs-fifo, backend: pgsql}
-          - {scenario: ecosystem-sqs-redrive, backend: pgsql}
-          - {scenario: ecosystem-remote-jwks, backend: pgsql}
-          - {scenario: ecosystem-jwks-dns-public, backend: pgsql}
-          - {scenario: ecosystem-jwks-dns-private, backend: pgsql}
-          - {scenario: ecosystem-jwks-dns-mixed, backend: pgsql}
-          - {scenario: ecosystem-jwks-dns-empty, backend: pgsql}
-          - {scenario: ecosystem-jwks-dns-rebind, backend: pgsql}
-          - {scenario: ecosystem-uid-provider-boundaries, backend: pgsql}
-          - {scenario: ecosystem-uid-filesystem, backend: pgsql}
-          - {scenario: ecosystem-uid-values, backend: pgsql}
-          - {scenario: ecosystem-randflake-conversions, backend: pgsql}
-          - {scenario: ecosystem-detached-crypto, backend: pgsql}
-          - {scenario: ecosystem-crypto-key-lifecycle, backend: pgsql}
-          - {scenario: ecosystem-config-reference, backend: pgsql}
-          - {scenario: ecosystem-fence-remix, backend: pgsql}
-          - {scenario: ecosystem-remix-composition, backend: pgsql}
-          - {scenario: ecosystem-di-contextual, backend: pgsql}
-          - {scenario: ecosystem-di-factories, backend: pgsql}
-          - {scenario: ecosystem-di-graph-failures, backend: pgsql}
-          - {scenario: ecosystem-di-preload, backend: pgsql}
-          - {scenario: ecosystem-di-cache, backend: pgsql}
-          - {scenario: ecosystem-di-cache-outage, backend: pgsql}
-          - {scenario: ecosystem-di-attributes, backend: pgsql}
-          - {scenario: ecosystem-file-index-retention, backend: pgsql}
-          - {scenario: ecosystem-archive-security, backend: pgsql}
-          - {scenario: ecosystem-archive-contracts, backend: pgsql}
-          - {scenario: ecosystem-archive-late-rollback, backend: pgsql}
-          - {scenario: ecosystem-file-rollback-failure, backend: pgsql}
-          - {scenario: ecosystem-file-queue-audit, backend: pgsql}
-          - {scenario: ecosystem-file-watch, backend: pgsql}
-          - {scenario: ecosystem-api-inventory, backend: pgsql}
-          - {scenario: ecosystem-recovery, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-recovery, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-active-recovery, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-remote-order-recovery, backend: pgsql}
-          - {scenario: ecosystem-active-recovery, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-release-cutover, backend: mysql, matcher: fused}
-          - {scenario: ecosystem-release-cutover, backend: mysql, matcher: sharded}
-          - {scenario: ecosystem-release-cutover, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-release-cutover, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-tenants, backend: mysql, matcher: fused}
-          - {scenario: ecosystem-tenants, backend: mysql, matcher: sharded}
-          - {scenario: ecosystem-tenants, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-tenants, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-http-representations, backend: pgsql}
-          - {scenario: ecosystem-http-signatures, backend: pgsql}
-          - {scenario: ecosystem-uid-families, backend: pgsql}
-          - {scenario: ecosystem-array-transforms, backend: pgsql}
-          - {scenario: ecosystem-array-set-contracts, backend: pgsql}
-          - {scenario: ecosystem-array-dto-guard, backend: pgsql}
-          - {scenario: ecosystem-array-helper-boundaries, backend: pgsql}
-          - {scenario: ecosystem-collection-ownership, backend: pgsql}
-          - {scenario: ecosystem-config-mutation-lifecycle, backend: pgsql}
-          - {scenario: ecosystem-di-environment, backend: pgsql}
-          - {scenario: ecosystem-sftp-trust, backend: pgsql}
-          - {scenario: ecosystem-sftp-outage, backend: pgsql}
-          - {scenario: ecosystem-sftp-publication-fault, backend: pgsql}
-          - {scenario: ecosystem-sftp-rename-uncertain, backend: pgsql}
-          - {scenario: ecosystem-s3-outage, backend: pgsql}
-          - {scenario: ecosystem-s3-publication-fault, backend: pgsql}
-          - {scenario: ecosystem-file-transactions, backend: pgsql}
-          - {scenario: ecosystem-mailbox-tls, backend: pgsql}
-          - {scenario: ecosystem-mailbox-idle, backend: pgsql}
           - {scenario: ecosystem-cache-outage, backend: pgsql}
           - {scenario: ecosystem-cache-valkey-outage, backend: pgsql}
           - {scenario: ecosystem-cache-memcached-outage, backend: pgsql}
@@ -583,27 +461,6 @@ jobs:
           - {scenario: ecosystem-cache-payload-policy-pdo, backend: pgsql}
           - {scenario: ecosystem-cache-payload-policy-pdo, backend: mysql}
           - {scenario: ecosystem-cache-payload-policy-pdo, backend: mariadb}
-          - {scenario: ecosystem-foundation-risk-isolation-redis, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-isolation-valkey, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-isolation-memcached, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-isolation-file, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-isolation-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-isolation-sqlite, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-isolation-pdo, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-isolation-pdo, backend: mysql}
-          - {scenario: ecosystem-foundation-risk-isolation-pdo, backend: mariadb}
-          - {scenario: ecosystem-foundation-risk-concurrent-redis, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-concurrent-valkey, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-concurrent-memcached, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-concurrent-file, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-concurrent-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-concurrent-sqlite, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-concurrent-pdo, backend: pgsql}
-          - {scenario: ecosystem-foundation-risk-concurrent-pdo, backend: mysql}
-          - {scenario: ecosystem-foundation-risk-concurrent-pdo, backend: mariadb}
-          - {scenario: ecosystem-foundation-resource-contracts, backend: pgsql}
-          - {scenario: ecosystem-consent-permissions, backend: pgsql}
-          - {scenario: ecosystem-consent-permissions, backend: mysql}
           - {scenario: ecosystem-cache-lock-ownership-redis, backend: pgsql}
           - {scenario: ecosystem-cache-lock-ownership-valkey, backend: pgsql}
           - {scenario: ecosystem-cache-lock-ownership-memcached, backend: pgsql}
@@ -632,460 +489,21 @@ jobs:
           - {scenario: ecosystem-cache-metrics-pdo, backend: mysql}
           - {scenario: ecosystem-cache-metrics-pdo, backend: mariadb}
           - {scenario: ecosystem-invalidation-processes, backend: pgsql}
-          - {scenario: ecosystem-validation-rules, backend: pgsql}
-          - {scenario: ecosystem-validation-options, backend: pgsql}
-          - {scenario: ecosystem-validation-nested-errors, backend: pgsql}
-          - {scenario: ecosystem-validation-locale, backend: pgsql}
-          - {scenario: ecosystem-validation-database, backend: mysql}
-          - {scenario: ecosystem-validation-database, backend: pgsql}
-          - {scenario: ecosystem-validation-database, backend: sqlite}
-    uses: ./.github/workflows/production-worker-ecosystem.yml
-    with:
-      scenario: ${{ matrix.scenario }}
-      backend: ${{ matrix.backend }}
-      host: ${{ matrix.host || 'worker' }}
-      matcher: ${{ matrix.matcher || 'fused' }}
-
-  ecosystem-extra:
-    if: inputs.group == 'all' || inputs.group == 'ecosystem-extra'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - {scenario: ecosystem-archive-extensions, backend: pgsql}
-          - {scenario: ecosystem-archive-hooks, backend: pgsql}
-          - {scenario: ecosystem-archive-aes128, backend: pgsql}
-          - {scenario: ecosystem-archive-selection, backend: pgsql}
-          - {scenario: ecosystem-sqs-tls-contracts, backend: mssql}
-          - {scenario: ecosystem-business-cache-queue, backend: pgsql}
-          - {scenario: ecosystem-business-cache-queue, backend: mysql}
-          - {scenario: ecosystem-business-cache-queue, backend: mariadb}
-          - {scenario: ecosystem-business-cache-queue, backend: sqlite}
-          - {scenario: ecosystem-business-cache-queue, backend: mssql}
-          - {scenario: ecosystem-business-receipt-redelivery, backend: pgsql}
-          - {scenario: ecosystem-business-receipt-redelivery, backend: mysql}
-          - {scenario: ecosystem-business-receipt-redelivery, backend: mariadb}
-          - {scenario: ecosystem-business-receipt-redelivery, backend: sqlite}
-          - {scenario: ecosystem-business-receipt-redelivery, backend: mssql}
-          - {scenario: ecosystem-business-poison-queue, backend: pgsql}
-          - {scenario: ecosystem-business-poison-queue, backend: mysql}
-          - {scenario: ecosystem-business-poison-queue, backend: mariadb}
-          - {scenario: ecosystem-business-poison-queue, backend: sqlite}
-          - {scenario: ecosystem-business-poison-queue, backend: mssql}
-          - {scenario: ecosystem-business-failure-recovery, backend: pgsql}
-          - {scenario: ecosystem-business-failure-recovery, backend: mysql}
-          - {scenario: ecosystem-business-failure-recovery, backend: mariadb}
-          - {scenario: ecosystem-business-failure-recovery, backend: sqlite}
-          - {scenario: ecosystem-business-failure-recovery, backend: mssql}
-          - {scenario: ecosystem-di-cache-parity-valkey, backend: pgsql}
-          - {scenario: ecosystem-di-cache-parity-memcached, backend: pgsql}
-          - {scenario: ecosystem-di-cache-parity-file, backend: pgsql}
-          - {scenario: ecosystem-di-cache-parity-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-di-cache-parity-pdo, backend: pgsql}
-          - {scenario: ecosystem-di-cache-parity-pdo, backend: mysql}
-          - {scenario: ecosystem-di-cache-parity-pdo, backend: mariadb}
-          - {scenario: ecosystem-di-cache-process-redis, backend: pgsql}
-          - {scenario: ecosystem-di-cache-process-valkey, backend: pgsql}
-          - {scenario: ecosystem-di-cache-process-memcached, backend: pgsql}
-          - {scenario: ecosystem-di-cache-process-file, backend: pgsql}
-          - {scenario: ecosystem-di-cache-process-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-di-cache-process-sqlite, backend: pgsql}
-          - {scenario: ecosystem-di-cache-process-pdo, backend: pgsql}
-          - {scenario: ecosystem-di-cache-process-pdo, backend: mysql}
-          - {scenario: ecosystem-di-cache-process-pdo, backend: mariadb}
-          - {scenario: ecosystem-lazy-replay, backend: pgsql}
-          - {scenario: ecosystem-lazy-factory, backend: pgsql}
-          - {scenario: ecosystem-config-merge-contracts, backend: pgsql}
-          - {scenario: ecosystem-config-resilience, backend: pgsql}
-          - {scenario: ecosystem-uid-ordering, backend: pgsql}
-          - {scenario: ecosystem-otp-challenge-replacement-redis, backend: pgsql}
-          - {scenario: ecosystem-otp-challenge-replacement-valkey, backend: pgsql}
-          - {scenario: ecosystem-otp-challenge-replacement-file, backend: pgsql}
-          - {scenario: ecosystem-otp-challenge-replacement-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-otp-challenge-replacement-sqlite, backend: pgsql}
-          - {scenario: ecosystem-otp-challenge-replacement-pdo, backend: pgsql}
-          - {scenario: ecosystem-otp-challenge-replacement-pdo, backend: mysql}
-          - {scenario: ecosystem-otp-challenge-replacement-pdo, backend: mariadb}
-          - {scenario: ecosystem-otp-rotation-orchestration-redis, backend: pgsql}
-          - {scenario: ecosystem-otp-rotation-orchestration-valkey, backend: pgsql}
-          - {scenario: ecosystem-otp-rotation-orchestration-file, backend: pgsql}
-          - {scenario: ecosystem-otp-rotation-orchestration-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-otp-rotation-orchestration-sqlite, backend: pgsql}
-          - {scenario: ecosystem-otp-rotation-orchestration-pdo, backend: pgsql}
-          - {scenario: ecosystem-otp-rotation-orchestration-pdo, backend: mysql}
-          - {scenario: ecosystem-otp-rotation-orchestration-pdo, backend: mariadb}
-          - {scenario: ecosystem-envelope-rotation-aes, backend: pgsql}
-          - {scenario: ecosystem-envelope-rotation-xchacha, backend: pgsql}
-          - {scenario: ecosystem-file-key-rotation, backend: pgsql}
-          - {scenario: ecosystem-validation-affix-digits, backend: pgsql}
-          - {scenario: ecosystem-validation-conditional, backend: pgsql}
-          - {scenario: ecosystem-omnibus-failure-replay, backend: pgsql}
-          - {scenario: ecosystem-omnibus-failure-replay, backend: mysql}
-          - {scenario: ecosystem-omnibus-failure-replay, backend: mariadb}
-          - {scenario: ecosystem-omnibus-failure-replay, backend: sqlite}
-          - {scenario: ecosystem-omnibus-failure-replay, backend: mssql}
-          - {scenario: ecosystem-omnibus-failure-rejection, backend: pgsql}
-          - {scenario: ecosystem-omnibus-failure-rejection, backend: mysql}
-          - {scenario: ecosystem-omnibus-failure-rejection, backend: mariadb}
-          - {scenario: ecosystem-omnibus-failure-rejection, backend: sqlite}
-          - {scenario: ecosystem-omnibus-failure-rejection, backend: mssql}
-          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: pgsql}
-          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mysql}
-          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mariadb}
-          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: sqlite}
-          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mssql}
-          - {scenario: ecosystem-file-binary-contracts, backend: pgsql}
-          - {scenario: ecosystem-file-csv-contracts, backend: pgsql}
-          - {scenario: ecosystem-file-jsonl-contracts, backend: pgsql}
-          - {scenario: ecosystem-file-serialized-contracts, backend: pgsql}
-          - {scenario: ecosystem-file-lock-contracts, backend: pgsql}
-          - {scenario: ecosystem-response-cache-freshness-redis, backend: pgsql}
-          - {scenario: ecosystem-response-cache-freshness-valkey, backend: pgsql}
-          - {scenario: ecosystem-response-cache-freshness-memcached, backend: pgsql}
-          - {scenario: ecosystem-response-cache-freshness-file, backend: pgsql}
-          - {scenario: ecosystem-response-cache-freshness-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-response-cache-freshness-sqlite, backend: pgsql}
-          - {scenario: ecosystem-response-cache-freshness-pdo, backend: pgsql}
-          - {scenario: ecosystem-response-cache-freshness-pdo, backend: mysql}
-          - {scenario: ecosystem-response-cache-freshness-pdo, backend: mariadb}
-          - {scenario: ecosystem-response-cache-bypass-redis, backend: pgsql}
-          - {scenario: ecosystem-response-cache-bypass-valkey, backend: pgsql}
-          - {scenario: ecosystem-response-cache-bypass-memcached, backend: pgsql}
-          - {scenario: ecosystem-response-cache-bypass-file, backend: pgsql}
-          - {scenario: ecosystem-response-cache-bypass-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-response-cache-bypass-sqlite, backend: pgsql}
-          - {scenario: ecosystem-response-cache-bypass-pdo, backend: pgsql}
-          - {scenario: ecosystem-response-cache-bypass-pdo, backend: mysql}
-          - {scenario: ecosystem-response-cache-bypass-pdo, backend: mariadb}
-          - {scenario: ecosystem-conditional-precedence, backend: pgsql}
-          - {scenario: ecosystem-route-cors-contracts, backend: pgsql}
-          - {scenario: ecosystem-outbound-cookie-contracts, backend: pgsql}
-          - {scenario: ecosystem-cancellation-ownership, backend: pgsql}
-          - {scenario: ecosystem-otp-durable, backend: mysql}
-          - {scenario: ecosystem-otp-durable, backend: pgsql}
-          - {scenario: ecosystem-otp-backends, backend: mysql}
-          - {scenario: ecosystem-otp-backends, backend: pgsql}
-          - {scenario: ecosystem-otp-drift, backend: pgsql}
-          - {scenario: ecosystem-otp-enrollment, backend: pgsql}
-          - {scenario: ecosystem-supervisor, backend: pgsql}
-          - {scenario: ecosystem-http-framing, backend: pgsql}
-          - {scenario: ecosystem-http-backpressure, backend: pgsql}
-          - {scenario: ecosystem-http-admission, backend: pgsql}
-          - {scenario: ecosystem-worker-budget, backend: pgsql}
-          - {scenario: ecosystem-http-connection-quotas, backend: pgsql}
-          - {scenario: ecosystem-wire-http3, backend: pgsql}
-          - {scenario: ecosystem-wire-http3-flow, backend: pgsql}
-          - {scenario: ecosystem-wire-http3-admission, backend: pgsql}
-          - {scenario: ecosystem-wire-mtls, backend: pgsql}
           - {scenario: ecosystem-scylla, backend: pgsql}
           - {scenario: ecosystem-redis-failover, backend: pgsql}
-          - {scenario: ecosystem-storage-local-modes, backend: pgsql}
-          - {scenario: ecosystem-ftp, backend: pgsql}
-          - {scenario: ecosystem-webdav, backend: pgsql}
-          - {scenario: ecosystem-gridfs, backend: pgsql}
-          - {scenario: ecosystem-sftp2, backend: pgsql}
-          - {scenario: ecosystem-async-s3, backend: pgsql}
-          - {scenario: ecosystem-azure, backend: pgsql}
-          - {scenario: ecosystem-gcs, backend: pgsql}
-          - {scenario: ecosystem-wire-tcp, backend: pgsql}
-          - {scenario: ecosystem-wire-unix, backend: pgsql}
-          - {scenario: ecosystem-wire-udp, backend: pgsql}
-          - {scenario: ecosystem-wire-websocket, backend: pgsql}
-          - {scenario: ecosystem-wire-http2, backend: pgsql}
-          - {scenario: ecosystem-wire-http2-flow, backend: pgsql}
-          - {scenario: ecosystem-wire-http2-admission, backend: pgsql}
           - {scenario: ecosystem-invalidation-sql, backend: mysql}
           - {scenario: ecosystem-invalidation-sql, backend: pgsql}
           - {scenario: ecosystem-invalidation-stream, backend: pgsql}
-          - {scenario: ecosystem-module-0, backend: pgsql}
-          - {scenario: ecosystem-module-1, backend: pgsql}
-          - {scenario: ecosystem-module-2, backend: pgsql}
-          - {scenario: ecosystem-module-3, backend: pgsql}
-          - {scenario: ecosystem-module-4, backend: pgsql}
-          - {scenario: ecosystem-module-5, backend: pgsql}
-          - {scenario: ecosystem-module-6, backend: pgsql}
-          - {scenario: ecosystem-module-7, backend: pgsql}
-          - {scenario: ecosystem-module-lifecycle, backend: pgsql}
-          - {scenario: ecosystem-module-conditional-validation, backend: pgsql}
-          - {scenario: ecosystem-module-conditional-mfa, backend: pgsql}
-          - {scenario: ecosystem-module-conditional-messaging, backend: pgsql}
-          - {scenario: ecosystem-conditional-modules, backend: pgsql}
-          - {scenario: ecosystem-amqp, backend: pgsql}
-          - {scenario: ecosystem-sqs, backend: pgsql}
-          - {scenario: ecosystem-imap, backend: pgsql}
-          - {scenario: ecosystem-pop3, backend: pgsql}
-          - {scenario: ecosystem-jwt-jws, backend: pgsql}
-          - {scenario: ecosystem-jwe, backend: pgsql}
-          - {scenario: ecosystem-gateway, backend: pgsql}
-          - {scenario: ecosystem-risk-provider, backend: pgsql}
-          - {scenario: ecosystem-middleware-policies, backend: pgsql}
-          - {scenario: ecosystem-vary-linter, backend: pgsql}
-          - {scenario: ecosystem-telemetry-risk, backend: pgsql}
-          - {scenario: ecosystem-risk-edge, backend: pgsql, host: fpm, matcher: fused}
-          - {scenario: ecosystem-risk-edge, backend: pgsql, host: fpm, matcher: sharded}
-          - {scenario: ecosystem-risk-ja4, backend: pgsql, host: fpm, matcher: fused}
-          - {scenario: ecosystem-risk-ja4, backend: pgsql, host: fpm, matcher: sharded}
-          - {scenario: ecosystem-telemetry-otel, backend: pgsql}
-          - {scenario: ecosystem-response-cache, backend: pgsql}
-          - {scenario: ecosystem-throttle, backend: pgsql}
-          - {scenario: ecosystem-cookie-protection, backend: pgsql}
-          - {scenario: ecosystem-uid-sequences, backend: pgsql}
-          - {scenario: ecosystem-closure, backend: pgsql}
-          - {scenario: ecosystem-config-layering, backend: pgsql}
-          - {scenario: ecosystem-pki, backend: pgsql}
-          - {scenario: ecosystem-crypto-algorithms, backend: pgsql}
-          - {scenario: ecosystem-validation-registry, backend: pgsql}
-          - {scenario: ecosystem-endurance, backend: mysql, matcher: fused}
-          - {scenario: ecosystem-endurance, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-http-policy, backend: pgsql}
           - {scenario: ecosystem-redis-cluster, backend: pgsql}
           - {scenario: ecosystem-mongodb, backend: pgsql}
-          - {scenario: ecosystem-s3, backend: pgsql}
-          - {scenario: ecosystem-sftp, backend: pgsql}
-          - {scenario: ecosystem-connected, backend: mysql, matcher: fused}
-          - {scenario: ecosystem-connected, backend: mysql, matcher: sharded}
-          - {scenario: ecosystem-connected, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-connected, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-routing, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-routing, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-route-attributes, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-route-attributes, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-compression-codings, backend: pgsql}
-          - {scenario: ecosystem-coroutines, backend: pgsql}
-          - {scenario: ecosystem-async-files, backend: pgsql}
-          - {scenario: ecosystem-pathwise-upload, backend: pgsql}
-          - {scenario: ecosystem-pathwise-download, backend: pgsql}
-          - {scenario: ecosystem-mail-mime, backend: pgsql}
-          - {scenario: ecosystem-smtp-uncertain, backend: pgsql}
-          - {scenario: ecosystem-smtp-tls-auth, backend: pgsql}
-          - {scenario: ecosystem-omnibus-workflow, backend: pgsql}
-          - {scenario: ecosystem-omnibus-middleware, backend: pgsql}
-          - {scenario: ecosystem-omnibus-middleware, backend: mysql}
-          - {scenario: ecosystem-omnibus-middleware, backend: mariadb}
-          - {scenario: ecosystem-omnibus-middleware, backend: sqlite}
-          - {scenario: ecosystem-omnibus-middleware, backend: mssql}
-          - {scenario: ecosystem-omnibus-events, backend: pgsql}
-          - {scenario: ecosystem-omnibus-events, backend: mysql}
-          - {scenario: ecosystem-omnibus-events, backend: mariadb}
-          - {scenario: ecosystem-omnibus-events, backend: sqlite}
-          - {scenario: ecosystem-omnibus-events, backend: mssql}
-          - {scenario: ecosystem-omnibus-workflow, backend: mysql}
-          - {scenario: ecosystem-omnibus-workflow, backend: mariadb}
-          - {scenario: ecosystem-omnibus-workflow, backend: sqlite}
-          - {scenario: ecosystem-omnibus-workflow, backend: mssql}
-          - {scenario: ecosystem-omnibus-failure-claims, backend: pgsql}
-          - {scenario: ecosystem-omnibus-failure-claims, backend: mysql}
-          - {scenario: ecosystem-omnibus-failure-claims, backend: mariadb}
-          - {scenario: ecosystem-omnibus-failure-claims, backend: sqlite}
-          - {scenario: ecosystem-omnibus-failure-claims, backend: mssql}
-          - {scenario: ecosystem-omnibus-reservation-ownership, backend: pgsql}
-          - {scenario: ecosystem-omnibus-reservation-ownership, backend: mysql}
-          - {scenario: ecosystem-omnibus-reservation-ownership, backend: mariadb}
-          - {scenario: ecosystem-omnibus-reservation-ownership, backend: sqlite}
-          - {scenario: ecosystem-omnibus-reservation-ownership, backend: mssql}
-          - {scenario: ecosystem-omnibus-redis, backend: pgsql}
-          - {scenario: ecosystem-omnibus-redis, backend: mysql}
-          - {scenario: ecosystem-omnibus-redis, backend: mariadb}
-          - {scenario: ecosystem-omnibus-redis, backend: sqlite}
-          - {scenario: ecosystem-omnibus-redis, backend: mssql}
           - {scenario: ecosystem-cache-tier, backend: pgsql}
           - {scenario: ecosystem-cache-local, backend: pgsql}
           - {scenario: ecosystem-cache-integrity, backend: pgsql}
           - {scenario: ecosystem-cache-race, backend: pgsql}
-          - {scenario: ecosystem-otp-race, backend: pgsql}
-          - {scenario: ecosystem-otp-recovery, backend: pgsql}
-          - {scenario: ecosystem-validation, backend: pgsql}
-          - {scenario: ecosystem-crypto-file, backend: pgsql}
-          - {scenario: ecosystem-crypto-envelope, backend: pgsql}
-          - {scenario: ecosystem-core-lifecycle, backend: pgsql}
-          - {scenario: ecosystem-intermix, backend: pgsql}
-          - {scenario: ecosystem-array-config, backend: pgsql}
-          - {scenario: ecosystem-array-stream, backend: pgsql}
-          - {scenario: ecosystem-uid-formats, backend: pgsql}
-          - {scenario: ecosystem-amqp-consumer-failures, backend: pgsql}
-          - {scenario: ecosystem-amqp-consumer-failures, backend: mysql}
-          - {scenario: ecosystem-amqp-consumer-failures, backend: mariadb}
-          - {scenario: ecosystem-sqs-consumer-failures, backend: pgsql}
-          - {scenario: ecosystem-sqs-consumer-failures, backend: mysql}
-          - {scenario: ecosystem-sqs-consumer-failures, backend: mariadb}
-    uses: ./.github/workflows/production-worker-ecosystem.yml
-    with:
-      scenario: ${{ matrix.scenario }}
-      backend: ${{ matrix.backend }}
-      host: ${{ matrix.host || 'worker' }}
-      matcher: ${{ matrix.matcher || 'fused' }}
-
-  ecosystem-residual:
-    if: inputs.group == 'all' || inputs.group == 'ecosystem-residual'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - {scenario: ecosystem-archive-limits, backend: pgsql}
-          - {scenario: ecosystem-wire-http2-aggregate-drain, backend: pgsql}
-          - {scenario: ecosystem-wire-http2-aggregate-reset, backend: pgsql}
-          - {scenario: ecosystem-wire-http2-aggregate-isolation, backend: pgsql}
-          - {scenario: ecosystem-amqp-crash, backend: pgsql}
-          - {scenario: ecosystem-amqp-crash, backend: mysql}
-          - {scenario: ecosystem-amqp-crash, backend: mariadb}
-          - {scenario: ecosystem-amqp-crash, backend: sqlite}
-          - {scenario: ecosystem-amqp-crash, backend: mssql}
-          - {scenario: ecosystem-sqs-fifo-groups, backend: pgsql}
-          - {scenario: ecosystem-sqs-fifo-groups, backend: mysql}
-          - {scenario: ecosystem-sqs-fifo-groups, backend: mariadb}
-          - {scenario: ecosystem-sqs-fifo-groups, backend: sqlite}
-          - {scenario: ecosystem-sqs-fifo-groups, backend: mssql}
-          - {scenario: ecosystem-sqs-visibility-recovery, backend: pgsql}
-          - {scenario: ecosystem-sqs-visibility-recovery, backend: mysql}
-          - {scenario: ecosystem-sqs-visibility-recovery, backend: mariadb}
-          - {scenario: ecosystem-sqs-visibility-recovery, backend: sqlite}
-          - {scenario: ecosystem-sqs-visibility-recovery, backend: mssql}
-          - {scenario: ecosystem-di-ownership-input-identity-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-input-identity-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-input-rejection-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-input-rejection-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-make-invoke-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-make-invoke-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-fiber-isolation-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-fiber-isolation-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-fiber-attachment-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-fiber-attachment-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-context-rejection-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-context-rejection-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-attachment-failure-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-attachment-failure-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-tagged-ownership-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-tagged-ownership-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-failed-request-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-ownership-failed-request-compiled, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-sizes, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-dates, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-collections, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-patterns, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-network, backend: pgsql}
-          - {scenario: ecosystem-validation-presence-truth-table, backend: pgsql}
-          - {scenario: ecosystem-validation-distinct-groups, backend: pgsql}
-          - {scenario: ecosystem-array-numeric-domains, backend: pgsql}
-          - {scenario: ecosystem-array-bucket-projection, backend: pgsql}
-          - {scenario: ecosystem-array-matrix-shape, backend: pgsql}
-          - {scenario: ecosystem-array-path-mutation, backend: pgsql}
-          - {scenario: ecosystem-config-read-cache-toggle, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-eddsa, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-es256, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-es384, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-es512, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-ps256, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-ps384, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-ps512, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-rs256, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-rs384, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-rs512, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-hs256, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-hs384, backend: pgsql}
-          - {scenario: ecosystem-jwt-rotation-hs512, backend: pgsql}
-          - {scenario: ecosystem-signing-readiness-eddsa, backend: pgsql}
-          - {scenario: ecosystem-signing-readiness-es256, backend: pgsql}
-          - {scenario: ecosystem-signing-readiness-es384, backend: pgsql}
-          - {scenario: ecosystem-signing-readiness-es512, backend: pgsql}
-          - {scenario: ecosystem-signing-readiness-ps256, backend: pgsql}
-          - {scenario: ecosystem-signing-readiness-ps384, backend: pgsql}
-          - {scenario: ecosystem-signing-readiness-ps512, backend: pgsql}
-          - {scenario: ecosystem-signing-readiness-rs256, backend: pgsql}
-          - {scenario: ecosystem-signing-readiness-rs384, backend: pgsql}
-          - {scenario: ecosystem-signing-readiness-rs512, backend: pgsql}
-          - {scenario: ecosystem-purpose-token-rotation, backend: pgsql}
-          - {scenario: ecosystem-signed-payload-rotation, backend: pgsql}
-          - {scenario: ecosystem-foundation-json-offset, backend: pgsql}
-          - {scenario: ecosystem-foundation-json-offset, backend: mysql}
-          - {scenario: ecosystem-foundation-json-offset, backend: mariadb}
-          - {scenario: ecosystem-foundation-json-cursor, backend: pgsql}
-          - {scenario: ecosystem-foundation-json-cursor, backend: mysql}
-          - {scenario: ecosystem-foundation-json-cursor, backend: mariadb}
-          - {scenario: ecosystem-foundation-json-validation, backend: pgsql}
-          - {scenario: ecosystem-foundation-json-validation, backend: mysql}
-          - {scenario: ecosystem-foundation-json-validation, backend: mariadb}
-          - {scenario: ecosystem-foundation-json-native, backend: pgsql}
-          - {scenario: ecosystem-foundation-json-tunneled, backend: pgsql}
-          - {scenario: ecosystem-foundation-logging-throttle, backend: pgsql}
-          - {scenario: ecosystem-foundation-logging-sample-zero, backend: pgsql}
-          - {scenario: ecosystem-foundation-logging-concurrent, backend: pgsql}
-          - {scenario: ecosystem-foundation-paths-auto, backend: pgsql}
-          - {scenario: ecosystem-foundation-paths-explicit, backend: pgsql}
-          - {scenario: ecosystem-foundation-notifications-templates, backend: pgsql}
-          - {scenario: ecosystem-foundation-notifications-spool, backend: pgsql}
-          - {scenario: ecosystem-gridfs-publication-before, backend: pgsql}
-          - {scenario: ecosystem-gridfs-publication-after, backend: pgsql}
-          - {scenario: ecosystem-ftp-rename-before, backend: pgsql}
-          - {scenario: ecosystem-ftp-rename-after, backend: pgsql}
-          - {scenario: ecosystem-ftp-interrupted-upload, backend: pgsql}
-          - {scenario: ecosystem-sftp2-rename-before, backend: pgsql}
-          - {scenario: ecosystem-sftp2-rename-after, backend: pgsql}
-          - {scenario: ecosystem-sftp2-interrupted-upload, backend: pgsql}
           - {scenario: ecosystem-cache-mongodb-outage-closed, backend: pgsql}
           - {scenario: ecosystem-cache-mongodb-outage-open, backend: pgsql}
           - {scenario: ecosystem-cache-scylla-outage-closed, backend: pgsql}
           - {scenario: ecosystem-cache-scylla-outage-open, backend: pgsql}
-          - {scenario: ecosystem-webdav-http-publication-before, backend: pgsql}
-          - {scenario: ecosystem-webdav-http-publication-after, backend: pgsql}
-          - {scenario: ecosystem-async-s3-http-publication-before, backend: pgsql}
-          - {scenario: ecosystem-async-s3-http-publication-after, backend: pgsql}
-          - {scenario: ecosystem-azure-http-publication-before, backend: pgsql}
-          - {scenario: ecosystem-azure-http-publication-after, backend: pgsql}
-          - {scenario: ecosystem-gcs-http-publication-before, backend: pgsql}
-          - {scenario: ecosystem-gcs-http-publication-after, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-replay-redis, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-replay-valkey, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-replay-memcached, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-replay-file, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-replay-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-replay-sqlite, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-replay-pdo, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-replay-pdo, backend: mysql}
-          - {scenario: ecosystem-foundation-webhook-replay-pdo, backend: mariadb}
-          - {scenario: ecosystem-foundation-webhook-rotation-redis, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-rotation-valkey, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-rotation-memcached, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-rotation-file, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-rotation-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-rotation-sqlite, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-rotation-pdo, backend: pgsql}
-          - {scenario: ecosystem-foundation-webhook-rotation-pdo, backend: mysql}
-          - {scenario: ecosystem-foundation-webhook-rotation-pdo, backend: mariadb}
-          - {scenario: ecosystem-foundation-validator-profile, backend: pgsql}
-          - {scenario: ecosystem-foundation-validator-profile, backend: mysql}
-          - {scenario: ecosystem-foundation-validator-profile, backend: mariadb}
-          - {scenario: ecosystem-validation-related-wildcard, backend: pgsql}
-          - {scenario: ecosystem-validation-conditional-wildcard, backend: pgsql}
-          - {scenario: ecosystem-validation-upload-metadata, backend: pgsql}
-          - {scenario: ecosystem-validation-path-options, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-immediate-redis, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-immediate-valkey, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-immediate-file, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-immediate-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-immediate-sqlite, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-immediate-pdo, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-immediate-pdo, backend: mysql}
-          - {scenario: ecosystem-otp-mobile-rotation-immediate-pdo, backend: mariadb}
-          - {scenario: ecosystem-otp-mobile-rotation-overlap-redis, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-overlap-valkey, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-overlap-file, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-overlap-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-overlap-sqlite, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-overlap-pdo, backend: pgsql}
-          - {scenario: ecosystem-otp-mobile-rotation-overlap-pdo, backend: mysql}
-          - {scenario: ecosystem-otp-mobile-rotation-overlap-pdo, backend: mariadb}
-          - {scenario: ecosystem-compiled-policy-negotiation, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-compiled-policy-negotiation, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-compiled-policy-cors, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-compiled-policy-cors, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-compiled-policy-preflight, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-compiled-policy-preflight, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-compiled-policy-middleware, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-compiled-policy-middleware, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-compiled-policy-method-domain, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-compiled-policy-method-domain, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-cache-redis-cluster-bulk, backend: pgsql}
           - {scenario: ecosystem-cache-redis-cluster-tags, backend: pgsql}
           - {scenario: ecosystem-cache-redis-cluster-remember, backend: pgsql}
@@ -1111,27 +529,176 @@ jobs:
           - {scenario: ecosystem-cache-scylla-remote-capabilities, backend: pgsql}
           - {scenario: ecosystem-cache-scylla-payload-contracts, backend: pgsql}
           - {scenario: ecosystem-invalidation-sql, backend: mariadb}
-          - {scenario: ecosystem-ftp-outage, backend: pgsql}
-          - {scenario: ecosystem-ftp-copy-contracts, backend: pgsql}
-          - {scenario: ecosystem-ftp-staged-contracts, backend: pgsql}
-          - {scenario: ecosystem-webdav-outage, backend: pgsql}
-          - {scenario: ecosystem-webdav-copy-contracts, backend: pgsql}
-          - {scenario: ecosystem-webdav-staged-contracts, backend: pgsql}
-          - {scenario: ecosystem-gridfs-outage, backend: pgsql}
-          - {scenario: ecosystem-gridfs-copy-contracts, backend: pgsql}
-          - {scenario: ecosystem-gridfs-staged-contracts, backend: pgsql}
-          - {scenario: ecosystem-sftp2-outage, backend: pgsql}
-          - {scenario: ecosystem-sftp2-copy-contracts, backend: pgsql}
-          - {scenario: ecosystem-sftp2-staged-contracts, backend: pgsql}
-          - {scenario: ecosystem-async-s3-outage, backend: pgsql}
-          - {scenario: ecosystem-async-s3-copy-contracts, backend: pgsql}
-          - {scenario: ecosystem-async-s3-staged-contracts, backend: pgsql}
-          - {scenario: ecosystem-azure-outage, backend: pgsql}
-          - {scenario: ecosystem-azure-copy-contracts, backend: pgsql}
-          - {scenario: ecosystem-azure-staged-contracts, backend: pgsql}
-          - {scenario: ecosystem-gcs-outage, backend: pgsql}
-          - {scenario: ecosystem-gcs-copy-contracts, backend: pgsql}
-          - {scenario: ecosystem-gcs-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-named-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-replacement, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-tls-trust, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-tls-identity, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-tls-payload, backend: pgsql}
+          - {scenario: ecosystem-cache-scylla-tls-restart, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-tls-trust, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-tls-bulk, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-tls-atomic, backend: pgsql}
+          - {scenario: ecosystem-cache-redis-cluster-tls-restart, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-read-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-read-redis, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-read-redis, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-read-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-read-valkey, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-read-valkey, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-read-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-read-memcached, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-read-memcached, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-write-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-write-redis, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-write-redis, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-write-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-write-valkey, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-write-valkey, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-write-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-write-memcached, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-write-memcached, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-response-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-response-redis, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-response-redis, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-response-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-response-valkey, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-response-valkey, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: mariadb}
+          - {scenario: ecosystem-cache-tls-live-read, backend: pgsql}
+          - {scenario: ecosystem-cache-tls-live-write, backend: pgsql}
+          - {scenario: ecosystem-cache-tls-live-atomic, backend: pgsql}
+          - {scenario: ecosystem-valkey-tls-live-read, backend: pgsql}
+          - {scenario: ecosystem-valkey-tls-live-write, backend: pgsql}
+          - {scenario: ecosystem-valkey-tls-live-atomic, backend: pgsql}
+    uses: ./.github/workflows/production-worker-cache.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  authentication:
+    if: inputs.group == 'all' || inputs.group == 'authentication' || inputs.group == 'ecosystem'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-otp-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-file, backend: pgsql}
+          - {scenario: ecosystem-otp-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-pdo, backend: mariadb}
+          - {scenario: ecosystem-auth-lifecycle, backend: mysql}
+          - {scenario: ecosystem-jwt-replay, backend: mysql}
+          - {scenario: ecosystem-auth-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-consent-scope-policy, backend: pgsql}
+          - {scenario: ecosystem-consent-scope-policy, backend: mysql}
+          - {scenario: ecosystem-consent-scope-policy, backend: mariadb}
+          - {scenario: ecosystem-consent-lifecycle, backend: mariadb}
+          - {scenario: ecosystem-consent-permissions, backend: mariadb}
+          - {scenario: ecosystem-consent-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-consent-lifecycle, backend: mysql}
+          - {scenario: ecosystem-jwt-replay, backend: pgsql}
+          - {scenario: ecosystem-remote-jwks, backend: pgsql}
+          - {scenario: ecosystem-jwks-dns-public, backend: pgsql}
+          - {scenario: ecosystem-jwks-dns-private, backend: pgsql}
+          - {scenario: ecosystem-jwks-dns-mixed, backend: pgsql}
+          - {scenario: ecosystem-jwks-dns-empty, backend: pgsql}
+          - {scenario: ecosystem-jwks-dns-rebind, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-risk-isolation-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-risk-concurrent-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-risk-concurrent-pdo, backend: mariadb}
+          - {scenario: ecosystem-consent-permissions, backend: pgsql}
+          - {scenario: ecosystem-consent-permissions, backend: mysql}
+          - {scenario: ecosystem-otp-challenge-replacement-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-file, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-challenge-replacement-pdo, backend: mariadb}
+          - {scenario: ecosystem-otp-rotation-orchestration-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-file, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-rotation-orchestration-pdo, backend: mariadb}
+          - {scenario: ecosystem-otp-durable, backend: mysql}
+          - {scenario: ecosystem-otp-durable, backend: pgsql}
+          - {scenario: ecosystem-otp-backends, backend: mysql}
+          - {scenario: ecosystem-otp-backends, backend: pgsql}
+          - {scenario: ecosystem-otp-drift, backend: pgsql}
+          - {scenario: ecosystem-otp-enrollment, backend: pgsql}
+          - {scenario: ecosystem-jwt-jws, backend: pgsql}
+          - {scenario: ecosystem-risk-provider, backend: pgsql}
+          - {scenario: ecosystem-risk-edge, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: ecosystem-risk-edge, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: ecosystem-risk-ja4, backend: pgsql, host: fpm, matcher: fused}
+          - {scenario: ecosystem-risk-ja4, backend: pgsql, host: fpm, matcher: sharded}
+          - {scenario: ecosystem-otp-race, backend: pgsql}
+          - {scenario: ecosystem-otp-recovery, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-eddsa, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-es256, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-es384, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-es512, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-ps256, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-ps384, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-ps512, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-rs256, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-rs384, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-rs512, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-hs256, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-hs384, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-hs512, backend: pgsql}
+          - {scenario: ecosystem-purpose-token-rotation, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-file, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-pdo, backend: mariadb}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-file, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-pdo, backend: mariadb}
           - {scenario: ecosystem-otp-rotation-hotp-redis, backend: pgsql}
           - {scenario: ecosystem-otp-rotation-hotp-valkey, backend: pgsql}
           - {scenario: ecosystem-otp-rotation-hotp-file, backend: pgsql}
@@ -1179,127 +746,204 @@ jobs:
           - {scenario: ecosystem-foundation-risk-outage-redis, backend: pgsql}
           - {scenario: ecosystem-foundation-risk-outage-valkey, backend: pgsql}
           - {scenario: ecosystem-foundation-risk-outage-memcached, backend: pgsql}
-    uses: ./.github/workflows/production-worker-ecosystem.yml
+          - {scenario: ecosystem-otp-redis-tls-restart, backend: pgsql}
+          - {scenario: ecosystem-otp-redis-tls-live, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-restart, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-live, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-minority-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-minority-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-minority-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-minority-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-minority-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-minority-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-otp-redis-tls-factor-hotp-live, backend: pgsql}
+          - {scenario: ecosystem-otp-redis-tls-factor-mobile-live, backend: pgsql}
+          - {scenario: ecosystem-otp-redis-tls-factor-ocra-counter-live, backend: pgsql}
+          - {scenario: ecosystem-otp-redis-tls-factor-ocra-challenge-live, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-factor-hotp-live, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-factor-mobile-live, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-factor-ocra-counter-live, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-factor-ocra-challenge-live, backend: pgsql}
+    uses: ./.github/workflows/production-worker-authentication.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
 
-  ecosystem-expansion:
-    if: inputs.group == 'all' || inputs.group == 'ecosystem-expansion'
+  cryptography:
+    if: inputs.group == 'all' || inputs.group == 'cryptography' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {scenario: ecosystem-array-projection-group-keys, backend: pgsql}
-          - {scenario: ecosystem-array-projection-group-callback, backend: pgsql}
-          - {scenario: ecosystem-array-projection-key-collision, backend: pgsql}
-          - {scenario: ecosystem-array-projection-pluck-null, backend: pgsql}
-          - {scenario: ecosystem-array-projection-derived-strict, backend: pgsql}
-          - {scenario: ecosystem-array-projection-derived-structural, backend: pgsql}
-          - {scenario: ecosystem-array-projection-query-null, backend: pgsql}
-          - {scenario: ecosystem-array-projection-query-like, backend: pgsql}
-          - {scenario: ecosystem-array-projection-query-text, backend: pgsql}
-          - {scenario: ecosystem-array-projection-query-first, backend: pgsql}
-          - {scenario: ecosystem-array-projection-query-range, backend: pgsql}
-          - {scenario: ecosystem-array-projection-query-callback, backend: pgsql}
-          - {scenario: ecosystem-array-projection-partition-keys, backend: pgsql}
-          - {scenario: ecosystem-array-projection-skip-boundary, backend: pgsql}
-          - {scenario: ecosystem-array-projection-rekey-collision, backend: pgsql}
-          - {scenario: ecosystem-array-projection-combine-keys, backend: pgsql}
-          - {scenario: ecosystem-array-projection-strict-set, backend: pgsql}
-          - {scenario: ecosystem-array-projection-recursive-sort, backend: pgsql}
-          - {scenario: ecosystem-array-projection-sort-budget, backend: pgsql}
-          - {scenario: ecosystem-array-projection-config-required, backend: pgsql}
-          - {scenario: ecosystem-array-projection-config-sequence, backend: pgsql}
-          - {scenario: ecosystem-array-projection-config-file-reload, backend: pgsql}
-          - {scenario: ecosystem-array-projection-config-enum, backend: pgsql}
-          - {scenario: ecosystem-array-projection-config-snapshots, backend: pgsql}
-          - {scenario: ecosystem-validation-db-correlation, backend: pgsql}
-          - {scenario: ecosystem-validation-db-correlation, backend: mysql}
-          - {scenario: ecosystem-validation-db-correlation, backend: mariadb}
-          - {scenario: ecosystem-validation-db-correlation, backend: sqlite}
-          - {scenario: ecosystem-validation-db-correlation, backend: mssql}
-          - {scenario: ecosystem-validation-db-restricted-policy, backend: pgsql}
-          - {scenario: ecosystem-validation-db-restricted-policy, backend: mysql}
-          - {scenario: ecosystem-validation-db-restricted-policy, backend: mariadb}
-          - {scenario: ecosystem-validation-db-restricted-policy, backend: sqlite}
-          - {scenario: ecosystem-validation-db-restricted-policy, backend: mssql}
-          - {scenario: ecosystem-validation-db-ignore-policy, backend: pgsql}
-          - {scenario: ecosystem-validation-db-ignore-policy, backend: mysql}
-          - {scenario: ecosystem-validation-db-ignore-policy, backend: mariadb}
-          - {scenario: ecosystem-validation-db-ignore-policy, backend: sqlite}
-          - {scenario: ecosystem-validation-db-ignore-policy, backend: mssql}
-          - {scenario: ecosystem-validation-db-null-values, backend: pgsql}
-          - {scenario: ecosystem-validation-db-null-values, backend: mysql}
-          - {scenario: ecosystem-validation-db-null-values, backend: mariadb}
-          - {scenario: ecosystem-validation-db-null-values, backend: sqlite}
-          - {scenario: ecosystem-validation-db-null-values, backend: mssql}
-          - {scenario: ecosystem-validation-db-identifier-guards, backend: pgsql}
-          - {scenario: ecosystem-validation-db-identifier-guards, backend: mysql}
-          - {scenario: ecosystem-validation-db-identifier-guards, backend: mariadb}
-          - {scenario: ecosystem-validation-db-identifier-guards, backend: sqlite}
-          - {scenario: ecosystem-validation-db-identifier-guards, backend: mssql}
-          - {scenario: ecosystem-validation-db-failure-recovery, backend: pgsql}
-          - {scenario: ecosystem-validation-db-failure-recovery, backend: mysql}
-          - {scenario: ecosystem-validation-db-failure-recovery, backend: mariadb}
-          - {scenario: ecosystem-validation-db-failure-recovery, backend: sqlite}
-          - {scenario: ecosystem-validation-db-failure-recovery, backend: mssql}
-          - {scenario: ecosystem-foundation-pool-recycle, backend: pgsql}
-          - {scenario: ecosystem-foundation-pool-recycle, backend: mysql}
-          - {scenario: ecosystem-foundation-pool-recycle, backend: mariadb}
-          - {scenario: ecosystem-foundation-pool-crash, backend: pgsql}
-          - {scenario: ecosystem-foundation-pool-crash, backend: mysql}
-          - {scenario: ecosystem-foundation-pool-crash, backend: mariadb}
-          - {scenario: ecosystem-foundation-pool-parent-guard, backend: pgsql}
-          - {scenario: ecosystem-foundation-pool-parent-guard, backend: mysql}
-          - {scenario: ecosystem-foundation-pool-parent-guard, backend: mariadb}
-          - {scenario: ecosystem-foundation-messaging-worker-options, backend: pgsql}
-          - {scenario: ecosystem-foundation-messaging-worker-options, backend: mysql}
-          - {scenario: ecosystem-foundation-messaging-worker-options, backend: mariadb}
-          - {scenario: ecosystem-foundation-messaging-worker-recycle, backend: pgsql}
-          - {scenario: ecosystem-foundation-messaging-worker-recycle, backend: mysql}
-          - {scenario: ecosystem-foundation-messaging-worker-recycle, backend: mariadb}
-          - {scenario: ecosystem-foundation-messaging-scheduled, backend: pgsql}
-          - {scenario: ecosystem-foundation-messaging-scheduled, backend: mysql}
-          - {scenario: ecosystem-foundation-messaging-scheduled, backend: mariadb}
-          - {scenario: ecosystem-foundation-messaging-database-failures, backend: pgsql}
-          - {scenario: ecosystem-foundation-messaging-database-failures, backend: mysql}
-          - {scenario: ecosystem-foundation-messaging-database-failures, backend: mariadb}
-          - {scenario: ecosystem-foundation-messaging-memory-failures, backend: pgsql}
-          - {scenario: ecosystem-foundation-messaging-memory-failures, backend: mysql}
-          - {scenario: ecosystem-foundation-messaging-memory-failures, backend: mariadb}
-          - {scenario: ecosystem-foundation-messaging-invalid-durable, backend: pgsql}
-          - {scenario: ecosystem-foundation-messaging-invalid-durable, backend: mysql}
-          - {scenario: ecosystem-foundation-messaging-invalid-durable, backend: mariadb}
-          - {scenario: ecosystem-foundation-messaging-partial-schema, backend: pgsql}
-          - {scenario: ecosystem-foundation-messaging-partial-schema, backend: mysql}
-          - {scenario: ecosystem-foundation-messaging-partial-schema, backend: mariadb}
-          - {scenario: ecosystem-foundation-communication-auth-header, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-auth-query, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-auth-basic, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-auth-bearer, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-profile, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-invalid-profile, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-tls, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-body-limit, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-cookies, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-retry, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-idempotency, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-rate-limit, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-circuit, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-webhook, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-webhook-retry, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-webhook-bound, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-double-retry, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-production-peer, backend: pgsql}
-          - {scenario: ecosystem-foundation-communication-production-host, backend: pgsql}
-          - {scenario: ecosystem-otp-redis-tls-restart, backend: pgsql}
-          - {scenario: ecosystem-otp-redis-tls-live, backend: pgsql}
-          - {scenario: ecosystem-otp-valkey-tls-restart, backend: pgsql}
-          - {scenario: ecosystem-otp-valkey-tls-live, backend: pgsql}
+          - {scenario: ecosystem-detached-crypto, backend: pgsql}
+          - {scenario: ecosystem-crypto-key-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-envelope-rotation-aes, backend: pgsql}
+          - {scenario: ecosystem-envelope-rotation-xchacha, backend: pgsql}
+          - {scenario: ecosystem-jwe, backend: pgsql}
+          - {scenario: ecosystem-pki, backend: pgsql}
+          - {scenario: ecosystem-crypto-algorithms, backend: pgsql}
+          - {scenario: ecosystem-crypto-file, backend: pgsql}
+          - {scenario: ecosystem-crypto-envelope, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-eddsa, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-es256, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-es384, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-es512, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-ps256, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-ps384, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-ps512, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-rs256, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-rs384, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-rs512, backend: pgsql}
+          - {scenario: ecosystem-signed-payload-rotation, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-dir-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-dir-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-dir-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-dir-flattened-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256kw-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256kw-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256kw-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256kw-flattened-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256gcmkw-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256gcmkw-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256gcmkw-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256gcmkw-flattened-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-flattened-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-flattened-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-flattened-native-to-library, backend: pgsql}
+    uses: ./.github/workflows/production-worker-cryptography.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  storage:
+    if: inputs.group == 'all' || inputs.group == 'storage' || inputs.group == 'ecosystem'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-file-index-retention, backend: pgsql}
+          - {scenario: ecosystem-archive-security, backend: pgsql}
+          - {scenario: ecosystem-archive-contracts, backend: pgsql}
+          - {scenario: ecosystem-archive-late-rollback, backend: pgsql}
+          - {scenario: ecosystem-file-rollback-failure, backend: pgsql}
+          - {scenario: ecosystem-file-queue-audit, backend: pgsql}
+          - {scenario: ecosystem-file-watch, backend: pgsql}
+          - {scenario: ecosystem-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-sftp-trust, backend: pgsql}
+          - {scenario: ecosystem-sftp-outage, backend: pgsql}
+          - {scenario: ecosystem-sftp-publication-fault, backend: pgsql}
+          - {scenario: ecosystem-sftp-rename-uncertain, backend: pgsql}
+          - {scenario: ecosystem-s3-outage, backend: pgsql}
+          - {scenario: ecosystem-s3-publication-fault, backend: pgsql}
+          - {scenario: ecosystem-file-transactions, backend: pgsql}
+          - {scenario: ecosystem-archive-extensions, backend: pgsql}
+          - {scenario: ecosystem-archive-hooks, backend: pgsql}
+          - {scenario: ecosystem-archive-aes128, backend: pgsql}
+          - {scenario: ecosystem-archive-selection, backend: pgsql}
+          - {scenario: ecosystem-file-key-rotation, backend: pgsql}
+          - {scenario: ecosystem-file-binary-contracts, backend: pgsql}
+          - {scenario: ecosystem-file-csv-contracts, backend: pgsql}
+          - {scenario: ecosystem-file-jsonl-contracts, backend: pgsql}
+          - {scenario: ecosystem-file-serialized-contracts, backend: pgsql}
+          - {scenario: ecosystem-file-lock-contracts, backend: pgsql}
+          - {scenario: ecosystem-storage-local-modes, backend: pgsql}
+          - {scenario: ecosystem-ftp, backend: pgsql}
+          - {scenario: ecosystem-webdav, backend: pgsql}
+          - {scenario: ecosystem-gridfs, backend: pgsql}
+          - {scenario: ecosystem-sftp2, backend: pgsql}
+          - {scenario: ecosystem-async-s3, backend: pgsql}
+          - {scenario: ecosystem-azure, backend: pgsql}
+          - {scenario: ecosystem-gcs, backend: pgsql}
+          - {scenario: ecosystem-s3, backend: pgsql}
+          - {scenario: ecosystem-sftp, backend: pgsql}
+          - {scenario: ecosystem-async-files, backend: pgsql}
+          - {scenario: ecosystem-pathwise-upload, backend: pgsql}
+          - {scenario: ecosystem-pathwise-download, backend: pgsql}
+          - {scenario: ecosystem-archive-limits, backend: pgsql}
+          - {scenario: ecosystem-foundation-paths-auto, backend: pgsql}
+          - {scenario: ecosystem-foundation-paths-explicit, backend: pgsql}
+          - {scenario: ecosystem-gridfs-publication-before, backend: pgsql}
+          - {scenario: ecosystem-gridfs-publication-after, backend: pgsql}
+          - {scenario: ecosystem-ftp-rename-before, backend: pgsql}
+          - {scenario: ecosystem-ftp-rename-after, backend: pgsql}
+          - {scenario: ecosystem-ftp-interrupted-upload, backend: pgsql}
+          - {scenario: ecosystem-sftp2-rename-before, backend: pgsql}
+          - {scenario: ecosystem-sftp2-rename-after, backend: pgsql}
+          - {scenario: ecosystem-sftp2-interrupted-upload, backend: pgsql}
+          - {scenario: ecosystem-webdav-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-webdav-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-async-s3-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-async-s3-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-azure-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-azure-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-gcs-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-gcs-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-ftp-outage, backend: pgsql}
+          - {scenario: ecosystem-ftp-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-ftp-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-webdav-outage, backend: pgsql}
+          - {scenario: ecosystem-webdav-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-webdav-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-gridfs-outage, backend: pgsql}
+          - {scenario: ecosystem-gridfs-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-gridfs-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-sftp2-outage, backend: pgsql}
+          - {scenario: ecosystem-sftp2-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-sftp2-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-async-s3-outage, backend: pgsql}
+          - {scenario: ecosystem-async-s3-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-async-s3-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-azure-outage, backend: pgsql}
+          - {scenario: ecosystem-azure-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-azure-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-gcs-outage, backend: pgsql}
+          - {scenario: ecosystem-gcs-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-gcs-staged-contracts, backend: pgsql}
           - {scenario: ecosystem-s3-archive-selection, backend: pgsql}
           - {scenario: ecosystem-s3-archive-collision, backend: pgsql}
           - {scenario: ecosystem-s3-archive-encrypted, backend: pgsql}
@@ -1336,119 +980,11 @@ jobs:
           - {scenario: ecosystem-gcs-archive-collision, backend: pgsql}
           - {scenario: ecosystem-gcs-archive-encrypted, backend: pgsql}
           - {scenario: ecosystem-gcs-archive-traversal, backend: pgsql}
-          - {scenario: ecosystem-signed-compiled-permanent, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-signed-compiled-permanent, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-signed-compiled-temporary, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-signed-compiled-temporary, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-signed-compiled-leeway, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-signed-compiled-leeway, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-signed-compiled-canonical, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-signed-compiled-canonical, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-signed-compiled-tamper, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-signed-compiled-tamper, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-signed-compiled-invalid-expiry, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-signed-compiled-invalid-expiry, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-signed-compiled-relative, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-signed-compiled-relative, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-signed-compiled-rotation, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-signed-compiled-rotation, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-signed-compiled-retired-key, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-signed-compiled-retired-key, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-signed-compiled-composition, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-signed-compiled-composition, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-signed-compiled-registry, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-signed-compiled-registry, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-foundation-cache-named-redis, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-named-valkey, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-named-memcached, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-named-file, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-named-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-named-sqlite, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-named-pdo, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-named-pdo, backend: mysql}
-          - {scenario: ecosystem-foundation-cache-named-pdo, backend: mariadb}
-          - {scenario: ecosystem-foundation-cache-replacement, backend: pgsql}
           - {scenario: ecosystem-foundation-storage-disks, backend: pgsql}
           - {scenario: ecosystem-foundation-storage-link-lifecycle, backend: pgsql}
           - {scenario: ecosystem-foundation-storage-link-rejection, backend: pgsql}
           - {scenario: ecosystem-foundation-storage-public-reject, backend: pgsql}
           - {scenario: ecosystem-foundation-storage-public-allow, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-301-post, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-301-put, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-301-head, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-302-post, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-302-put, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-302-head, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-303-post, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-303-put, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-303-head, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-307-post, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-307-put, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-307-head, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-308-post, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-308-put, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-308-head, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-query, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-downgrade, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-multi, backend: pgsql}
-          - {scenario: ecosystem-http-response-limit-single-body, backend: pgsql}
-          - {scenario: ecosystem-http-response-limit-single-header-bytes, backend: pgsql}
-          - {scenario: ecosystem-http-response-limit-single-header-count, backend: pgsql}
-          - {scenario: ecosystem-http-response-limit-multi-body, backend: pgsql}
-          - {scenario: ecosystem-http-response-limit-multi-header-bytes, backend: pgsql}
-          - {scenario: ecosystem-http-response-limit-multi-header-count, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-property-defaults-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-property-defaults-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-property-type-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-property-type-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-missing-input-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-missing-input-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-method-fallback-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-method-fallback-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-method-override-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-method-override-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-method-throw-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-method-throw-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-constructor-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-constructor-compiled, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-registration-dynamic, backend: pgsql}
-          - {scenario: ecosystem-di-attribute-registration-compiled, backend: pgsql}
-          - {scenario: ecosystem-wire-http3-aggregate-drain, backend: pgsql}
-          - {scenario: ecosystem-wire-http3-aggregate-reset, backend: pgsql}
-          - {scenario: ecosystem-wire-http3-aggregate-isolation, backend: pgsql}
-          - {scenario: ecosystem-cache-scylla-tls-trust, backend: pgsql}
-          - {scenario: ecosystem-cache-scylla-tls-identity, backend: pgsql}
-          - {scenario: ecosystem-cache-scylla-tls-payload, backend: pgsql}
-          - {scenario: ecosystem-cache-scylla-tls-restart, backend: pgsql}
-          - {scenario: ecosystem-cache-redis-cluster-tls-trust, backend: pgsql}
-          - {scenario: ecosystem-cache-redis-cluster-tls-bulk, backend: pgsql}
-          - {scenario: ecosystem-cache-redis-cluster-tls-atomic, backend: pgsql}
-          - {scenario: ecosystem-cache-redis-cluster-tls-restart, backend: pgsql}
-          - {scenario: ecosystem-array-hook-order, backend: pgsql}
-          - {scenario: ecosystem-array-hook-rejection, backend: pgsql}
-          - {scenario: ecosystem-array-hook-copy, backend: pgsql}
-          - {scenario: ecosystem-array-facade-mutations, backend: pgsql}
-          - {scenario: ecosystem-array-facade-rejection, backend: pgsql}
-          - {scenario: ecosystem-config-typed-defaults, backend: pgsql}
-          - {scenario: ecosystem-config-lazy-defaults, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-308-get, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-308-patch, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-308-delete, backend: pgsql}
-          - {scenario: ecosystem-http-redirect-308-options, backend: pgsql}
-    uses: ./.github/workflows/production-worker-ecosystem.yml
-    with:
-      scenario: ${{ matrix.scenario }}
-      backend: ${{ matrix.backend }}
-      host: ${{ matrix.host || 'worker' }}
-      matcher: ${{ matrix.matcher || 'fused' }}
-
-  ecosystem-closure:
-    if: inputs.group == 'all' || inputs.group == 'ecosystem-closure'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
           - {scenario: ecosystem-s3-remote-order-recovery, backend: mysql}
           - {scenario: ecosystem-s3-remote-order-recovery, backend: mariadb}
           - {scenario: ecosystem-s3-remote-order-recovery, backend: mssql}
@@ -1472,48 +1008,6 @@ jobs:
           - {scenario: ecosystem-gcs-remote-order-recovery, backend: mysql}
           - {scenario: ecosystem-gcs-remote-order-recovery, backend: mariadb}
           - {scenario: ecosystem-gcs-remote-order-recovery, backend: mssql}
-          - {scenario: ecosystem-otp-cluster-redis-generic, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-hotp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-totp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-mobile, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-ocra-counter, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-ocra-challenge, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-generic, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-hotp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-totp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-mobile, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-ocra-counter, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-ocra-challenge, backend: pgsql}
-          - {scenario: ecosystem-amqp-quorum-leader, backend: pgsql}
-          - {scenario: ecosystem-amqp-quorum-leader, backend: mysql}
-          - {scenario: ecosystem-amqp-quorum-leader, backend: mariadb}
-          - {scenario: ecosystem-amqp-quorum-leader, backend: sqlite}
-          - {scenario: ecosystem-amqp-quorum-leader, backend: mssql}
-          - {scenario: ecosystem-amqp-quorum-follower, backend: pgsql}
-          - {scenario: ecosystem-amqp-quorum-follower, backend: mysql}
-          - {scenario: ecosystem-amqp-quorum-follower, backend: mariadb}
-          - {scenario: ecosystem-amqp-quorum-follower, backend: sqlite}
-          - {scenario: ecosystem-amqp-quorum-follower, backend: mssql}
-          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: pgsql}
-          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: mysql}
-          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: mariadb}
-          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: sqlite}
-          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: mssql}
-          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: pgsql}
-          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: mysql}
-          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: mariadb}
-          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: sqlite}
-          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: mssql}
-          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: pgsql}
-          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: mysql}
-          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: mariadb}
-          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: sqlite}
-          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: mssql}
-          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: pgsql}
-          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: mysql}
-          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: mariadb}
-          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: sqlite}
-          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: mssql}
           - {scenario: ecosystem-webdav-order-http-publication-before, backend: pgsql}
           - {scenario: ecosystem-webdav-order-http-publication-before, backend: mysql}
           - {scenario: ecosystem-webdav-order-http-publication-before, backend: mariadb}
@@ -1554,52 +1048,6 @@ jobs:
           - {scenario: ecosystem-gcs-order-http-publication-after, backend: mariadb}
           - {scenario: ecosystem-gcs-order-http-publication-after, backend: sqlite}
           - {scenario: ecosystem-gcs-order-http-publication-after, backend: mssql}
-          - {scenario: ecosystem-closure-boundary-exact-bound, backend: pgsql}
-          - {scenario: ecosystem-closure-boundary-prefix, backend: pgsql}
-          - {scenario: ecosystem-closure-boundary-encoding, backend: pgsql}
-          - {scenario: ecosystem-closure-boundary-pre-authentication, backend: pgsql}
-          - {scenario: ecosystem-closure-boundary-authenticated-nonclosure, backend: pgsql}
-          - {scenario: ecosystem-closure-boundary-unsigned-boundary, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-alternation-direct, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-alternation-compiled, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-escaped-pipe-direct, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-escaped-pipe-compiled, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-character-class-direct, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-character-class-compiled, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-escaped-delimiter-direct, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-escaped-delimiter-compiled, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-alternate-delimiter-direct, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-alternate-delimiter-compiled, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-negative-pattern-direct, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-negative-pattern-compiled, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-unicode-direct, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-unicode-compiled, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-trailing-rule-direct, backend: pgsql}
-          - {scenario: ecosystem-validation-expression-trailing-rule-compiled, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-dir-compact-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-dir-compact-native-to-library, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-dir-flattened-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-dir-flattened-native-to-library, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-a256kw-compact-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-a256kw-compact-native-to-library, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-a256kw-flattened-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-a256kw-flattened-native-to-library, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-a256gcmkw-compact-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-a256gcmkw-compact-native-to-library, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-a256gcmkw-flattened-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-a256gcmkw-flattened-native-to-library, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-compact-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-compact-native-to-library, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-flattened-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-flattened-native-to-library, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-ecdh-es-compact-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-ecdh-es-compact-native-to-library, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-ecdh-es-flattened-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-ecdh-es-flattened-native-to-library, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-compact-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-compact-native-to-library, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-flattened-library-to-native, backend: pgsql}
-          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-flattened-native-to-library, backend: pgsql}
           - {scenario: ecosystem-s3-archive-outage-source, backend: pgsql}
           - {scenario: ecosystem-s3-archive-outage-save, backend: pgsql}
           - {scenario: ecosystem-s3-archive-outage-extract, backend: pgsql}
@@ -1627,6 +1075,390 @@ jobs:
           - {scenario: ecosystem-gcs-archive-outage-source, backend: pgsql}
           - {scenario: ecosystem-gcs-archive-outage-save, backend: pgsql}
           - {scenario: ecosystem-gcs-archive-outage-extract, backend: pgsql}
+          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mssql}
+          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mssql}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mssql}
+          - {scenario: ecosystem-s3-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-sftp-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-ftp-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-webdav-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-azure-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-gcs-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-s3-order-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-s3-order-http-publication-before, backend: mysql}
+          - {scenario: ecosystem-s3-order-http-publication-before, backend: mariadb}
+          - {scenario: ecosystem-s3-order-http-publication-before, backend: sqlite}
+          - {scenario: ecosystem-s3-order-http-publication-before, backend: mssql}
+          - {scenario: ecosystem-s3-order-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-s3-order-http-publication-after, backend: mysql}
+          - {scenario: ecosystem-s3-order-http-publication-after, backend: mariadb}
+          - {scenario: ecosystem-s3-order-http-publication-after, backend: sqlite}
+          - {scenario: ecosystem-s3-order-http-publication-after, backend: mssql}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: pgsql}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: mysql}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: mariadb}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: sqlite}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: mssql}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: pgsql}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: mysql}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: mariadb}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: sqlite}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: mssql}
+          - {scenario: ecosystem-ftp-order-rename-before, backend: pgsql}
+          - {scenario: ecosystem-ftp-order-rename-before, backend: mysql}
+          - {scenario: ecosystem-ftp-order-rename-before, backend: mariadb}
+          - {scenario: ecosystem-ftp-order-rename-before, backend: sqlite}
+          - {scenario: ecosystem-ftp-order-rename-before, backend: mssql}
+          - {scenario: ecosystem-ftp-order-rename-after, backend: pgsql}
+    uses: ./.github/workflows/production-worker-storage.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  storage-2:
+    if: inputs.group == 'all' || inputs.group == 'storage' || inputs.group == 'ecosystem'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-ftp-order-rename-after, backend: mysql}
+          - {scenario: ecosystem-ftp-order-rename-after, backend: mariadb}
+          - {scenario: ecosystem-ftp-order-rename-after, backend: sqlite}
+          - {scenario: ecosystem-ftp-order-rename-after, backend: mssql}
+          - {scenario: ecosystem-sftp-order-rename-before, backend: pgsql}
+          - {scenario: ecosystem-sftp-order-rename-before, backend: mysql}
+          - {scenario: ecosystem-sftp-order-rename-before, backend: mariadb}
+          - {scenario: ecosystem-sftp-order-rename-before, backend: sqlite}
+          - {scenario: ecosystem-sftp-order-rename-before, backend: mssql}
+          - {scenario: ecosystem-sftp-order-rename-after, backend: pgsql}
+          - {scenario: ecosystem-sftp-order-rename-after, backend: mysql}
+          - {scenario: ecosystem-sftp-order-rename-after, backend: mariadb}
+          - {scenario: ecosystem-sftp-order-rename-after, backend: sqlite}
+          - {scenario: ecosystem-sftp-order-rename-after, backend: mssql}
+          - {scenario: ecosystem-sftp2-order-rename-before, backend: pgsql}
+          - {scenario: ecosystem-sftp2-order-rename-before, backend: mysql}
+          - {scenario: ecosystem-sftp2-order-rename-before, backend: mariadb}
+          - {scenario: ecosystem-sftp2-order-rename-before, backend: sqlite}
+          - {scenario: ecosystem-sftp2-order-rename-before, backend: mssql}
+          - {scenario: ecosystem-sftp2-order-rename-after, backend: pgsql}
+          - {scenario: ecosystem-sftp2-order-rename-after, backend: mysql}
+          - {scenario: ecosystem-sftp2-order-rename-after, backend: mariadb}
+          - {scenario: ecosystem-sftp2-order-rename-after, backend: sqlite}
+          - {scenario: ecosystem-sftp2-order-rename-after, backend: mssql}
+    uses: ./.github/workflows/production-worker-storage.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  messaging:
+    if: inputs.group == 'all' || inputs.group == 'messaging' || inputs.group == 'ecosystem'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-sqs-tls-contracts, backend: pgsql}
+          - {scenario: ecosystem-sqs-tls-contracts, backend: mysql}
+          - {scenario: ecosystem-sqs-tls-contracts, backend: mariadb}
+          - {scenario: ecosystem-sqs-tls-contracts, backend: sqlite}
+          - {scenario: ecosystem-amqp-ack-uncertain, backend: mysql}
+          - {scenario: ecosystem-amqp-ack-uncertain, backend: sqlite}
+          - {scenario: ecosystem-amqp-ack-uncertain, backend: mssql}
+          - {scenario: ecosystem-amqp-wire-ack, backend: mysql}
+          - {scenario: ecosystem-amqp-wire-ack, backend: sqlite}
+          - {scenario: ecosystem-amqp-wire-ack, backend: mssql}
+          - {scenario: ecosystem-sqs-ack-uncertain, backend: mysql}
+          - {scenario: ecosystem-sqs-ack-uncertain, backend: sqlite}
+          - {scenario: ecosystem-sqs-ack-uncertain, backend: mssql}
+          - {scenario: ecosystem-sqs-wire-ack, backend: mysql}
+          - {scenario: ecosystem-sqs-wire-ack, backend: sqlite}
+          - {scenario: ecosystem-sqs-wire-ack, backend: mssql}
+          - {scenario: ecosystem-amqp-consumer-failures, backend: sqlite}
+          - {scenario: ecosystem-amqp-consumer-failures, backend: mssql}
+          - {scenario: ecosystem-sqs-consumer-failures, backend: sqlite}
+          - {scenario: ecosystem-sqs-consumer-failures, backend: mssql}
+          - {scenario: ecosystem-amqp-dlq, backend: pgsql}
+          - {scenario: ecosystem-amqp-ack-uncertain, backend: pgsql}
+          - {scenario: ecosystem-amqp-ack-uncertain, backend: mariadb}
+          - {scenario: ecosystem-amqp-wire-ack, backend: pgsql}
+          - {scenario: ecosystem-amqp-wire-ack, backend: mariadb}
+          - {scenario: ecosystem-sqs-ack-uncertain, backend: pgsql}
+          - {scenario: ecosystem-sqs-ack-uncertain, backend: mariadb}
+          - {scenario: ecosystem-sqs-wire-ack, backend: pgsql}
+          - {scenario: ecosystem-sqs-wire-ack, backend: mariadb}
+          - {scenario: ecosystem-amqp-tls, backend: pgsql}
+          - {scenario: ecosystem-sqs-fifo, backend: pgsql}
+          - {scenario: ecosystem-sqs-redrive, backend: pgsql}
+          - {scenario: ecosystem-mailbox-tls, backend: pgsql}
+          - {scenario: ecosystem-mailbox-idle, backend: pgsql}
+          - {scenario: ecosystem-sqs-tls-contracts, backend: mssql}
+          - {scenario: ecosystem-omnibus-failure-replay, backend: pgsql}
+          - {scenario: ecosystem-omnibus-failure-replay, backend: mysql}
+          - {scenario: ecosystem-omnibus-failure-replay, backend: mariadb}
+          - {scenario: ecosystem-omnibus-failure-replay, backend: sqlite}
+          - {scenario: ecosystem-omnibus-failure-replay, backend: mssql}
+          - {scenario: ecosystem-omnibus-failure-rejection, backend: pgsql}
+          - {scenario: ecosystem-omnibus-failure-rejection, backend: mysql}
+          - {scenario: ecosystem-omnibus-failure-rejection, backend: mariadb}
+          - {scenario: ecosystem-omnibus-failure-rejection, backend: sqlite}
+          - {scenario: ecosystem-omnibus-failure-rejection, backend: mssql}
+          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: pgsql}
+          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mysql}
+          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mariadb}
+          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: sqlite}
+          - {scenario: ecosystem-omnibus-transaction-enqueue, backend: mssql}
+          - {scenario: ecosystem-amqp, backend: pgsql}
+          - {scenario: ecosystem-sqs, backend: pgsql}
+          - {scenario: ecosystem-imap, backend: pgsql}
+          - {scenario: ecosystem-pop3, backend: pgsql}
+          - {scenario: ecosystem-mail-mime, backend: pgsql}
+          - {scenario: ecosystem-smtp-uncertain, backend: pgsql}
+          - {scenario: ecosystem-smtp-tls-auth, backend: pgsql}
+          - {scenario: ecosystem-omnibus-workflow, backend: pgsql}
+          - {scenario: ecosystem-omnibus-middleware, backend: pgsql}
+          - {scenario: ecosystem-omnibus-middleware, backend: mysql}
+          - {scenario: ecosystem-omnibus-middleware, backend: mariadb}
+          - {scenario: ecosystem-omnibus-middleware, backend: sqlite}
+          - {scenario: ecosystem-omnibus-middleware, backend: mssql}
+          - {scenario: ecosystem-omnibus-events, backend: pgsql}
+          - {scenario: ecosystem-omnibus-events, backend: mysql}
+          - {scenario: ecosystem-omnibus-events, backend: mariadb}
+          - {scenario: ecosystem-omnibus-events, backend: sqlite}
+          - {scenario: ecosystem-omnibus-events, backend: mssql}
+          - {scenario: ecosystem-omnibus-workflow, backend: mysql}
+          - {scenario: ecosystem-omnibus-workflow, backend: mariadb}
+          - {scenario: ecosystem-omnibus-workflow, backend: sqlite}
+          - {scenario: ecosystem-omnibus-workflow, backend: mssql}
+          - {scenario: ecosystem-omnibus-failure-claims, backend: pgsql}
+          - {scenario: ecosystem-omnibus-failure-claims, backend: mysql}
+          - {scenario: ecosystem-omnibus-failure-claims, backend: mariadb}
+          - {scenario: ecosystem-omnibus-failure-claims, backend: sqlite}
+          - {scenario: ecosystem-omnibus-failure-claims, backend: mssql}
+          - {scenario: ecosystem-omnibus-reservation-ownership, backend: pgsql}
+          - {scenario: ecosystem-omnibus-reservation-ownership, backend: mysql}
+          - {scenario: ecosystem-omnibus-reservation-ownership, backend: mariadb}
+          - {scenario: ecosystem-omnibus-reservation-ownership, backend: sqlite}
+          - {scenario: ecosystem-omnibus-reservation-ownership, backend: mssql}
+          - {scenario: ecosystem-omnibus-redis, backend: pgsql}
+          - {scenario: ecosystem-omnibus-redis, backend: mysql}
+          - {scenario: ecosystem-omnibus-redis, backend: mariadb}
+          - {scenario: ecosystem-omnibus-redis, backend: sqlite}
+          - {scenario: ecosystem-omnibus-redis, backend: mssql}
+          - {scenario: ecosystem-amqp-consumer-failures, backend: pgsql}
+          - {scenario: ecosystem-amqp-consumer-failures, backend: mysql}
+          - {scenario: ecosystem-amqp-consumer-failures, backend: mariadb}
+          - {scenario: ecosystem-sqs-consumer-failures, backend: pgsql}
+          - {scenario: ecosystem-sqs-consumer-failures, backend: mysql}
+          - {scenario: ecosystem-sqs-consumer-failures, backend: mariadb}
+          - {scenario: ecosystem-amqp-crash, backend: pgsql}
+          - {scenario: ecosystem-amqp-crash, backend: mysql}
+          - {scenario: ecosystem-amqp-crash, backend: mariadb}
+          - {scenario: ecosystem-amqp-crash, backend: sqlite}
+          - {scenario: ecosystem-amqp-crash, backend: mssql}
+          - {scenario: ecosystem-sqs-fifo-groups, backend: pgsql}
+          - {scenario: ecosystem-sqs-fifo-groups, backend: mysql}
+          - {scenario: ecosystem-sqs-fifo-groups, backend: mariadb}
+          - {scenario: ecosystem-sqs-fifo-groups, backend: sqlite}
+          - {scenario: ecosystem-sqs-fifo-groups, backend: mssql}
+          - {scenario: ecosystem-sqs-visibility-recovery, backend: pgsql}
+          - {scenario: ecosystem-sqs-visibility-recovery, backend: mysql}
+          - {scenario: ecosystem-sqs-visibility-recovery, backend: mariadb}
+          - {scenario: ecosystem-sqs-visibility-recovery, backend: sqlite}
+          - {scenario: ecosystem-sqs-visibility-recovery, backend: mssql}
+          - {scenario: ecosystem-foundation-notifications-templates, backend: pgsql}
+          - {scenario: ecosystem-foundation-notifications-spool, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-worker-options, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-worker-options, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-worker-options, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-worker-recycle, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-worker-recycle, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-worker-recycle, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-scheduled, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-scheduled, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-scheduled, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-database-failures, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-database-failures, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-database-failures, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-memory-failures, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-memory-failures, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-memory-failures, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-invalid-durable, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-invalid-durable, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-invalid-durable, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-partial-schema, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-partial-schema, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-partial-schema, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-leader, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-leader, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-leader, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-leader, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-leader, backend: mssql}
+          - {scenario: ecosystem-amqp-quorum-follower, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-follower, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-follower, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-follower, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-follower, backend: mssql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: mssql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: mssql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: mssql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: mssql}
+          - {scenario: ecosystem-foundation-messaging-validated-publication, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-validated-publication, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-validated-publication, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-rollback-publication, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-rollback-publication, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-rollback-publication, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-cache-publication, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-cache-publication, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-cache-publication, backend: mariadb}
+          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: pgsql}
+          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mysql}
+          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mariadb}
+          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: sqlite}
+          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mssql}
+          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: pgsql}
+          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mysql}
+          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mariadb}
+          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: sqlite}
+          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mssql}
+    uses: ./.github/workflows/production-worker-messaging.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  runtime:
+    if: inputs.group == 'all' || inputs.group == 'runtime' || inputs.group == 'ecosystem'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-wire-outbound-h3, backend: pgsql}
+          - {scenario: ecosystem-http-pool, backend: pgsql}
+          - {scenario: ecosystem-grpc-inbound, backend: pgsql}
+          - {scenario: ecosystem-http-transfer, backend: pgsql}
+          - {scenario: ecosystem-http-retry-safety, backend: pgsql}
+          - {scenario: ecosystem-http-proxy, backend: pgsql}
+          - {scenario: ecosystem-http-representations, backend: pgsql}
+          - {scenario: ecosystem-http-signatures, backend: pgsql}
+          - {scenario: ecosystem-outbound-cookie-contracts, backend: pgsql}
+          - {scenario: ecosystem-cancellation-ownership, backend: pgsql}
+          - {scenario: ecosystem-supervisor, backend: pgsql}
+          - {scenario: ecosystem-http-framing, backend: pgsql}
+          - {scenario: ecosystem-http-backpressure, backend: pgsql}
+          - {scenario: ecosystem-http-admission, backend: pgsql}
+          - {scenario: ecosystem-worker-budget, backend: pgsql}
+          - {scenario: ecosystem-http-connection-quotas, backend: pgsql}
+          - {scenario: ecosystem-wire-http3, backend: pgsql}
+          - {scenario: ecosystem-wire-http3-flow, backend: pgsql}
+          - {scenario: ecosystem-wire-http3-admission, backend: pgsql}
+          - {scenario: ecosystem-wire-mtls, backend: pgsql}
+          - {scenario: ecosystem-wire-tcp, backend: pgsql}
+          - {scenario: ecosystem-wire-unix, backend: pgsql}
+          - {scenario: ecosystem-wire-udp, backend: pgsql}
+          - {scenario: ecosystem-wire-websocket, backend: pgsql}
+          - {scenario: ecosystem-wire-http2, backend: pgsql}
+          - {scenario: ecosystem-wire-http2-flow, backend: pgsql}
+          - {scenario: ecosystem-wire-http2-admission, backend: pgsql}
+          - {scenario: ecosystem-http-policy, backend: pgsql}
+          - {scenario: ecosystem-coroutines, backend: pgsql}
+          - {scenario: ecosystem-wire-http2-aggregate-drain, backend: pgsql}
+          - {scenario: ecosystem-wire-http2-aggregate-reset, backend: pgsql}
+          - {scenario: ecosystem-wire-http2-aggregate-isolation, backend: pgsql}
+          - {scenario: ecosystem-foundation-pool-recycle, backend: pgsql}
+          - {scenario: ecosystem-foundation-pool-recycle, backend: mysql}
+          - {scenario: ecosystem-foundation-pool-recycle, backend: mariadb}
+          - {scenario: ecosystem-foundation-pool-crash, backend: pgsql}
+          - {scenario: ecosystem-foundation-pool-crash, backend: mysql}
+          - {scenario: ecosystem-foundation-pool-crash, backend: mariadb}
+          - {scenario: ecosystem-foundation-pool-parent-guard, backend: pgsql}
+          - {scenario: ecosystem-foundation-pool-parent-guard, backend: mysql}
+          - {scenario: ecosystem-foundation-pool-parent-guard, backend: mariadb}
+          - {scenario: ecosystem-foundation-communication-auth-header, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-auth-query, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-auth-basic, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-auth-bearer, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-profile, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-invalid-profile, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-tls, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-body-limit, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-cookies, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-retry, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-idempotency, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-rate-limit, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-circuit, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-webhook, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-webhook-retry, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-webhook-bound, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-double-retry, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-production-peer, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-production-host, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-301-post, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-301-put, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-301-head, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-302-post, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-302-put, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-302-head, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-303-post, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-303-put, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-303-head, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-307-post, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-307-put, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-307-head, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-post, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-put, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-head, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-query, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-downgrade, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-multi, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-single-body, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-single-header-bytes, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-single-header-count, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-multi-body, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-multi-header-bytes, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-multi-header-count, backend: pgsql}
+          - {scenario: ecosystem-wire-http3-aggregate-drain, backend: pgsql}
+          - {scenario: ecosystem-wire-http3-aggregate-reset, backend: pgsql}
+          - {scenario: ecosystem-wire-http3-aggregate-isolation, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-get, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-patch, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-delete, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-options, backend: pgsql}
           - {scenario: ecosystem-http-retry-matrix-status-408, backend: pgsql}
           - {scenario: ecosystem-http-retry-matrix-status-425, backend: pgsql}
           - {scenario: ecosystem-http-retry-matrix-status-429, backend: pgsql}
@@ -1704,68 +1536,6 @@ jobs:
           - {scenario: ecosystem-http-redirect-307-patch, backend: pgsql}
           - {scenario: ecosystem-http-redirect-307-delete, backend: pgsql}
           - {scenario: ecosystem-http-redirect-307-options, backend: pgsql}
-    uses: ./.github/workflows/production-worker-ecosystem.yml
-    with:
-      scenario: ${{ matrix.scenario }}
-      backend: ${{ matrix.backend }}
-      host: ${{ matrix.host || 'worker' }}
-      matcher: ${{ matrix.matcher || 'fused' }}
-
-  ecosystem-final:
-    if: inputs.group == 'all' || inputs.group == 'ecosystem-final'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: pgsql}
-          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mysql}
-          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mariadb}
-          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: sqlite}
-          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mssql}
-          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: pgsql}
-          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mysql}
-          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mariadb}
-          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: sqlite}
-          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mssql}
-          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: pgsql}
-          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mysql}
-          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mariadb}
-          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: sqlite}
-          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mssql}
-          - {scenario: ecosystem-s3-remote-order-recovery, backend: sqlite}
-          - {scenario: ecosystem-sftp-remote-order-recovery, backend: sqlite}
-          - {scenario: ecosystem-ftp-remote-order-recovery, backend: sqlite}
-          - {scenario: ecosystem-webdav-remote-order-recovery, backend: sqlite}
-          - {scenario: ecosystem-azure-remote-order-recovery, backend: sqlite}
-          - {scenario: ecosystem-gcs-remote-order-recovery, backend: sqlite}
-          - {scenario: ecosystem-response-cache-identity-redis, backend: pgsql}
-          - {scenario: ecosystem-response-cache-identity-valkey, backend: pgsql}
-          - {scenario: ecosystem-response-cache-identity-memcached, backend: pgsql}
-          - {scenario: ecosystem-response-cache-identity-file, backend: pgsql}
-          - {scenario: ecosystem-response-cache-identity-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-response-cache-identity-sqlite, backend: pgsql}
-          - {scenario: ecosystem-response-cache-identity-pdo, backend: pgsql}
-          - {scenario: ecosystem-response-cache-identity-pdo, backend: mysql}
-          - {scenario: ecosystem-response-cache-identity-pdo, backend: mariadb}
-          - {scenario: ecosystem-response-cache-publication-redis, backend: pgsql}
-          - {scenario: ecosystem-response-cache-publication-valkey, backend: pgsql}
-          - {scenario: ecosystem-response-cache-publication-memcached, backend: pgsql}
-          - {scenario: ecosystem-response-cache-publication-file, backend: pgsql}
-          - {scenario: ecosystem-response-cache-publication-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-response-cache-publication-sqlite, backend: pgsql}
-          - {scenario: ecosystem-response-cache-publication-pdo, backend: pgsql}
-          - {scenario: ecosystem-response-cache-publication-pdo, backend: mysql}
-          - {scenario: ecosystem-response-cache-publication-pdo, backend: mariadb}
-          - {scenario: ecosystem-response-cache-directives-redis, backend: pgsql}
-          - {scenario: ecosystem-response-cache-directives-valkey, backend: pgsql}
-          - {scenario: ecosystem-response-cache-directives-memcached, backend: pgsql}
-          - {scenario: ecosystem-response-cache-directives-file, backend: pgsql}
-          - {scenario: ecosystem-response-cache-directives-phpfiles, backend: pgsql}
-          - {scenario: ecosystem-response-cache-directives-sqlite, backend: pgsql}
-          - {scenario: ecosystem-response-cache-directives-pdo, backend: pgsql}
-          - {scenario: ecosystem-response-cache-directives-pdo, backend: mysql}
-          - {scenario: ecosystem-response-cache-directives-pdo, backend: mariadb}
           - {scenario: ecosystem-http-redirect-cross-301-get, backend: pgsql}
           - {scenario: ecosystem-http-redirect-cross-301-head, backend: pgsql}
           - {scenario: ecosystem-http-redirect-cross-301-post, backend: pgsql}
@@ -1801,131 +1571,6 @@ jobs:
           - {scenario: ecosystem-http-redirect-cross-308-patch, backend: pgsql}
           - {scenario: ecosystem-http-redirect-cross-308-delete, backend: pgsql}
           - {scenario: ecosystem-http-redirect-cross-308-options, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-outage-read-redis, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-outage-read-redis, backend: mysql}
-          - {scenario: ecosystem-foundation-cache-outage-read-redis, backend: mariadb}
-          - {scenario: ecosystem-foundation-cache-outage-read-valkey, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-outage-read-valkey, backend: mysql}
-          - {scenario: ecosystem-foundation-cache-outage-read-valkey, backend: mariadb}
-          - {scenario: ecosystem-foundation-cache-outage-read-memcached, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-outage-read-memcached, backend: mysql}
-          - {scenario: ecosystem-foundation-cache-outage-read-memcached, backend: mariadb}
-          - {scenario: ecosystem-foundation-cache-outage-write-redis, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-outage-write-redis, backend: mysql}
-          - {scenario: ecosystem-foundation-cache-outage-write-redis, backend: mariadb}
-          - {scenario: ecosystem-foundation-cache-outage-write-valkey, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-outage-write-valkey, backend: mysql}
-          - {scenario: ecosystem-foundation-cache-outage-write-valkey, backend: mariadb}
-          - {scenario: ecosystem-foundation-cache-outage-write-memcached, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-outage-write-memcached, backend: mysql}
-          - {scenario: ecosystem-foundation-cache-outage-write-memcached, backend: mariadb}
-          - {scenario: ecosystem-foundation-cache-outage-response-redis, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-outage-response-redis, backend: mysql}
-          - {scenario: ecosystem-foundation-cache-outage-response-redis, backend: mariadb}
-          - {scenario: ecosystem-foundation-cache-outage-response-valkey, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-outage-response-valkey, backend: mysql}
-          - {scenario: ecosystem-foundation-cache-outage-response-valkey, backend: mariadb}
-          - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: pgsql}
-          - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: mysql}
-          - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: mariadb}
-          - {scenario: ecosystem-otp-cluster-redis-minority-generic, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-minority-hotp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-minority-totp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-minority-mobile, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-minority-ocra-counter, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-minority-ocra-challenge, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-shard-loss-generic, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-shard-loss-hotp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-shard-loss-totp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-shard-loss-mobile, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-shard-loss-ocra-counter, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-redis-shard-loss-ocra-challenge, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-minority-generic, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-minority-hotp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-minority-totp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-minority-mobile, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-minority-ocra-counter, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-minority-ocra-challenge, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-generic, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-hotp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-totp, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-mobile, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-ocra-counter, backend: pgsql}
-          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-ocra-challenge, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-ipv4-global, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-ipv6-global, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-ipv4-no-reserved, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-ipv6-no-reserved, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-ipv4-no-private, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-ipv6-no-private, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-ipv4-short-alias, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-ipv6-short-alias, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-uuid-v1, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-uuid-v2, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-uuid-v3, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-uuid-v5, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-uuid-reversed-range, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-uuid-exclude-one, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-decimal-lower-bound, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-decimal-upper-bound, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-decimal-zero-range, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-fractional-multiple, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-negative-multiple, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-min-digits-leading-zero, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-max-digits-leading-zero, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-hex-short, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-hex-unprefixed, backend: pgsql}
-          - {scenario: ecosystem-validation-granular-regex-alternation, backend: pgsql}
-          - {scenario: ecosystem-s3-order-http-publication-before, backend: pgsql}
-          - {scenario: ecosystem-s3-order-http-publication-before, backend: mysql}
-          - {scenario: ecosystem-s3-order-http-publication-before, backend: mariadb}
-          - {scenario: ecosystem-s3-order-http-publication-before, backend: sqlite}
-          - {scenario: ecosystem-s3-order-http-publication-before, backend: mssql}
-          - {scenario: ecosystem-s3-order-http-publication-after, backend: pgsql}
-          - {scenario: ecosystem-s3-order-http-publication-after, backend: mysql}
-          - {scenario: ecosystem-s3-order-http-publication-after, backend: mariadb}
-          - {scenario: ecosystem-s3-order-http-publication-after, backend: sqlite}
-          - {scenario: ecosystem-s3-order-http-publication-after, backend: mssql}
-          - {scenario: ecosystem-gridfs-order-publication-before, backend: pgsql}
-          - {scenario: ecosystem-gridfs-order-publication-before, backend: mysql}
-          - {scenario: ecosystem-gridfs-order-publication-before, backend: mariadb}
-          - {scenario: ecosystem-gridfs-order-publication-before, backend: sqlite}
-          - {scenario: ecosystem-gridfs-order-publication-before, backend: mssql}
-          - {scenario: ecosystem-gridfs-order-publication-after, backend: pgsql}
-          - {scenario: ecosystem-gridfs-order-publication-after, backend: mysql}
-          - {scenario: ecosystem-gridfs-order-publication-after, backend: mariadb}
-          - {scenario: ecosystem-gridfs-order-publication-after, backend: sqlite}
-          - {scenario: ecosystem-gridfs-order-publication-after, backend: mssql}
-          - {scenario: ecosystem-ftp-order-rename-before, backend: pgsql}
-          - {scenario: ecosystem-ftp-order-rename-before, backend: mysql}
-          - {scenario: ecosystem-ftp-order-rename-before, backend: mariadb}
-          - {scenario: ecosystem-ftp-order-rename-before, backend: sqlite}
-          - {scenario: ecosystem-ftp-order-rename-before, backend: mssql}
-          - {scenario: ecosystem-ftp-order-rename-after, backend: pgsql}
-          - {scenario: ecosystem-ftp-order-rename-after, backend: mysql}
-          - {scenario: ecosystem-ftp-order-rename-after, backend: mariadb}
-          - {scenario: ecosystem-ftp-order-rename-after, backend: sqlite}
-          - {scenario: ecosystem-ftp-order-rename-after, backend: mssql}
-          - {scenario: ecosystem-sftp-order-rename-before, backend: pgsql}
-          - {scenario: ecosystem-sftp-order-rename-before, backend: mysql}
-          - {scenario: ecosystem-sftp-order-rename-before, backend: mariadb}
-          - {scenario: ecosystem-sftp-order-rename-before, backend: sqlite}
-          - {scenario: ecosystem-sftp-order-rename-before, backend: mssql}
-          - {scenario: ecosystem-sftp-order-rename-after, backend: pgsql}
-          - {scenario: ecosystem-sftp-order-rename-after, backend: mysql}
-          - {scenario: ecosystem-sftp-order-rename-after, backend: mariadb}
-          - {scenario: ecosystem-sftp-order-rename-after, backend: sqlite}
-          - {scenario: ecosystem-sftp-order-rename-after, backend: mssql}
-          - {scenario: ecosystem-sftp2-order-rename-before, backend: pgsql}
-          - {scenario: ecosystem-sftp2-order-rename-before, backend: mysql}
-          - {scenario: ecosystem-sftp2-order-rename-before, backend: mariadb}
-          - {scenario: ecosystem-sftp2-order-rename-before, backend: sqlite}
-          - {scenario: ecosystem-sftp2-order-rename-before, backend: mssql}
-          - {scenario: ecosystem-sftp2-order-rename-after, backend: pgsql}
-          - {scenario: ecosystem-sftp2-order-rename-after, backend: mysql}
-          - {scenario: ecosystem-sftp2-order-rename-after, backend: mariadb}
-          - {scenario: ecosystem-sftp2-order-rename-after, backend: sqlite}
-          - {scenario: ecosystem-sftp2-order-rename-after, backend: mssql}
           - {scenario: ecosystem-runwire-outbound-h1-get, backend: pgsql}
           - {scenario: ecosystem-runwire-outbound-h1-head, backend: pgsql}
           - {scenario: ecosystem-runwire-outbound-h1-binary, backend: pgsql}
@@ -1972,20 +1617,6 @@ jobs:
           - {scenario: ecosystem-runwire-h1-policy-retry-exhausted, backend: pgsql}
           - {scenario: ecosystem-runwire-h1-policy-retry-post, backend: pgsql}
           - {scenario: ecosystem-runwire-h1-policy-retry-after-head, backend: pgsql}
-    uses: ./.github/workflows/production-worker-ecosystem.yml
-    with:
-      scenario: ${{ matrix.scenario }}
-      backend: ${{ matrix.backend }}
-      host: ${{ matrix.host || 'worker' }}
-      matcher: ${{ matrix.matcher || 'fused' }}
-
-  ecosystem-specialist:
-    if: inputs.group == 'all' || inputs.group == 'ecosystem-specialist'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
           - {scenario: ecosystem-runwire-negotiation-h1-strict, backend: pgsql}
           - {scenario: ecosystem-runwire-negotiation-h1-preferred-fallback, backend: pgsql}
           - {scenario: ecosystem-runwire-negotiation-h1-reverse-fallback, backend: pgsql}
@@ -1993,6 +1624,20 @@ jobs:
           - {scenario: ecosystem-runwire-negotiation-h1-reverse-only, backend: pgsql}
           - {scenario: ecosystem-runwire-negotiation-h1-wrong-ca, backend: pgsql}
           - {scenario: ecosystem-runwire-negotiation-h1-wrong-peer, backend: pgsql}
+    uses: ./.github/workflows/production-worker-runtime.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  runtime-2:
+    if: inputs.group == 'all' || inputs.group == 'runtime' || inputs.group == 'ecosystem'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - {scenario: ecosystem-runwire-negotiation-h1-wrong-offer, backend: pgsql}
           - {scenario: ecosystem-runwire-negotiation-h1-h3-preferred, backend: pgsql}
           - {scenario: ecosystem-runwire-negotiation-h1-plaintext-h2, backend: pgsql}
@@ -2026,6 +1671,477 @@ jobs:
           - {scenario: ecosystem-runwire-multiplex-flow-4, backend: pgsql}
           - {scenario: ecosystem-runwire-multiplex-flow-8, backend: pgsql}
           - {scenario: ecosystem-runwire-multiplex-flow-16, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-ping-2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-ping-4, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-ping-8, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-ping-16, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-deadline-2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-deadline-4, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-deadline-8, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-deadline-16, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-goaway-2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-goaway-4, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-goaway-8, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-goaway-16, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-status-503, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-method-post-unsafe, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-method-post-keyed, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-method-patch-keyed, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-cancel-preflight, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-cancel-during-wait, backend: pgsql}
+    uses: ./.github/workflows/production-worker-runtime.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  routing:
+    if: inputs.group == 'all' || inputs.group == 'routing' || inputs.group == 'ecosystem'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-response-cache-freshness-redis, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-valkey, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-memcached, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-file, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-sqlite, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-pdo, backend: pgsql}
+          - {scenario: ecosystem-response-cache-freshness-pdo, backend: mysql}
+          - {scenario: ecosystem-response-cache-freshness-pdo, backend: mariadb}
+          - {scenario: ecosystem-response-cache-bypass-redis, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-valkey, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-memcached, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-file, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-sqlite, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-pdo, backend: pgsql}
+          - {scenario: ecosystem-response-cache-bypass-pdo, backend: mysql}
+          - {scenario: ecosystem-response-cache-bypass-pdo, backend: mariadb}
+          - {scenario: ecosystem-conditional-precedence, backend: pgsql}
+          - {scenario: ecosystem-route-cors-contracts, backend: pgsql}
+          - {scenario: ecosystem-gateway, backend: pgsql}
+          - {scenario: ecosystem-middleware-policies, backend: pgsql}
+          - {scenario: ecosystem-vary-linter, backend: pgsql}
+          - {scenario: ecosystem-response-cache, backend: pgsql}
+          - {scenario: ecosystem-throttle, backend: pgsql}
+          - {scenario: ecosystem-cookie-protection, backend: pgsql}
+          - {scenario: ecosystem-routing, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-routing, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-route-attributes, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-route-attributes, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-compression-codings, backend: pgsql}
+          - {scenario: ecosystem-compiled-policy-negotiation, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-compiled-policy-negotiation, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-compiled-policy-cors, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-compiled-policy-cors, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-compiled-policy-preflight, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-compiled-policy-preflight, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-compiled-policy-middleware, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-compiled-policy-middleware, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-compiled-policy-method-domain, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-compiled-policy-method-domain, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-permanent, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-permanent, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-temporary, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-temporary, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-leeway, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-leeway, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-canonical, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-canonical, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-tamper, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-tamper, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-invalid-expiry, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-invalid-expiry, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-relative, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-relative, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-rotation, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-rotation, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-retired-key, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-retired-key, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-composition, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-composition, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-registry, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-registry, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-response-cache-identity-redis, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-valkey, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-memcached, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-file, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-sqlite, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-pdo, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-pdo, backend: mysql}
+          - {scenario: ecosystem-response-cache-identity-pdo, backend: mariadb}
+          - {scenario: ecosystem-response-cache-publication-redis, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-valkey, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-memcached, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-file, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-sqlite, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-pdo, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-pdo, backend: mysql}
+          - {scenario: ecosystem-response-cache-publication-pdo, backend: mariadb}
+          - {scenario: ecosystem-response-cache-directives-redis, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-valkey, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-memcached, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-file, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-sqlite, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-pdo, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-pdo, backend: mysql}
+          - {scenario: ecosystem-response-cache-directives-pdo, backend: mariadb}
+          - {scenario: ecosystem-response-cache-cors-file-outer, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-file-inner-keyed, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-file-inner-unkeyed, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-sqlite-outer, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-sqlite-inner-keyed, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-sqlite-inner-unkeyed, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-pdo-outer, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-pdo-inner-keyed, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-pdo-inner-unkeyed, backend: pgsql}
+    uses: ./.github/workflows/production-worker-routing.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  foundation:
+    if: inputs.group == 'all' || inputs.group == 'foundation' || inputs.group == 'ecosystem'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-config-reference, backend: pgsql}
+          - {scenario: ecosystem-di-contextual, backend: pgsql}
+          - {scenario: ecosystem-di-factories, backend: pgsql}
+          - {scenario: ecosystem-di-graph-failures, backend: pgsql}
+          - {scenario: ecosystem-di-preload, backend: pgsql}
+          - {scenario: ecosystem-di-cache, backend: pgsql}
+          - {scenario: ecosystem-di-cache-outage, backend: pgsql}
+          - {scenario: ecosystem-di-attributes, backend: pgsql}
+          - {scenario: ecosystem-recovery, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-recovery, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-active-recovery, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-active-recovery, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-release-cutover, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-release-cutover, backend: mysql, matcher: sharded}
+          - {scenario: ecosystem-release-cutover, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-release-cutover, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-tenants, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-tenants, backend: mysql, matcher: sharded}
+          - {scenario: ecosystem-tenants, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-tenants, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-config-mutation-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-di-environment, backend: pgsql}
+          - {scenario: ecosystem-foundation-resource-contracts, backend: pgsql}
+          - {scenario: ecosystem-business-cache-queue, backend: pgsql}
+          - {scenario: ecosystem-business-cache-queue, backend: mysql}
+          - {scenario: ecosystem-business-cache-queue, backend: mariadb}
+          - {scenario: ecosystem-business-cache-queue, backend: sqlite}
+          - {scenario: ecosystem-business-cache-queue, backend: mssql}
+          - {scenario: ecosystem-business-receipt-redelivery, backend: pgsql}
+          - {scenario: ecosystem-business-receipt-redelivery, backend: mysql}
+          - {scenario: ecosystem-business-receipt-redelivery, backend: mariadb}
+          - {scenario: ecosystem-business-receipt-redelivery, backend: sqlite}
+          - {scenario: ecosystem-business-receipt-redelivery, backend: mssql}
+          - {scenario: ecosystem-business-poison-queue, backend: pgsql}
+          - {scenario: ecosystem-business-poison-queue, backend: mysql}
+          - {scenario: ecosystem-business-poison-queue, backend: mariadb}
+          - {scenario: ecosystem-business-poison-queue, backend: sqlite}
+          - {scenario: ecosystem-business-poison-queue, backend: mssql}
+          - {scenario: ecosystem-business-failure-recovery, backend: pgsql}
+          - {scenario: ecosystem-business-failure-recovery, backend: mysql}
+          - {scenario: ecosystem-business-failure-recovery, backend: mariadb}
+          - {scenario: ecosystem-business-failure-recovery, backend: sqlite}
+          - {scenario: ecosystem-business-failure-recovery, backend: mssql}
+          - {scenario: ecosystem-di-cache-parity-valkey, backend: pgsql}
+          - {scenario: ecosystem-di-cache-parity-memcached, backend: pgsql}
+          - {scenario: ecosystem-di-cache-parity-file, backend: pgsql}
+          - {scenario: ecosystem-di-cache-parity-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-di-cache-parity-pdo, backend: pgsql}
+          - {scenario: ecosystem-di-cache-parity-pdo, backend: mysql}
+          - {scenario: ecosystem-di-cache-parity-pdo, backend: mariadb}
+          - {scenario: ecosystem-di-cache-process-redis, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-valkey, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-memcached, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-file, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-sqlite, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-pdo, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-pdo, backend: mysql}
+          - {scenario: ecosystem-di-cache-process-pdo, backend: mariadb}
+          - {scenario: ecosystem-config-merge-contracts, backend: pgsql}
+          - {scenario: ecosystem-config-resilience, backend: pgsql}
+          - {scenario: ecosystem-module-0, backend: pgsql}
+          - {scenario: ecosystem-module-1, backend: pgsql}
+          - {scenario: ecosystem-module-2, backend: pgsql}
+          - {scenario: ecosystem-module-3, backend: pgsql}
+          - {scenario: ecosystem-module-4, backend: pgsql}
+          - {scenario: ecosystem-module-5, backend: pgsql}
+          - {scenario: ecosystem-module-6, backend: pgsql}
+          - {scenario: ecosystem-module-7, backend: pgsql}
+          - {scenario: ecosystem-module-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-module-conditional-validation, backend: pgsql}
+          - {scenario: ecosystem-module-conditional-mfa, backend: pgsql}
+          - {scenario: ecosystem-module-conditional-messaging, backend: pgsql}
+          - {scenario: ecosystem-conditional-modules, backend: pgsql}
+          - {scenario: ecosystem-telemetry-risk, backend: pgsql}
+          - {scenario: ecosystem-telemetry-otel, backend: pgsql}
+          - {scenario: ecosystem-config-layering, backend: pgsql}
+          - {scenario: ecosystem-endurance, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-endurance, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-connected, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-connected, backend: mysql, matcher: sharded}
+          - {scenario: ecosystem-connected, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-connected, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-core-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-input-identity-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-input-identity-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-input-rejection-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-input-rejection-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-make-invoke-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-make-invoke-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-fiber-isolation-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-fiber-isolation-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-fiber-attachment-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-fiber-attachment-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-context-rejection-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-context-rejection-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-attachment-failure-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-attachment-failure-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-tagged-ownership-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-tagged-ownership-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-failed-request-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-failed-request-compiled, backend: pgsql}
+          - {scenario: ecosystem-config-read-cache-toggle, backend: pgsql}
+          - {scenario: ecosystem-foundation-json-offset, backend: pgsql}
+          - {scenario: ecosystem-foundation-json-offset, backend: mysql}
+          - {scenario: ecosystem-foundation-json-offset, backend: mariadb}
+          - {scenario: ecosystem-foundation-json-cursor, backend: pgsql}
+          - {scenario: ecosystem-foundation-json-cursor, backend: mysql}
+          - {scenario: ecosystem-foundation-json-cursor, backend: mariadb}
+          - {scenario: ecosystem-foundation-json-validation, backend: pgsql}
+          - {scenario: ecosystem-foundation-json-validation, backend: mysql}
+          - {scenario: ecosystem-foundation-json-validation, backend: mariadb}
+          - {scenario: ecosystem-foundation-json-native, backend: pgsql}
+          - {scenario: ecosystem-foundation-json-tunneled, backend: pgsql}
+          - {scenario: ecosystem-foundation-logging-throttle, backend: pgsql}
+          - {scenario: ecosystem-foundation-logging-sample-zero, backend: pgsql}
+          - {scenario: ecosystem-foundation-logging-concurrent, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-webhook-replay-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-webhook-rotation-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-webhook-rotation-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-validator-profile, backend: pgsql}
+          - {scenario: ecosystem-foundation-validator-profile, backend: mysql}
+          - {scenario: ecosystem-foundation-validator-profile, backend: mariadb}
+          - {scenario: ecosystem-di-attribute-property-defaults-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-property-defaults-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-property-type-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-property-type-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-missing-input-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-missing-input-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-fallback-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-fallback-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-override-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-override-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-throw-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-method-throw-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-constructor-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-constructor-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-registration-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-attribute-registration-compiled, backend: pgsql}
+          - {scenario: ecosystem-config-typed-defaults, backend: pgsql}
+          - {scenario: ecosystem-config-lazy-defaults, backend: pgsql}
+    uses: ./.github/workflows/production-worker-foundation.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  utilities:
+    if: inputs.group == 'all' || inputs.group == 'utilities' || inputs.group == 'ecosystem'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-validation-casts, backend: pgsql}
+          - {scenario: ecosystem-validation-cast-composition, backend: pgsql}
+          - {scenario: ecosystem-validation-sanitizers, backend: pgsql}
+          - {scenario: ecosystem-uid-provider-boundaries, backend: pgsql}
+          - {scenario: ecosystem-uid-filesystem, backend: pgsql}
+          - {scenario: ecosystem-uid-values, backend: pgsql}
+          - {scenario: ecosystem-randflake-conversions, backend: pgsql}
+          - {scenario: ecosystem-fence-remix, backend: pgsql}
+          - {scenario: ecosystem-remix-composition, backend: pgsql}
+          - {scenario: ecosystem-api-inventory, backend: pgsql}
+          - {scenario: ecosystem-uid-families, backend: pgsql}
+          - {scenario: ecosystem-array-transforms, backend: pgsql}
+          - {scenario: ecosystem-array-set-contracts, backend: pgsql}
+          - {scenario: ecosystem-array-dto-guard, backend: pgsql}
+          - {scenario: ecosystem-array-helper-boundaries, backend: pgsql}
+          - {scenario: ecosystem-collection-ownership, backend: pgsql}
+          - {scenario: ecosystem-validation-rules, backend: pgsql}
+          - {scenario: ecosystem-validation-options, backend: pgsql}
+          - {scenario: ecosystem-validation-nested-errors, backend: pgsql}
+          - {scenario: ecosystem-validation-locale, backend: pgsql}
+          - {scenario: ecosystem-validation-database, backend: mysql}
+          - {scenario: ecosystem-validation-database, backend: pgsql}
+          - {scenario: ecosystem-validation-database, backend: sqlite}
+          - {scenario: ecosystem-lazy-replay, backend: pgsql}
+          - {scenario: ecosystem-lazy-factory, backend: pgsql}
+          - {scenario: ecosystem-uid-ordering, backend: pgsql}
+          - {scenario: ecosystem-validation-affix-digits, backend: pgsql}
+          - {scenario: ecosystem-validation-conditional, backend: pgsql}
+          - {scenario: ecosystem-uid-sequences, backend: pgsql}
+          - {scenario: ecosystem-closure, backend: pgsql}
+          - {scenario: ecosystem-validation-registry, backend: pgsql}
+          - {scenario: ecosystem-validation, backend: pgsql}
+          - {scenario: ecosystem-intermix, backend: pgsql}
+          - {scenario: ecosystem-array-config, backend: pgsql}
+          - {scenario: ecosystem-array-stream, backend: pgsql}
+          - {scenario: ecosystem-uid-formats, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-sizes, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-dates, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-collections, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-patterns, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-network, backend: pgsql}
+          - {scenario: ecosystem-validation-presence-truth-table, backend: pgsql}
+          - {scenario: ecosystem-validation-distinct-groups, backend: pgsql}
+          - {scenario: ecosystem-array-numeric-domains, backend: pgsql}
+          - {scenario: ecosystem-array-bucket-projection, backend: pgsql}
+          - {scenario: ecosystem-array-matrix-shape, backend: pgsql}
+          - {scenario: ecosystem-array-path-mutation, backend: pgsql}
+          - {scenario: ecosystem-validation-related-wildcard, backend: pgsql}
+          - {scenario: ecosystem-validation-conditional-wildcard, backend: pgsql}
+          - {scenario: ecosystem-validation-upload-metadata, backend: pgsql}
+          - {scenario: ecosystem-validation-path-options, backend: pgsql}
+          - {scenario: ecosystem-array-projection-group-keys, backend: pgsql}
+          - {scenario: ecosystem-array-projection-group-callback, backend: pgsql}
+          - {scenario: ecosystem-array-projection-key-collision, backend: pgsql}
+          - {scenario: ecosystem-array-projection-pluck-null, backend: pgsql}
+          - {scenario: ecosystem-array-projection-derived-strict, backend: pgsql}
+          - {scenario: ecosystem-array-projection-derived-structural, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-null, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-like, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-text, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-first, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-range, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-callback, backend: pgsql}
+          - {scenario: ecosystem-array-projection-partition-keys, backend: pgsql}
+          - {scenario: ecosystem-array-projection-skip-boundary, backend: pgsql}
+          - {scenario: ecosystem-array-projection-rekey-collision, backend: pgsql}
+          - {scenario: ecosystem-array-projection-combine-keys, backend: pgsql}
+          - {scenario: ecosystem-array-projection-strict-set, backend: pgsql}
+          - {scenario: ecosystem-array-projection-recursive-sort, backend: pgsql}
+          - {scenario: ecosystem-array-projection-sort-budget, backend: pgsql}
+          - {scenario: ecosystem-array-projection-config-required, backend: pgsql}
+          - {scenario: ecosystem-array-projection-config-sequence, backend: pgsql}
+          - {scenario: ecosystem-array-projection-config-file-reload, backend: pgsql}
+          - {scenario: ecosystem-array-projection-config-enum, backend: pgsql}
+          - {scenario: ecosystem-array-projection-config-snapshots, backend: pgsql}
+          - {scenario: ecosystem-validation-db-correlation, backend: pgsql}
+          - {scenario: ecosystem-validation-db-correlation, backend: mysql}
+          - {scenario: ecosystem-validation-db-correlation, backend: mariadb}
+          - {scenario: ecosystem-validation-db-correlation, backend: sqlite}
+          - {scenario: ecosystem-validation-db-correlation, backend: mssql}
+          - {scenario: ecosystem-validation-db-restricted-policy, backend: pgsql}
+          - {scenario: ecosystem-validation-db-restricted-policy, backend: mysql}
+          - {scenario: ecosystem-validation-db-restricted-policy, backend: mariadb}
+          - {scenario: ecosystem-validation-db-restricted-policy, backend: sqlite}
+          - {scenario: ecosystem-validation-db-restricted-policy, backend: mssql}
+          - {scenario: ecosystem-validation-db-ignore-policy, backend: pgsql}
+          - {scenario: ecosystem-validation-db-ignore-policy, backend: mysql}
+          - {scenario: ecosystem-validation-db-ignore-policy, backend: mariadb}
+          - {scenario: ecosystem-validation-db-ignore-policy, backend: sqlite}
+          - {scenario: ecosystem-validation-db-ignore-policy, backend: mssql}
+          - {scenario: ecosystem-validation-db-null-values, backend: pgsql}
+          - {scenario: ecosystem-validation-db-null-values, backend: mysql}
+          - {scenario: ecosystem-validation-db-null-values, backend: mariadb}
+          - {scenario: ecosystem-validation-db-null-values, backend: sqlite}
+          - {scenario: ecosystem-validation-db-null-values, backend: mssql}
+          - {scenario: ecosystem-validation-db-identifier-guards, backend: pgsql}
+          - {scenario: ecosystem-validation-db-identifier-guards, backend: mysql}
+          - {scenario: ecosystem-validation-db-identifier-guards, backend: mariadb}
+          - {scenario: ecosystem-validation-db-identifier-guards, backend: sqlite}
+          - {scenario: ecosystem-validation-db-identifier-guards, backend: mssql}
+          - {scenario: ecosystem-validation-db-failure-recovery, backend: pgsql}
+          - {scenario: ecosystem-validation-db-failure-recovery, backend: mysql}
+          - {scenario: ecosystem-validation-db-failure-recovery, backend: mariadb}
+          - {scenario: ecosystem-validation-db-failure-recovery, backend: sqlite}
+          - {scenario: ecosystem-validation-db-failure-recovery, backend: mssql}
+          - {scenario: ecosystem-array-hook-order, backend: pgsql}
+          - {scenario: ecosystem-array-hook-rejection, backend: pgsql}
+          - {scenario: ecosystem-array-hook-copy, backend: pgsql}
+          - {scenario: ecosystem-array-facade-mutations, backend: pgsql}
+          - {scenario: ecosystem-array-facade-rejection, backend: pgsql}
+          - {scenario: ecosystem-closure-boundary-exact-bound, backend: pgsql}
+          - {scenario: ecosystem-closure-boundary-prefix, backend: pgsql}
+          - {scenario: ecosystem-closure-boundary-encoding, backend: pgsql}
+          - {scenario: ecosystem-closure-boundary-pre-authentication, backend: pgsql}
+          - {scenario: ecosystem-closure-boundary-authenticated-nonclosure, backend: pgsql}
+          - {scenario: ecosystem-closure-boundary-unsigned-boundary, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-alternation-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-alternation-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-escaped-pipe-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-escaped-pipe-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-character-class-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-character-class-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-escaped-delimiter-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-escaped-delimiter-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-alternate-delimiter-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-alternate-delimiter-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-negative-pattern-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-negative-pattern-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-unicode-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-unicode-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-trailing-rule-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-trailing-rule-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv4-global, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv6-global, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv4-no-reserved, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv6-no-reserved, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv4-no-private, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv6-no-private, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv4-short-alias, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv6-short-alias, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-v1, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-v2, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-v3, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-v5, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-reversed-range, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-exclude-one, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-decimal-lower-bound, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-decimal-upper-bound, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-decimal-zero-range, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-fractional-multiple, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-negative-multiple, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-min-digits-leading-zero, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-max-digits-leading-zero, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-hex-short, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-hex-unprefixed, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-regex-alternation, backend: pgsql}
           - {scenario: ecosystem-intermix-macro-unlocked-private-binding, backend: pgsql}
           - {scenario: ecosystem-intermix-macro-unlocked-static-denial, backend: pgsql}
           - {scenario: ecosystem-intermix-macro-unlocked-replacement, backend: pgsql}
@@ -2050,131 +2166,19 @@ jobs:
           - {scenario: ecosystem-intermix-helper-retry-backoff, backend: pgsql}
           - {scenario: ecosystem-intermix-helper-retry-predicate, backend: pgsql}
           - {scenario: ecosystem-intermix-helper-retry-invalid-budget, backend: pgsql}
-          - {scenario: ecosystem-foundation-messaging-validated-publication, backend: pgsql}
-          - {scenario: ecosystem-foundation-messaging-validated-publication, backend: mysql}
-          - {scenario: ecosystem-foundation-messaging-validated-publication, backend: mariadb}
-          - {scenario: ecosystem-foundation-messaging-rollback-publication, backend: pgsql}
-          - {scenario: ecosystem-foundation-messaging-rollback-publication, backend: mysql}
-          - {scenario: ecosystem-foundation-messaging-rollback-publication, backend: mariadb}
-          - {scenario: ecosystem-foundation-messaging-cache-publication, backend: pgsql}
-          - {scenario: ecosystem-foundation-messaging-cache-publication, backend: mysql}
-          - {scenario: ecosystem-foundation-messaging-cache-publication, backend: mariadb}
-          - {scenario: ecosystem-cache-tls-live-read, backend: pgsql}
-          - {scenario: ecosystem-cache-tls-live-write, backend: pgsql}
-          - {scenario: ecosystem-cache-tls-live-atomic, backend: pgsql}
-          - {scenario: ecosystem-valkey-tls-live-read, backend: pgsql}
-          - {scenario: ecosystem-valkey-tls-live-write, backend: pgsql}
-          - {scenario: ecosystem-valkey-tls-live-atomic, backend: pgsql}
-          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: pgsql}
-          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mysql}
-          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mariadb}
-          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: sqlite}
-          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mssql}
-          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: pgsql}
-          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mysql}
-          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mariadb}
-          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: sqlite}
-          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mssql}
-          - {scenario: ecosystem-runwire-multiplex-ping-2, backend: pgsql}
-          - {scenario: ecosystem-runwire-multiplex-ping-4, backend: pgsql}
-          - {scenario: ecosystem-runwire-multiplex-ping-8, backend: pgsql}
-          - {scenario: ecosystem-runwire-multiplex-ping-16, backend: pgsql}
-          - {scenario: ecosystem-runwire-multiplex-deadline-2, backend: pgsql}
-          - {scenario: ecosystem-runwire-multiplex-deadline-4, backend: pgsql}
-          - {scenario: ecosystem-runwire-multiplex-deadline-8, backend: pgsql}
-          - {scenario: ecosystem-runwire-multiplex-deadline-16, backend: pgsql}
-          - {scenario: ecosystem-runwire-multiplex-goaway-2, backend: pgsql}
-          - {scenario: ecosystem-runwire-multiplex-goaway-4, backend: pgsql}
-          - {scenario: ecosystem-runwire-multiplex-goaway-8, backend: pgsql}
-          - {scenario: ecosystem-runwire-multiplex-goaway-16, backend: pgsql}
-          - {scenario: ecosystem-otp-redis-tls-factor-hotp-live, backend: pgsql}
-          - {scenario: ecosystem-otp-redis-tls-factor-mobile-live, backend: pgsql}
-          - {scenario: ecosystem-otp-redis-tls-factor-ocra-counter-live, backend: pgsql}
-          - {scenario: ecosystem-otp-redis-tls-factor-ocra-challenge-live, backend: pgsql}
-          - {scenario: ecosystem-otp-valkey-tls-factor-hotp-live, backend: pgsql}
-          - {scenario: ecosystem-otp-valkey-tls-factor-mobile-live, backend: pgsql}
-          - {scenario: ecosystem-otp-valkey-tls-factor-ocra-counter-live, backend: pgsql}
-          - {scenario: ecosystem-otp-valkey-tls-factor-ocra-challenge-live, backend: pgsql}
-          - {scenario: ecosystem-response-cache-cors-file-outer, backend: pgsql}
-          - {scenario: ecosystem-response-cache-cors-file-inner-keyed, backend: pgsql}
-          - {scenario: ecosystem-response-cache-cors-file-inner-unkeyed, backend: pgsql}
-          - {scenario: ecosystem-response-cache-cors-sqlite-outer, backend: pgsql}
-          - {scenario: ecosystem-response-cache-cors-sqlite-inner-keyed, backend: pgsql}
-          - {scenario: ecosystem-response-cache-cors-sqlite-inner-unkeyed, backend: pgsql}
-          - {scenario: ecosystem-response-cache-cors-pdo-outer, backend: pgsql}
-          - {scenario: ecosystem-response-cache-cors-pdo-inner-keyed, backend: pgsql}
-          - {scenario: ecosystem-response-cache-cors-pdo-inner-unkeyed, backend: pgsql}
-          - {scenario: ecosystem-http-proxy-retry-status-503, backend: pgsql}
-          - {scenario: ecosystem-http-proxy-retry-method-post-unsafe, backend: pgsql}
-          - {scenario: ecosystem-http-proxy-retry-method-post-keyed, backend: pgsql}
-          - {scenario: ecosystem-http-proxy-retry-method-patch-keyed, backend: pgsql}
-          - {scenario: ecosystem-http-proxy-retry-cancel-preflight, backend: pgsql}
-          - {scenario: ecosystem-http-proxy-retry-cancel-during-wait, backend: pgsql}
           - {scenario: ecosystem-intermix-remix-callback-null-result, backend: pgsql}
           - {scenario: ecosystem-intermix-remix-callback-false-result, backend: pgsql}
           - {scenario: ecosystem-intermix-remix-callback-predicate-once, backend: pgsql}
           - {scenario: ecosystem-intermix-remix-callback-tap-exception, backend: pgsql}
-    uses: ./.github/workflows/production-worker-ecosystem.yml
+    uses: ./.github/workflows/production-worker-utilities.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
 
-
-  application-business:
-    if: inputs.group == 'all' || inputs.group == 'application'
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - {scenario: cache-file, backend: pgsql}
-          - {scenario: cache-phpfiles, backend: pgsql}
-          - {scenario: cache-sqlite, backend: pgsql}
-          - {scenario: cache-mysql, backend: mysql}
-          - {scenario: cache-pgsql, backend: pgsql}
-          - {scenario: cache-valkey, backend: pgsql}
-          - {scenario: cache-memcached, backend: pgsql}
-          - {scenario: refresh, backend: mysql}
-          - {scenario: refresh, backend: pgsql}
-          - {scenario: oidc, backend: mysql}
-          - {scenario: oidc, backend: pgsql}
-          - {scenario: dpop, backend: mysql}
-          - {scenario: dpop, backend: pgsql}
-          - {scenario: pat, backend: mysql}
-          - {scenario: pat, backend: pgsql}
-          - {scenario: risk, backend: mysql}
-          - {scenario: risk, backend: pgsql}
-          - {scenario: import, backend: mysql}
-          - {scenario: import, backend: pgsql}
-          - {scenario: native-otp, backend: pgsql}
-          - {scenario: orders, backend: pgsql}
-          - {scenario: orders, backend: mysql}
-          - {scenario: accounts, backend: pgsql}
-          - {scenario: accounts, backend: mysql}
-          - {scenario: mail, backend: pgsql}
-          - {scenario: authorization, backend: pgsql}
-          - {scenario: authorization, backend: mysql}
-          - {scenario: security, backend: pgsql}
-          - {scenario: security, backend: mysql}
-          - {scenario: queue, backend: pgsql}
-          - {scenario: queue, backend: mysql}
-          - {scenario: passkey, backend: pgsql}
-          - {scenario: passkey, backend: mysql}
-          - {scenario: protocols, backend: pgsql}
-          - {scenario: storage, backend: pgsql}
-          - {scenario: oauth, backend: mysql}
-          - {scenario: oauth, backend: pgsql}
-    uses: ./.github/workflows/production-worker-business.yml
-    with:
-      scenario: ${{ matrix.scenario }}
-      backend: ${{ matrix.backend }}
-      host: ${{ matrix.host || 'worker' }}
-      matcher: ${{ matrix.matcher || 'fused' }}
-
-  application-http:
-    if: inputs.group == 'all' || inputs.group == 'application'
+  http:
+    if: inputs.group == 'all' || inputs.group == 'http' || inputs.group == 'application'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -2345,8 +2349,59 @@ jobs:
       host: ${{ matrix.host || 'worker' }}
       matcher: ${{ matrix.matcher || 'fused' }}
 
-  application-operations:
-    if: inputs.group == 'all' || inputs.group == 'application'
+  business:
+    if: inputs.group == 'all' || inputs.group == 'business' || inputs.group == 'application'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: cache-file, backend: pgsql}
+          - {scenario: cache-phpfiles, backend: pgsql}
+          - {scenario: cache-sqlite, backend: pgsql}
+          - {scenario: cache-mysql, backend: mysql}
+          - {scenario: cache-pgsql, backend: pgsql}
+          - {scenario: cache-valkey, backend: pgsql}
+          - {scenario: cache-memcached, backend: pgsql}
+          - {scenario: refresh, backend: mysql}
+          - {scenario: refresh, backend: pgsql}
+          - {scenario: oidc, backend: mysql}
+          - {scenario: oidc, backend: pgsql}
+          - {scenario: dpop, backend: mysql}
+          - {scenario: dpop, backend: pgsql}
+          - {scenario: pat, backend: mysql}
+          - {scenario: pat, backend: pgsql}
+          - {scenario: risk, backend: mysql}
+          - {scenario: risk, backend: pgsql}
+          - {scenario: import, backend: mysql}
+          - {scenario: import, backend: pgsql}
+          - {scenario: native-otp, backend: pgsql}
+          - {scenario: orders, backend: pgsql}
+          - {scenario: orders, backend: mysql}
+          - {scenario: accounts, backend: pgsql}
+          - {scenario: accounts, backend: mysql}
+          - {scenario: mail, backend: pgsql}
+          - {scenario: authorization, backend: pgsql}
+          - {scenario: authorization, backend: mysql}
+          - {scenario: security, backend: pgsql}
+          - {scenario: security, backend: mysql}
+          - {scenario: queue, backend: pgsql}
+          - {scenario: queue, backend: mysql}
+          - {scenario: passkey, backend: pgsql}
+          - {scenario: passkey, backend: mysql}
+          - {scenario: protocols, backend: pgsql}
+          - {scenario: storage, backend: pgsql}
+          - {scenario: oauth, backend: mysql}
+          - {scenario: oauth, backend: pgsql}
+    uses: ./.github/workflows/production-worker-business.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+
+  operations:
+    if: inputs.group == 'all' || inputs.group == 'operations' || inputs.group == 'application'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false

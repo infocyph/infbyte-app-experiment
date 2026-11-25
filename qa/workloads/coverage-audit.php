@@ -87,26 +87,44 @@ function auditMatrix(string $repository, string $workloads): array
             auditAssert(is_file($workloads . '/' . $script), 'Dispatcher script not found: ' . $script);
         }
     }
-    preg_match_all('/^\h{2}(database|database-expansion|ecosystem|ecosystem-extra|ecosystem-residual|ecosystem-expansion|ecosystem-closure|ecosystem-final|ecosystem-specialist|application-business|application-http|application-operations):\h*\n(.*?)(?=^ {2}\S|\z)/ms', $workflow, $shards, PREG_SET_ORDER);
+    $ownership = json_decode(auditRead($repository . '/qa/workload-worker-types.json'), true, flags: JSON_THROW_ON_ERROR);
+    preg_match_all('/^\h{2}([a-z][a-z0-9-]*):\h*\n(.*?)(?=^ {2}\S|\z)/ms', $workflow, $shards, PREG_SET_ORDER);
     $shardCounts = [];
     foreach ($shards as $shard) {
         preg_match_all('/^\h*-\h*\{scenario:\h*([^,}]+)/m', $shard[2], $entries);
-        auditAssert($entries[1] !== [] && count($entries[1]) <= 256, 'Invalid matrix shard size: ' . $shard[1]);
+        if ($entries[1] === []) {
+            continue;
+        }
+        auditAssert(count($entries[1]) <= 256, 'Invalid matrix shard size: ' . $shard[1]);
         foreach ($entries[1] as $name) {
             $name = trim($name);
-            $expected = match (true) {
-                str_starts_with($name, 'db-') => 'database',
-                str_starts_with($name, 'ecosystem-') => 'ecosystem',
-                $name === 'operations' => 'operations',
-                $name === 'http', $name === 'oauth-http', str_starts_with($name, 'browser'), str_starts_with($name, 'transfer') => 'http',
-                default => 'business',
-            };
+            if (str_starts_with($name, 'ecosystem-')) {
+                $capability = substr($name, 10);
+                $owners = [];
+                foreach ($ownership as $owner => $prefixes) {
+                    foreach ($prefixes as $prefix) {
+                        if ($capability === $prefix || str_starts_with($capability, $prefix . '-')) {
+                            $owners[] = $owner;
+                            break;
+                        }
+                    }
+                }
+                auditAssert(count($owners) === 1, 'Invalid capability ownership: ' . $name);
+                $expected = $owners[0];
+            } else {
+                $expected = match (true) {
+                    str_starts_with($name, 'db-') => 'database',
+                    $name === 'operations' => 'operations',
+                    $name === 'http', $name === 'oauth-http', str_starts_with($name, 'browser'), str_starts_with($name, 'transfer') => 'http',
+                    default => 'business',
+                };
+            }
             auditAssert(str_contains($shard[2], './.github/workflows/production-worker-' . $expected . '.yml'), 'Wrong worker for scenario: ' . $name);
-            auditAssert($expected === $shard[1] || ($expected === 'database' && $shard[1] === 'database-expansion') || $shard[1] === 'application-' . $expected || ($expected === 'ecosystem' && in_array($shard[1], ['ecosystem-extra', 'ecosystem-residual', 'ecosystem-expansion', 'ecosystem-closure', 'ecosystem-final', 'ecosystem-specialist'], true)), 'Scenario assigned to wrong shard: ' . $name);
+            auditAssert($shard[1] === $expected || preg_match('/^' . preg_quote($expected, '/') . '-[2-9][0-9]*$/D', $shard[1]) === 1, 'Scenario assigned to wrong shard: ' . $name);
         }
         $shardCounts[$shard[1]] = count($entries[1]);
     }
-    auditAssert(count($shardCounts) === 12 && array_sum($shardCounts) === count($rows), 'Incomplete matrix shard inventory.');
+    auditAssert(count($shardCounts) === 16 && array_sum($shardCounts) === count($rows), 'Incomplete matrix shard inventory.');
     ksort($scenarios);
     ksort($routes);
     foreach ($dimensions as &$counts) {

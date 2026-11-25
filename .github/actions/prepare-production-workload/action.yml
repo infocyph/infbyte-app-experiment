@@ -39,7 +39,16 @@ runs:
         if scenario.startswith("db-"):
             worker_type = "database"
         elif scenario.startswith("ecosystem-"):
-            worker_type = "ecosystem"
+            import json
+            rules = json.loads(Path("qa/workload-worker-types.json").read_text(encoding="utf-8"))
+            capability = scenario.removeprefix("ecosystem-")
+            owners = [
+                owner for owner, prefixes in rules.items()
+                if any(capability == prefix or capability.startswith(prefix + "-") for prefix in prefixes)
+            ]
+            if len(owners) != 1:
+                raise SystemExit(f"Expected one capability owner for {scenario!r}, got {owners!r}.")
+            worker_type = owners[0]
         elif scenario == "operations":
             worker_type = "operations"
         elif scenario == "http" or scenario.startswith(("browser", "transfer")) or scenario == "oauth-http":

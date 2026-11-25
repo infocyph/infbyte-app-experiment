@@ -1,0 +1,124 @@
+name: Production worker - authentication
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: Exact scenario name from the frozen workload matrix
+        required: true
+        type: string
+      backend:
+        description: Database backend
+        required: true
+        type: choice
+        default: pgsql
+        options: [pgsql, mysql, mariadb, sqlite, mssql]
+      host:
+        description: Runtime (match the matrix entry)
+        required: true
+        type: choice
+        default: worker
+        options: [worker, native, fpm, roadrunner, frankenphp, swoole, openswoole]
+      matcher:
+        description: Route matcher
+        required: true
+        type: choice
+        default: fused
+        options: [fused, sharded]
+  workflow_call:
+    inputs:
+      scenario:
+        required: true
+        type: string
+      backend:
+        required: true
+        type: string
+      host:
+        type: string
+        default: worker
+      matcher:
+        type: string
+        default: fused
+permissions:
+  contents: read
+jobs:
+  execute:
+    name: Execute workload
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    concurrency:
+      group: production-worker-authentication-${{ github.ref }}-${{ inputs.scenario }}-${{ inputs.backend }}-${{ inputs.host || 'worker' }}-${{ inputs.matcher || 'fused' }}
+      cancel-in-progress: true
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: experiment
+          POSTGRES_USER: experiment
+          POSTGRES_PASSWORD: experiment
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U experiment -d experiment" --health-interval 5s --health-timeout 5s --health-retries 15
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: experiment
+          MYSQL_USER: experiment
+          MYSQL_PASSWORD: experiment
+          MYSQL_ROOT_PASSWORD: experiment-root
+        ports: ['3306:3306']
+        options: --health-cmd "mysqladmin ping -h localhost --silent" --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:8
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 15
+      mariadb:
+        image: ${{ inputs.backend == 'mariadb' && 'mariadb:11.4' || '' }}
+        env:
+          MARIADB_DATABASE: experiment
+          MARIADB_USER: experiment
+          MARIADB_PASSWORD: experiment
+          MARIADB_ROOT_PASSWORD: experiment-root
+        ports: ['3307:3306']
+        options: --health-cmd "healthcheck.sh --connect --innodb_initialized" --health-interval 5s --health-timeout 5s --health-retries 20
+      mailpit:
+        image: axllent/mailpit:latest
+        ports: ['1025:1025', '8025:8025']
+      valkey:
+        image: ${{ (inputs.scenario == 'ecosystem-otp-valkey' || inputs.scenario == 'ecosystem-foundation-risk-qualification-valkey' || inputs.scenario == 'ecosystem-foundation-risk-corruption-valkey' || inputs.scenario == 'ecosystem-otp-challenge-replacement-valkey' || inputs.scenario == 'ecosystem-otp-rotation-orchestration-valkey' || inputs.scenario == 'ecosystem-otp-mobile-rotation-immediate-valkey' || inputs.scenario == 'ecosystem-otp-mobile-rotation-overlap-valkey' || inputs.scenario == 'ecosystem-otp-rotation-hotp-valkey' || inputs.scenario == 'ecosystem-otp-rotation-ocra-counter-valkey' || inputs.scenario == 'ecosystem-otp-rotation-ocra-challenge-valkey' || inputs.scenario == 'ecosystem-foundation-risk-isolation-valkey' || inputs.scenario == 'ecosystem-foundation-risk-concurrent-valkey') && 'valkey/valkey:8' || '' }}
+        ports: ['6380:6379']
+        options: --health-cmd "valkey-cli ping" --health-interval 5s --health-timeout 5s --health-retries 15
+      memcached:
+        image: ${{ (inputs.scenario == 'ecosystem-foundation-risk-qualification-memcached' || inputs.scenario == 'ecosystem-foundation-risk-corruption-memcached' || inputs.scenario == 'ecosystem-foundation-risk-outage-memcached' || inputs.scenario == 'ecosystem-foundation-risk-isolation-memcached' || inputs.scenario == 'ecosystem-foundation-risk-concurrent-memcached') && 'memcached:1.6' || '' }}
+        ports: ['11211:11211']
+    env:
+      SCENARIO: ${{ inputs.scenario }}
+      HOST_MODE: ${{ inputs.host || 'worker' }}
+      LAB_MATCHER: ${{ inputs.matcher || 'fused' }}
+      DB_BACKEND: ${{ inputs.backend }}
+      PHP_SERIES: '8.5'
+      SOAK: ${{ inputs.scenario == 'http' && inputs.host == 'native' && inputs.backend == 'pgsql' && '1' || '0' }}
+      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/prepare-production-workload
+        with:
+          worker_type: authentication
+          scenario: ${{ inputs.scenario }}
+          backend: ${{ inputs.backend }}
+          host: ${{ inputs.host || 'worker' }}
+          extensions: pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, sqlite3, redis, curl, mbstring, intl, sodium, zip, fileinfo, apcu, shmop, sysvsem${{ (inputs.scenario == 'ecosystem-foundation-risk-qualification-memcached' || inputs.scenario == 'ecosystem-foundation-risk-corruption-memcached' || inputs.scenario == 'ecosystem-foundation-risk-outage-memcached' || inputs.scenario == 'ecosystem-foundation-risk-isolation-memcached' || inputs.scenario == 'ecosystem-foundation-risk-concurrent-memcached') && ', memcached' || '' }}
+      - name: Exercise authentication capability contracts
+        env:
+          POSTGRES_SERVICE: ${{ job.services.postgres.id }}
+          REDIS_SERVICE: ${{ job.services.redis.id }}
+          MAIL_SERVICE: ${{ job.services.mailpit.id }}
+        shell: bash
+        run: bash qa/workloads/ecosystem.sh
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: workload-${{ inputs.scenario }}-${{ inputs.backend }}-${{ inputs.host || 'worker' }}-${{ inputs.matcher || 'fused' }}
+          path: ${{ runner.temp }}/workload-evidence/
+          if-no-files-found: error
+          retention-days: 30
