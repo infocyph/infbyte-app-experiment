@@ -188,7 +188,9 @@ final class LabSftpGatedStream
 
 function sftpPublicationFaultWorkload(string $phase): void
 {
-    putenv('LAB_STORAGE_BACKEND=sftp');
+    if (getenv('LAB_STORAGE_BACKEND') === false) {
+        putenv('LAB_STORAGE_BACKEND=sftp');
+    }
     $context = storageOutageContext(false);
     $disk = $context->filesystem();
     $foreign = $context->filesystem('foreign');
@@ -255,7 +257,9 @@ function sftpPublicationFaultWorkload(string $phase): void
 
 function sftpRenameFaultWorkload(string $phase, string $mode): void
 {
-    putenv('LAB_STORAGE_BACKEND=sftp');
+    if (getenv('LAB_STORAGE_BACKEND') === false) {
+        putenv('LAB_STORAGE_BACKEND=sftp');
+    }
     $context = storageOutageContext(false);
     $disk = $context->filesystem();
     $foreign = $context->filesystem('foreign');

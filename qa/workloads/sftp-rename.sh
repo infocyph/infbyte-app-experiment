@@ -14,10 +14,21 @@ for attempt in {1..60}; do
 done
 ssh-keyscan -T 2 -p 12222 127.0.0.1 >/dev/null 2>&1
 export LAB_SFTP_HOST_KEYS="$(docker exec lab-sftp-rename sh -c 'for f in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$f" -E sha256; done' | awk '{print $2}')"
-composer require league/flysystem-sftp-v3 --no-interaction --prefer-dist --no-progress
+export LAB_STORAGE_BACKEND=sftp
+adapter=league/flysystem-sftp-v3
+if [[ "$SCENARIO" == ecosystem-sftp2-rename-* ]]; then
+  LAB_STORAGE_BACKEND=sftp2
+  adapter=league/flysystem-sftp-v2
+fi
+composer require "$adapter" --no-interaction --prefer-dist --no-progress
 composer check-platform-reqs --no-dev
 docker exec -u experiment lab-sftp-rename sh -c 'printf off > /signal/phase'
-for mode in before after; do
+modes=(before after)
+case "$SCENARIO" in
+  *-before) modes=(before) ;;
+  *-after) modes=(after) ;;
+esac
+for mode in "${modes[@]}"; do
   timeout 60s php "$probe" sftp-rename-seed "$mode"
   docker exec -u experiment lab-sftp-rename sh -c 'printf "%s" "$1" > /signal/phase' sh "$mode"
   timeout 60s php "$probe" sftp-rename-fault "$mode" | tee "$EVIDENCE/sftp-rename-$mode.log"

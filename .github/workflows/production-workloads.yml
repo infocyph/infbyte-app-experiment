@@ -762,6 +762,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-ftp-rename-before, backend: pgsql}
+          - {scenario: ecosystem-ftp-rename-after, backend: pgsql}
+          - {scenario: ecosystem-ftp-interrupted-upload, backend: pgsql}
+          - {scenario: ecosystem-sftp2-rename-before, backend: pgsql}
+          - {scenario: ecosystem-sftp2-rename-after, backend: pgsql}
+          - {scenario: ecosystem-sftp2-interrupted-upload, backend: pgsql}
           - {scenario: ecosystem-cache-mongodb-outage-closed, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-cache-mongodb-outage-open, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-cache-scylla-outage-closed, backend: pgsql, php: '8.4'}

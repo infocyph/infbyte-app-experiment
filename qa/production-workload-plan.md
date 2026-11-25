@@ -733,3 +733,7 @@ I: eight independent jobs: interrupted body and withheld successful origin respo
 ## B170 — Native remote-cache outage contracts
 
 I: four independent jobs for MongoDB and ScyllaDB fail-open and fail-closed behavior with live clients, actual service stop and port absence, rejected reads/writes, durable restart and independent namespace/read reconciliation. MongoDB CAS must reject during outage and recover afterwards; Scylla explicitly has no native atomic capability. Existing service/extension provisioning reused. Bounded host/worker barriers retain failure logs. CORE-01, DATA, SEC, EXEC-03: source/matrix wiring inspected; hosted outcomes deferred. 960 routine rows.
+
+## B171 — Native FTP and SFTP-v2 publication faults
+
+I: six jobs: FTP and SFTP-v2 rename before/after settlement uncertainty and interrupted staged upload. Native FTP RNTO relay hooks only armed paths; OpenSSH subsystem fixture reused for SFTP-v2; physical origin path evidence, no silent retry after rename, explicit cleanup/retry after observed incomplete upload. Existing SFTP-v3 cases preserved. CORE-01, DATA, SEC, MEM, EXEC-03: source/matrix wiring inspected; hosted outcomes deferred. 966 routine rows.

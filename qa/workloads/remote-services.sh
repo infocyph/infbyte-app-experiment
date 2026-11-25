@@ -11,6 +11,8 @@ cleanup() {
 trap cleanup EXIT
 provision="$SCENARIO"
 case "$SCENARIO" in
+  ecosystem-ftp-rename-before|ecosystem-ftp-rename-after|ecosystem-ftp-interrupted-upload) provision=ecosystem-ftp ;;
+  ecosystem-sftp2-interrupted-upload) provision=ecosystem-sftp2 ;;
   ecosystem-webdav-http-publication-before|ecosystem-webdav-http-publication-after|ecosystem-async-s3-http-publication-before|ecosystem-async-s3-http-publication-after|ecosystem-azure-http-publication-before|ecosystem-azure-http-publication-after|ecosystem-gcs-http-publication-before|ecosystem-gcs-http-publication-after)
     provision="${SCENARIO%-http-publication-*}" ;;
   ecosystem-cache-redis-cluster-*) provision=ecosystem-redis-cluster ;;
@@ -84,6 +86,11 @@ case "$provision" in
     python="$RUNNER_TEMP/storage-peer-venv/bin/python"
     "$python" -m pip install 'pyftpdlib>=2,<3' 'wsgidav>=4,<5' 'cheroot>=10,<12'
     mkdir -p "$RUNNER_TEMP/storage-peer/tenant-a" "$RUNNER_TEMP/storage-peer/tenant-b"
+    if [[ "$SCENARIO" == ecosystem-ftp-rename-* ]]; then
+      export LAB_FTP_SIGNAL="$RUNNER_TEMP/ftp-rename-signal"
+      mkdir -m 700 "$LAB_FTP_SIGNAL"
+      printf off > "$LAB_FTP_SIGNAL/phase"
+    fi
     "$python" "$GITHUB_WORKSPACE/qa/workloads/storage-peer.py" "${provision#ecosystem-}" "$RUNNER_TEMP/storage-peer" > "$EVIDENCE/storage-peer.log" 2>&1 &
     storage_peer=$!
     trap 'kill "$storage_peer" 2>/dev/null || :; wait "$storage_peer" 2>/dev/null || :; cleanup' EXIT
@@ -156,14 +163,48 @@ elif [[ "$SCENARIO" == ecosystem-s3-publication-fault ]]; then
   done
   test -f "$EVIDENCE/s3-peer-ready"
   timeout 90s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" s3-publication-fault | tee "$EVIDENCE/ecosystem.log"
-elif [[ "$SCENARIO" == ecosystem-sftp-publication-fault ]]; then
+elif [[ "$SCENARIO" == ecosystem-ftp-rename-* ]]; then
+  probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
+  export LAB_STORAGE_BACKEND=ftp
+  mode="${SCENARIO##*-}"
+  for attempt in {1..60}; do
+    if timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/12121' 2>/dev/null; then break; fi
+    sleep 1
+  done
+  timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/12121'
+  timeout 60s php "$probe" sftp-rename-seed "$mode"
+  printf '%s' "$mode" > "$LAB_FTP_SIGNAL/phase"
+  timeout 60s php "$probe" sftp-rename-fault "$mode" | tee "$EVIDENCE/ftp-rename-fault.log"
+  cp "$LAB_FTP_SIGNAL/$mode" "$EVIDENCE/ftp-rename-boundary.txt"
+  prefix="$RUNNER_TEMP/storage-peer/tenant-a/receipts/$mode"
+  if [[ "$mode" == before ]]; then
+    grep -Fx 'rename request withheld' "$EVIDENCE/ftp-rename-boundary.txt"
+    test -f "$prefix-stage.bin" && test ! -e "$prefix-published.bin"
+  else
+    grep -Fx 'native rename success response withheld' "$EVIDENCE/ftp-rename-boundary.txt"
+    test ! -e "$prefix-stage.bin" && test -f "$prefix-published.bin"
+  fi
+  test ! -e "$LAB_FTP_SIGNAL/replayed-$mode"
+  printf off > "$LAB_FTP_SIGNAL/phase"
+  timeout 60s php "$probe" sftp-rename-recover "$mode" | tee "$EVIDENCE/ftp-rename-recovery.log"
+elif [[ "$SCENARIO" == ecosystem-sftp-publication-fault || "$SCENARIO" == ecosystem-sftp2-interrupted-upload || "$SCENARIO" == ecosystem-ftp-interrupted-upload ]]; then
+  export LAB_STORAGE_BACKEND=sftp
+  if [[ "$SCENARIO" == ecosystem-sftp2-interrupted-upload ]]; then LAB_STORAGE_BACKEND=sftp2; fi
+  if [[ "$SCENARIO" == ecosystem-ftp-interrupted-upload ]]; then
+    LAB_STORAGE_BACKEND=ftp
+    for attempt in {1..60}; do
+      if timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/12121' 2>/dev/null; then break; fi
+      sleep 1
+    done
+    timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/12121'
+  fi
   probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
   export LAB_SFTP_FAULT_ROOT="$(mktemp -d "$RUNNER_TEMP/sftp-fault.XXXXXXXX")"
   dd if=/dev/urandom of="$LAB_SFTP_FAULT_ROOT/payload.bin" bs=1M count=8 status=none
   timeout 60s php "$probe" sftp-publication-seed
   timeout 90s php "$probe" sftp-publication-interrupt > "$EVIDENCE/sftp-interrupt.log" 2>&1 &
   worker=$!
-  trap 'kill "$worker" 2>/dev/null || :; wait "$worker" 2>/dev/null || :; rm -rf "$LAB_SFTP_FAULT_ROOT"; cleanup' EXIT
+  trap 'kill "$worker" 2>/dev/null || :; wait "$worker" 2>/dev/null || :; if [[ -n "${storage_peer:-}" ]]; then kill "$storage_peer" 2>/dev/null || :; wait "$storage_peer" 2>/dev/null || :; fi; rm -rf "$LAB_SFTP_FAULT_ROOT"; cleanup' EXIT
   for attempt in {1..300}; do
     [[ -f "$LAB_SFTP_FAULT_ROOT/source-paused" ]] && break
     kill -0 "$worker"
@@ -172,7 +213,11 @@ elif [[ "$SCENARIO" == ecosystem-sftp-publication-fault ]]; then
   test -f "$LAB_SFTP_FAULT_ROOT/source-paused"
   observed=0
   for attempt in {1..100}; do
-    size="$(docker exec lab-sftp stat -c %s /home/experiment/upload/tenant-a/receipts/staging.bin 2>/dev/null || true)"
+    if [[ "$LAB_STORAGE_BACKEND" == ftp ]]; then
+      size="$(stat -c %s "$RUNNER_TEMP/storage-peer/tenant-a/receipts/staging.bin" 2>/dev/null || true)"
+    else
+      size="$(docker exec lab-sftp stat -c %s /home/experiment/upload/tenant-a/receipts/staging.bin 2>/dev/null || true)"
+    fi
     if [[ "$size" =~ ^[0-9]+$ ]] && (( size > 0 && size < 8388608 )); then
       printf 'Origin staging bytes before disconnect: %s/8388608\n' "$size" > "$EVIDENCE/sftp-partial.txt"
       observed=1
@@ -182,14 +227,27 @@ elif [[ "$SCENARIO" == ecosystem-sftp-publication-fault ]]; then
     sleep 0.1
   done
   test "$observed" = 1
-  docker kill lab-sftp >/dev/null
+  if [[ "$LAB_STORAGE_BACKEND" == ftp ]]; then
+    kill -KILL "$storage_peer"
+    wait "$storage_peer" || :
+  else
+    docker kill lab-sftp >/dev/null
+  fi
   touch "$LAB_SFTP_FAULT_ROOT/source-release"
   wait "$worker"
   cat "$EVIDENCE/sftp-interrupt.log"
-  docker start lab-sftp >/dev/null
+  if [[ "$LAB_STORAGE_BACKEND" == ftp ]]; then
+    "$python" "$GITHUB_WORKSPACE/qa/workloads/storage-peer.py" ftp "$RUNNER_TEMP/storage-peer" >> "$EVIDENCE/storage-peer.log" 2>&1 &
+    storage_peer=$!
+  else
+    docker start lab-sftp >/dev/null
+  fi
   ready=0
   for attempt in {1..60}; do
-    if ssh-keyscan -T 2 -p 12222 127.0.0.1 >/dev/null 2>&1; then ready=1; break; fi
+    if [[ "$LAB_STORAGE_BACKEND" == ftp ]]; then
+      if timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/12121' 2>/dev/null; then ready=1; break; fi
+    elif ssh-keyscan -T 2 -p 12222 127.0.0.1 >/dev/null 2>&1; then ready=1; break
+    fi
     sleep 1
   done
   test "$ready" = 1
