@@ -98,3 +98,83 @@ function cacheRememberWorkload(string $backend): void
     verify($foreign->get('projection') === 'foreign', 'Resolver invalidation crossed namespace.');
     echo "Shared $backend remember overlap, failure recovery and strict hits passed\n";
 }
+
+function cacheTtlWorkload(string $backend): void
+{
+    [$cache, $peer, $foreign] = cacheContractPeers($backend, 'ttl-forms');
+    $atomic = $cache->atomic();
+    verify($atomic !== null, 'Atomic capability unavailable.');
+    $expiry = new DateTimeImmutable('+10 minutes');
+    verify($cache->set('absolute', 'a', $expiry) && $cache->set('interval', 'b', new DateInterval('PT10M')), 'TTL forms failed.');
+    verify($atomic->setIfAbsent('atomic-interval', 1, new DateInterval('PT10M')), 'Atomic interval insertion failed.');
+    verify($atomic->compareAndSet('atomic-interval', 1, 2, $expiry), 'Atomic absolute replacement failed.');
+    verify($peer->get('absolute') === 'a' && $peer->get('interval') === 'b' && $peer->get('atomic-interval') === 2, 'TTL publication differs.');
+    verify($foreign->set('absolute', 'foreign', 600), 'Foreign fixture failed.');
+    $past = new DateTimeImmutable('-1 minute');
+    verify(!$atomic->compareAndSet('atomic-interval', 2, 3, $past) && $peer->get('atomic-interval') === 2, 'Expired CAS modified value.');
+    verify(!$atomic->setIfAbsent('past', 1, $past) && !$peer->has('past'), 'Expired insertion published.');
+    verify($cache->set('absolute', 'ignored', $past) && !$peer->has('absolute') && $foreign->get('absolute') === 'foreign', 'Past expiry did not delete only the target.');
+    expectFailure(static fn() => $cache->set('interval', 'bad', PHP_INT_MAX), InvalidCacheKey::class, 'Overflow TTL accepted.');
+    expectFailure(static fn() => $cache->set('interval', 'bad', '600'), InvalidCacheKey::class, 'String TTL accepted.');
+    verify($peer->get('interval') === 'b', 'Rejected TTL changed live value.');
+    verify($cache->set('short', 5, new DateInterval('PT2S')), 'Short interval failed.');
+    $deadline = hrtime(true) + 10_000_000_000;
+    while ($peer->has('short')) {
+        verify(hrtime(true) < $deadline, 'Interval expiry was not visible to peer.');
+        usleep(50_000);
+    }
+    verify($atomic->setIfAbsent('short', 6, $expiry) && $peer->get('short') === 6, 'Expired key could not be replaced.');
+    echo "Shared $backend absolute/interval TTL and rejected mutation contracts passed\n";
+}
+
+function cacheMixedAtomicWorkload(string $backend): void
+{
+    $root = evidenceDirectory() . '/cache-mixed-atomic';
+    verify(mkdir($root, 0700), 'Atomic fixture directory unavailable.');
+    $namespace = 'mixed-atomic';
+    $cache = sharedAtomicCache($backend, $namespace, $root);
+    $foreign = sharedAtomicCache($backend, 'foreign-mixed-atomic', $root);
+    verify($cache->set('order', 1, 600) && $foreign->set('order', 99, 600), 'Mixed race seed failed.');
+    $results = parallelRace(static function (int $worker) use ($backend, $namespace, $root): int {
+        $atomic = sharedAtomicCache($backend, $namespace, $root)->atomic();
+        verify($atomic !== null, 'Atomic capability unavailable.');
+        if ($worker % 2 === 0) {
+            return $atomic->compareAndSet('order', 1, 2, 600) ? 10 : 0;
+        }
+        $value = $atomic->getAndDelete('order', 0);
+        verify(in_array($value, [0, 1, 2], true), 'Unexpected consumed value.');
+        return $value;
+    }, 'mixed-atomic', 12);
+    $wins = array_count_values($results);
+    verify(($wins[1] ?? 0) + ($wins[2] ?? 0) === 1, 'Mixed race did not consume exactly once.');
+    verify(($wins[10] ?? 0) === ($wins[2] ?? 0), 'CAS and consumption cannot be linearized.');
+    verify(!$cache->has('order') && $foreign->get('order') === 99, 'Mixed race left data or crossed namespace.');
+    $atomic = $cache->atomic();
+    verify($atomic !== null && $atomic->setIfAbsent('order', 3, 600) && $atomic->getAndDelete('order') === 3, 'Mixed race prevented subsequent ownership.');
+    echo "Shared $backend mixed CAS/consume linearization and recovery passed\n";
+}
+
+function cachePayloadPolicyWorkload(string $backend): void
+{
+    $root = evidenceDirectory() . '/cache-payload-policy';
+    verify(mkdir($root, 0700), 'Payload fixture directory unavailable.');
+    $options = new \Infocyph\CacheLayer\Cache\CacheOptions(integrityKey: 'lab-payload-signing-key', maxPayloadBytes: 4096, compressionThreshold: 256, failOpen: false);
+    $cache = sharedAtomicCache($backend, 'payload-policy', $root, $options);
+    $peer = sharedAtomicCache($backend, 'payload-policy', $root, $options);
+    $atomic = $cache->atomic();
+    verify($cache->hasPayloadIntegrity() && $atomic !== null, 'Required integrity/atomic capability unavailable.');
+    $value = ['binary' => "x\0\xff", 'repeat' => str_repeat('z', 1200)];
+    verify($atomic->setIfAbsent('signed', $value, 600) && $peer->get('signed') === $value, 'Signed compressed record failed to roundtrip.');
+    verify($atomic->compareAndSet('signed', $value, ['version' => 2], 600), 'Signed atomic replacement failed.');
+    verify($peer->get('signed') === ['version' => 2], 'Signed replacement unavailable.');
+    $failure = \Infocyph\CacheLayer\Exceptions\CacheBackendException::class;
+    expectFailure(static fn() => $cache->set('signed', str_repeat('x', 8192), 600), $failure, 'Oversized expanded record accepted.');
+    expectFailure(static fn() => $atomic->compareAndSet('signed', ['version' => 2], new stdClass(), 600), $failure, 'Atomic object policy bypassed.');
+    expectFailure(static fn() => $atomic->setIfAbsent('closure', static fn(): int => 1, 600), $failure, 'Atomic closure policy bypassed.');
+    verify($peer->get('signed') === ['version' => 2] && !$peer->has('closure'), 'Rejected payload modified persisted state.');
+    verify($cache->set('wrong-key', $value, 600), 'Wrong-key fixture failed.');
+    $wrong = sharedAtomicCache($backend, 'payload-policy', $root, new \Infocyph\CacheLayer\Cache\CacheOptions(integrityKey: 'different-lab-signing-key', failOpen: false));
+    verify(!$wrong->has('wrong-key'), 'Record authenticated with unrelated key.');
+    verify($atomic->getAndDelete('signed') === ['version' => 2] && !$peer->has('signed'), 'Signed atomic consumption failed.');
+    echo "Shared $backend signed/compressed payload and atomic policy contracts passed\n";
+}

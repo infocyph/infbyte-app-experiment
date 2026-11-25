@@ -330,6 +330,33 @@ jobs:
           - {scenario: ecosystem-cache-remember-pdo, backend: pgsql}
           - {scenario: ecosystem-cache-remember-pdo, backend: mysql}
           - {scenario: ecosystem-cache-remember-pdo, backend: mariadb}
+          - {scenario: ecosystem-cache-ttl-forms-redis, backend: pgsql}
+          - {scenario: ecosystem-cache-ttl-forms-valkey, backend: pgsql}
+          - {scenario: ecosystem-cache-ttl-forms-memcached, backend: pgsql}
+          - {scenario: ecosystem-cache-ttl-forms-file, backend: pgsql}
+          - {scenario: ecosystem-cache-ttl-forms-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-cache-ttl-forms-sqlite, backend: pgsql}
+          - {scenario: ecosystem-cache-ttl-forms-pdo, backend: pgsql}
+          - {scenario: ecosystem-cache-ttl-forms-pdo, backend: mysql}
+          - {scenario: ecosystem-cache-ttl-forms-pdo, backend: mariadb}
+          - {scenario: ecosystem-cache-mixed-atomic-redis, backend: pgsql}
+          - {scenario: ecosystem-cache-mixed-atomic-valkey, backend: pgsql}
+          - {scenario: ecosystem-cache-mixed-atomic-memcached, backend: pgsql}
+          - {scenario: ecosystem-cache-mixed-atomic-file, backend: pgsql}
+          - {scenario: ecosystem-cache-mixed-atomic-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-cache-mixed-atomic-sqlite, backend: pgsql}
+          - {scenario: ecosystem-cache-mixed-atomic-pdo, backend: pgsql}
+          - {scenario: ecosystem-cache-mixed-atomic-pdo, backend: mysql}
+          - {scenario: ecosystem-cache-mixed-atomic-pdo, backend: mariadb}
+          - {scenario: ecosystem-cache-payload-policy-redis, backend: pgsql}
+          - {scenario: ecosystem-cache-payload-policy-valkey, backend: pgsql}
+          - {scenario: ecosystem-cache-payload-policy-memcached, backend: pgsql}
+          - {scenario: ecosystem-cache-payload-policy-file, backend: pgsql}
+          - {scenario: ecosystem-cache-payload-policy-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-cache-payload-policy-sqlite, backend: pgsql}
+          - {scenario: ecosystem-cache-payload-policy-pdo, backend: pgsql}
+          - {scenario: ecosystem-cache-payload-policy-pdo, backend: mysql}
+          - {scenario: ecosystem-cache-payload-policy-pdo, backend: mariadb}
           - {scenario: ecosystem-cache-lock-ownership-redis, backend: pgsql}
           - {scenario: ecosystem-cache-lock-ownership-valkey, backend: pgsql}
           - {scenario: ecosystem-cache-lock-ownership-memcached, backend: pgsql}

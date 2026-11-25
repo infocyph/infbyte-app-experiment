@@ -5,9 +5,9 @@ declare(strict_types=1);
 use Infocyph\CacheLayer\Cache\Cache;
 use Infocyph\CacheLayer\Cache\CacheOptions;
 
-function sharedAtomicCache(string $backend, string $namespace, string $root): Cache
+function sharedAtomicCache(string $backend, string $namespace, string $root, ?CacheOptions $options = null): Cache
 {
-    $options = new CacheOptions(failOpen: false);
+    $options ??= new CacheOptions(failOpen: false);
     $db = (string) getenv('DB_BACKEND');
     $dsn = match ($db) {
         'pgsql' => 'pgsql:host=127.0.0.1;port=5432;dbname=experiment',
