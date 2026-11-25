@@ -14,6 +14,22 @@ require __DIR__ . '/bootstrap.php';
 $app = application();
 $orders = new ConnectedOrders($app);
 match ($argv[1] ?? '') {
+    'pending' => $app->execution()->run(static function () use ($app, $argv): void {
+        $db = $app->make(\Infocyph\Foundation\Database\DBLayerFactory::class)->connection();
+        $expected = (int) $argv[2];
+        ensure(countValue($db->scalar('SELECT COUNT(*) FROM lab_connected_orders WHERE notified = 0')) === $expected, 'Pending business state changed.');
+        ensure(countValue($db->scalar('SELECT COUNT(*) FROM lab_connected_outbox WHERE sent = 1')) === $expected, 'Durable outbox state changed.');
+        ensure($app->make(\Infocyph\Omnibus\Integration\DBLayer\DBLayerTransport::class)->size('receipts') === $expected, 'Pending queue count changed.');
+    }),
+    'reserve-recovery' => (static function () use ($app): never {
+        $transport = $app->make(\Infocyph\Omnibus\Integration\DBLayer\DBLayerTransport::class);
+        foreach ($transport->receive('receipts', 1, 3.0) as $reservation) {
+            ensure($reservation->envelope()->message instanceof Receipt, 'Unexpected reserved message.');
+            ensure(file_put_contents(getenv('RUNNER_TEMP') . '/connected-reserved', 'reserved', LOCK_EX) !== false, 'Reservation handshake failed.');
+            sleep(60);
+        }
+        throw new \RuntimeException('Expected supervisor termination.');
+    })(),
     'setup' => $app->execution()->run($orders->setup(...)),
     'rollback' => $app->execution()->run(static function () use ($orders): void {
         try {

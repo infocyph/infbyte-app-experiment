@@ -45,6 +45,22 @@ for i in 1 2 3 4; do php "$worker" relay > "$EVIDENCE/relay-$i.log" 2>&1 & pids[
 failed=0
 for i in 0 1 2 3; do if ! wait "${pids[$i]}"; then failed=1; fi; done
 (( failed == 0 ))
+if [[ "$SCENARIO" == ecosystem-recovery ]]; then
+  php "$worker" pending 160
+  # Reserve a real message without completing it. Kill the process before external side effects.
+  php "$worker" reserve-recovery > "$EVIDENCE/reservation.log" 2>&1 &
+  reserved=$!
+  for attempt in $(seq 1 100); do
+    if [[ -f "$RUNNER_TEMP/connected-reserved" ]]; then break; fi
+    kill -0 "$reserved"
+    sleep 0.1
+  done
+  test -f "$RUNNER_TEMP/connected-reserved"
+  kill -KILL "$reserved"
+  wait "$reserved" 2>/dev/null || :
+  bash "$GITHUB_WORKSPACE/qa/workloads/connected-recovery.sh" outage
+  php "$worker" pending 160
+fi
 for i in 1 2 3 4; do php "$worker" drain > "$EVIDENCE/consumer-$i.log" 2>&1 & pids[$((i-1))]=$!; done
 failed=0
 for i in 0 1 2 3; do if ! wait "${pids[$i]}"; then failed=1; fi; done
@@ -52,4 +68,5 @@ for i in 0 1 2 3; do if ! wait "${pids[$i]}"; then failed=1; fi; done
 php "$worker" duplicate "$(head -n 1 "$EVIDENCE/connected-orders-1.txt")"
 php "$worker" drain
 php "$worker" verify 160
+if [[ "$SCENARIO" == ecosystem-recovery ]]; then bash "$GITHUB_WORKSPACE/qa/workloads/connected-recovery.sh" restore; fi
 echo '160 unique HTTP orders, 160 replay requests, transactional outbox rollback/relay, four durable consumers, encrypted files, duplicate delivery and exact SMTP reconciliation.' >> "$GITHUB_STEP_SUMMARY"

@@ -259,3 +259,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B52 — live deployment cutover and rollback
 - [x] Four backend/matcher combinations with live generation coexistence, additive schema and trusted activation rollback.
 - [ ] Hosted verification; destructive migration and external deployment orchestration remain separate.
+
+## B53 — connected dependency outage and recovery
+- [x] Two matcher lanes with real reservation loss, simultaneous backend outage, restart and SQL snapshot reconciliation.
+- [ ] Hosted verification and expanded recovery topologies.

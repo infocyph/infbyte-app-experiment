@@ -219,3 +219,7 @@ I: four independent production HTTP combinations (MySQL/PostgreSQL × fused/shar
 ## B52 — live release coexistence and rollback
 
 I: four MySQL/PostgreSQL × fused/sharded native combinations; old compiled generation serves continuous requests across additive DDL and new compilation, two live generations coexist, wrong trusted digest rejected, active pointer rolls back, fresh old workers and already-running new workers retain correct contracts. Separate ports intentionally model blue/green deployment; no external load-balancer SLA claimed. Hosted verification pending.
+
+## B53 — combined dependency interruption and durable recovery
+
+I: two PostgreSQL × fused/sharded connected checkout lanes. After 160 durable orders and outbox relay, a consumer reserves a real message and is killed before side effects. SQL, Redis and SMTP service containers stop together; socket unavailability and readiness after restart are asserted. Expired reservation recovery, exact queue/business effects, encrypted documents, SMTP uniqueness and post-recovery independent SQL snapshot/table digests are checked. Deliberately faults before uncertain SMTP acknowledgement; no exactly-once external email or RPO/RTO claim. Hosted verification pending.

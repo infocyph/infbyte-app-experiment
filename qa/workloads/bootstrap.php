@@ -89,7 +89,7 @@ function configuration(): array
             ]],
         ]],
     ];
-    if (in_array(getenv('SCENARIO'), ['http', 'browser', 'ecosystem-connected', 'ecosystem-endurance', 'ecosystem-tenants', 'ecosystem-release-cutover'], true)) {
+    if (in_array(getenv('SCENARIO'), ['http', 'browser', 'ecosystem-connected', 'ecosystem-recovery', 'ecosystem-endurance', 'ecosystem-tenants', 'ecosystem-release-cutover'], true)) {
         $matcher = getenv('LAB_MATCHER') ?: 'fused';
         ensure(in_array($matcher, ['fused', 'sharded'], true), 'Unsupported laboratory matcher.');
         $config['router'] = ['matcher' => $matcher];
@@ -124,7 +124,7 @@ function configuration(): array
         ];
     }
 
-    if (getenv('SCENARIO') === 'ecosystem-connected') {
+    if (in_array(getenv('SCENARIO'), ['ecosystem-connected', 'ecosystem-recovery'], true)) {
         $config['app']['env'] = 'production';
         $config['app']['debug'] = false;
         $config['app']['capabilities'] = ['cache', 'database', 'filesystem', 'validation', 'security', 'notifications', 'communication', 'messaging', 'runwire'];
