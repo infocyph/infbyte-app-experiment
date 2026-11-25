@@ -223,3 +223,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B43 — native runtime lifecycle and HTTP framing
 - [x] Actual supervisor lifecycle/control and wire-level parser/resource boundary tests.
 - [ ] Hosted verification, remaining cancellation/backpressure and resource policies.
+
+## B44 — durable OTP and factor lifecycle
+- [x] Five durable, backend matrix, drift and rotation lanes.
+- [ ] Hosted qualification and remaining auth lifecycle/provider combinations.

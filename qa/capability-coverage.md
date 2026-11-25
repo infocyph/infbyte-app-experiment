@@ -127,3 +127,5 @@ B41 adds native HTTP/3 and mTLS scenarios; ext-quic availability and hosted resu
 B42 adds real migration recovery, lost transactions and ProxySQL concurrency. Hosted evidence pending.
 
 B43 adds native runtime control/recycling/reload and HTTP wire framing/limits/recovery.
+
+B44 adds native shared OTP backend coverage and independent durable Foundation recovery race, drift and rotation. Known upstream defects remain reproducible.

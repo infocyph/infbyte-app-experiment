@@ -47,7 +47,7 @@ function configuration(): array
         ],
         'auth' => [
             'drivers' => ['storage' => 'database', 'cache' => 'cache', 'passwords' => 'security', 'tokens' => 'simple', 'notifications' => 'collect',
-                'mfa' => getenv('SCENARIO') === 'security' ? 'otp' : 'simple',
+                'mfa' => in_array(getenv('SCENARIO'), ['security', 'ecosystem-otp-durable'], true) ? 'otp' : 'simple',
                 'passkey' => in_array(getenv('SCENARIO'), ['security', 'passkey'], true) ? 'webauthn' : 'memory'],
             'token_secret_environment' => 'AUTH_TOKEN_SECRET',
             'otp' => ['replay' => ['store' => 'shared'], 'totp' => ['algorithm' => 'sha256', 'digits' => 6, 'period' => 30, 'secret_bytes' => 32, 'window' => 1],

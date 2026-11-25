@@ -15,6 +15,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-otp-durable, backend: mysql}
+          - {scenario: ecosystem-otp-durable, backend: pgsql}
+          - {scenario: ecosystem-otp-backends, backend: mysql}
+          - {scenario: ecosystem-otp-backends, backend: pgsql}
+          - {scenario: ecosystem-otp-drift, backend: pgsql}
           - {scenario: ecosystem-supervisor, backend: pgsql}
           - {scenario: ecosystem-http-framing, backend: pgsql}
           - {scenario: db-migration-fault, backend: mysql}

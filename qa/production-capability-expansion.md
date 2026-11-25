@@ -183,3 +183,7 @@ I: six independent lanes: real migration failure and driver-specific transaction
 ## B43 — runtime control, worker lifecycle and HTTP framing
 
 I: two actual native-server lanes. Supervisor uses protected Unix control, oversized/stale requests, automatic request-limit recycling, explicit slot recycle, generation reload, graceful stop and socket cleanup while serving 120 requests; HTTP framing uses actual chunked/large-body digest reconciliation, conflicting lengths/transfer encodings, oversized headers/body/request line and slow-header timeout plus 40 concurrent recovery operations. These are isolated wire tests, not exhaustive resource saturation. Hosted evidence pending.
+
+## B44 — durable OTP and factor lifecycle
+
+I: five independent lanes: actual Foundation recovery-code store on MySQL/PostgreSQL with 12 separate consumers of one proof, regenerated/foreign account rejection and replacement-process exhaustion; GenericOtp shared replay, key and expiry across Redis/file/SQLite/SQL backends; TOTP SHA1/256/512 × 6/8 digits, bounded drift, non-regressing replay state and rotation enrollment/grace boundary. Durable recovery intentionally retains published schema behavior and may reproduce the known recovery ID-width defect. Proofs live only in runner-private temporary storage, never artifacts. Hosted qualification pending.
