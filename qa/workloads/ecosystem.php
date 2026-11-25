@@ -95,6 +95,7 @@ require __DIR__ . '/ecosystem-cache-tls.php';
 require __DIR__ . '/ecosystem-cache-cluster-tls.php';
 require __DIR__ . '/ecosystem-cache-scylla-tls.php';
 require __DIR__ . '/ecosystem-route-boundaries.php';
+require __DIR__ . '/ecosystem-route-signatures.php';
 require __DIR__ . '/ecosystem-counter-otp-contracts.php';
 
 require __DIR__ . '/ecosystem-module-dependencies.php';
@@ -444,6 +445,17 @@ match ($argv[1] ?? '') {
     'foundation-storage-link-rejection' => foundationStorageProviderContracts('link-rejection'),
     'foundation-storage-public-reject' => foundationStorageProviderContracts('public-reject'),
     'foundation-storage-public-allow' => foundationStorageProviderContracts('public-allow'),
+    'signed-compiled-permanent' => signedCompiledContracts('permanent'),
+    'signed-compiled-temporary' => signedCompiledContracts('temporary'),
+    'signed-compiled-leeway' => signedCompiledContracts('leeway'),
+    'signed-compiled-canonical' => signedCompiledContracts('canonical'),
+    'signed-compiled-tamper' => signedCompiledContracts('tamper'),
+    'signed-compiled-invalid-expiry' => signedCompiledContracts('invalid-expiry'),
+    'signed-compiled-relative' => signedCompiledContracts('relative'),
+    'signed-compiled-rotation' => signedCompiledContracts('rotation'),
+    'signed-compiled-retired-key' => signedCompiledContracts('retired-key'),
+    'signed-compiled-composition' => signedCompiledContracts('composition'),
+    'signed-compiled-registry' => signedCompiledContracts('registry'),
     'foundation-resource-contracts' => foundationResourceContracts(),
     'cache-redis-cluster-bulk' => cacheBulkWorkload('redis-cluster'),
     'cache-redis-cluster-tags' => cacheTagsWorkload('redis-cluster'),

@@ -1138,6 +1138,28 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-signed-compiled-permanent, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-permanent, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-temporary, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-temporary, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-leeway, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-leeway, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-canonical, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-canonical, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-tamper, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-tamper, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-invalid-expiry, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-invalid-expiry, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-relative, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-relative, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-rotation, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-rotation, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-retired-key, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-retired-key, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-composition, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-composition, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-signed-compiled-registry, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-signed-compiled-registry, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-foundation-cache-named-redis, backend: pgsql}
           - {scenario: ecosystem-foundation-cache-named-valkey, backend: pgsql}
           - {scenario: ecosystem-foundation-cache-named-memcached, backend: pgsql}
