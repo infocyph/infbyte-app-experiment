@@ -1,5 +1,35 @@
 name: Production workload worker
 on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: Exact scenario name from the frozen workload matrix
+        required: true
+        type: string
+      backend:
+        description: Database backend
+        required: true
+        type: choice
+        default: pgsql
+        options: [pgsql, mysql, mariadb, sqlite, mssql]
+      host:
+        description: Runtime (match the matrix entry)
+        required: true
+        type: choice
+        default: worker
+        options: [worker, native, fpm, roadrunner, frankenphp, swoole, openswoole]
+      matcher:
+        description: Route matcher
+        required: true
+        type: choice
+        default: fused
+        options: [fused, sharded]
+      php:
+        description: PHP version (match the matrix entry)
+        required: true
+        type: choice
+        default: '8.6'
+        options: ['8.4', '8.5', '8.6']
   workflow_call:
     inputs:
       scenario:
@@ -85,6 +115,36 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Validate requested frozen workload entry
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          requested = (
+              os.environ["SCENARIO"], os.environ["DB_BACKEND"],
+              os.environ["HOST_MODE"], os.environ["LAB_MATCHER"],
+              os.environ["PHP_SERIES"],
+          )
+          matrix = Path(".github/workflows/production-workloads.yml").read_text(encoding="utf-8")
+          for line in matrix.splitlines():
+              match = re.fullmatch(r"\s*- \{(scenario: [^}]+)\}\s*", line)
+              if not match:
+                  continue
+              row = dict(part.strip().split(": ", 1) for part in match.group(1).split(","))
+              candidate = (
+                  row["scenario"], row["backend"], row.get("host", "worker"),
+                  row.get("matcher", "fused"), row.get("php", "8.6").strip("'"),
+              )
+              if candidate == requested:
+                  print("Selected frozen workload:", requested)
+                  break
+          else:
+              raise SystemExit(f"No frozen workload matches {requested!r}; check the matrix for valid combinations.")
+          PY
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ inputs.php || '8.6' }}

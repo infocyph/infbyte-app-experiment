@@ -1,16 +1,21 @@
 name: Production workload laboratory
 on:
-  push:
-    branches: [main]
-    paths: ['qa/**', '.github/workflows/production-workloads.yml', '.github/workflows/production-worker.yml']
   workflow_dispatch:
+    inputs:
+      group:
+        description: Full matrix or one workload group
+        type: choice
+        required: true
+        default: all
+        options: [all, database, database-expansion, ecosystem, ecosystem-extra, ecosystem-residual, ecosystem-expansion, ecosystem-closure, ecosystem-final, ecosystem-specialist, application, grpc]
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}${{ inputs.group != 'all' && format('-{0}', inputs.group) || '' }}
   cancel-in-progress: true
 jobs:
   database:
+    if: inputs.group == 'all' || inputs.group == 'database'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
       fail-fast: false
@@ -274,6 +279,7 @@ jobs:
       php: ${{ matrix.php || '8.6' }}
 
   database-expansion:
+    if: inputs.group == 'all' || inputs.group == 'database-expansion'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
       fail-fast: false
@@ -373,6 +379,7 @@ jobs:
       php: ${{ matrix.php || '8.6' }}
 
   ecosystem:
+    if: inputs.group == 'all' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
       fail-fast: false
@@ -643,6 +650,7 @@ jobs:
       php: ${{ matrix.php || '8.6' }}
 
   ecosystem-extra:
+    if: inputs.group == 'all' || inputs.group == 'ecosystem-extra'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
       fail-fast: false
@@ -913,6 +921,7 @@ jobs:
       php: ${{ matrix.php || '8.6' }}
 
   ecosystem-residual:
+    if: inputs.group == 'all' || inputs.group == 'ecosystem-residual'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
       fail-fast: false
@@ -1183,6 +1192,7 @@ jobs:
       php: ${{ matrix.php || '8.6' }}
 
   ecosystem-expansion:
+    if: inputs.group == 'all' || inputs.group == 'ecosystem-expansion'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
       fail-fast: false
@@ -1439,6 +1449,7 @@ jobs:
       php: ${{ matrix.php || '8.6' }}
 
   ecosystem-closure:
+    if: inputs.group == 'all' || inputs.group == 'ecosystem-closure'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
       fail-fast: false
@@ -1708,6 +1719,7 @@ jobs:
       php: ${{ matrix.php || '8.6' }}
 
   ecosystem-final:
+    if: inputs.group == 'all' || inputs.group == 'ecosystem-final'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
       fail-fast: false
@@ -1976,6 +1988,7 @@ jobs:
       php: ${{ matrix.php || '8.6' }}
 
   ecosystem-specialist:
+    if: inputs.group == 'all' || inputs.group == 'ecosystem-specialist'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
       fail-fast: false
@@ -2118,6 +2131,7 @@ jobs:
       php: ${{ matrix.php || '8.6' }}
 
   application:
+    if: inputs.group == 'all' || inputs.group == 'application'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
       fail-fast: false
@@ -2328,6 +2342,7 @@ jobs:
       php: ${{ matrix.php || '8.6' }}
 
   grpc:
+    if: inputs.group == 'all' || inputs.group == 'grpc'
     name: Native gRPC / PHP 8.6 / ${{ matrix.mode }}
     strategy:
       fail-fast: false

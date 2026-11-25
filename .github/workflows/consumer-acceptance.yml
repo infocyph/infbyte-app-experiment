@@ -3,6 +3,7 @@ name: Published Infbyte consumer acceptance
 on:
   push:
     branches: [main]
+    paths: ['.github/workflows/consumer-acceptance.yml']
   workflow_dispatch:
 
 permissions:

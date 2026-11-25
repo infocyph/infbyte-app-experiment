@@ -4,6 +4,13 @@ on:
     branches: [main]
     paths: ['qa/workloads/phpprobe.sh', '.github/workflows/phpprobe-acceptance.yml']
   workflow_dispatch:
+    inputs:
+      mode:
+        description: All engineering modes or one targeted mode
+        type: choice
+        required: true
+        default: all
+        options: [all, syntax-graph, reference, duplicates, comments, config-check, changed-only, graph-api, reference-scope, duplicate-cache, comment-options, syntax-options, config-precedence, config-schema-init, check-gate-artifacts, comment-custom, comment-suppression, graph-root-boundary, doctor-missing, doctor-valid, doctor-invalid, doctor-disabled-process, check-report-clean-text, check-report-clean-markdown, check-report-clean-sarif, check-report-clean-github, check-report-syntax-text, check-report-syntax-markdown, check-report-syntax-sarif, check-report-syntax-github, check-report-reference-text, check-report-reference-markdown, check-report-reference-sarif, check-report-reference-github, check-report-duplicates-text, check-report-duplicates-markdown, check-report-duplicates-sarif, check-report-duplicates-github, check-report-comments-text, check-report-comments-markdown, check-report-comments-sarif, check-report-comments-github]
 permissions:
   contents: read
 concurrency:
@@ -14,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [syntax-graph, reference, duplicates, comments, config-check, changed-only, graph-api, reference-scope, duplicate-cache, comment-options, syntax-options, config-precedence, config-schema-init, check-gate-artifacts, comment-custom, comment-suppression, graph-root-boundary, doctor-missing, doctor-valid, doctor-invalid, doctor-disabled-process, check-report-clean-text, check-report-clean-markdown, check-report-clean-sarif, check-report-clean-github, check-report-syntax-text, check-report-syntax-markdown, check-report-syntax-sarif, check-report-syntax-github, check-report-reference-text, check-report-reference-markdown, check-report-reference-sarif, check-report-reference-github, check-report-duplicates-text, check-report-duplicates-markdown, check-report-duplicates-sarif, check-report-duplicates-github, check-report-comments-text, check-report-comments-markdown, check-report-comments-sarif, check-report-comments-github]
+        mode: ${{ fromJSON((inputs.mode == '' || inputs.mode == 'all') && '["syntax-graph","reference","duplicates","comments","config-check","changed-only","graph-api","reference-scope","duplicate-cache","comment-options","syntax-options","config-precedence","config-schema-init","check-gate-artifacts","comment-custom","comment-suppression","graph-root-boundary","doctor-missing","doctor-valid","doctor-invalid","doctor-disabled-process","check-report-clean-text","check-report-clean-markdown","check-report-clean-sarif","check-report-clean-github","check-report-syntax-text","check-report-syntax-markdown","check-report-syntax-sarif","check-report-syntax-github","check-report-reference-text","check-report-reference-markdown","check-report-reference-sarif","check-report-reference-github","check-report-duplicates-text","check-report-duplicates-markdown","check-report-duplicates-sarif","check-report-duplicates-github","check-report-comments-text","check-report-comments-markdown","check-report-comments-sarif","check-report-comments-github"]' || format('["{0}"]', inputs.mode)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
