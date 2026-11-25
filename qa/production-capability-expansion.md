@@ -91,3 +91,7 @@ I: eleven independent lanes covering fused/sharded compiled routing corpus (1500
 ## B20 — connected checkout, outbox and receipt workload
 
 I: four independent native compiled HTTP jobs (MySQL/PostgreSQL × fused/sharded): 160 unique orders and 160 idempotent replays across eight clients, invalid quantity and conflicting replay rejection, stock conservation, rollback of queue publication and outbox marker, concurrent relay and durable consumers, Epicrypt-authenticated Pathwise files, Redis receipt cache publication, repeated delivery and exact Mailpit subject reconciliation. This is an isolated loopback checkout without account authentication; existing authenticated acceptance remains mandatory. No exactly-once SMTP guarantee under ambiguous acknowledgement or process death is asserted. Hosted evidence pending; additional capability rows remain open.
+
+## B21 — advanced DB transaction contracts
+
+I: nine additional jobs: two real PostgreSQL SERIALIZABLE snapshot workers with actual retry and durable callbacks; PostgreSQL/MySQL raw NOWAIT, SKIP LOCKED and native advisory lock ownership; native PDO transaction ownership (query cache bypass, callback and cache-aware write rejection, rollback); post-commit failure propagation, later callback execution and durable commit preservation across MySQL/PostgreSQL/SQLite. Native lock SQL is deliberately passed through DBLayer, not a claim of a public portable lock-builder API. Other DB rows remain open; hosted results pending.

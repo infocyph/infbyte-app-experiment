@@ -44,6 +44,15 @@ jobs:
           - {scenario: ecosystem-array-config, backend: pgsql}
           - {scenario: ecosystem-array-stream, backend: pgsql}
           - {scenario: ecosystem-uid-formats, backend: pgsql}
+          - {scenario: db-serialization, backend: pgsql}
+          - {scenario: db-lock-modes, backend: mysql}
+          - {scenario: db-lock-modes, backend: pgsql}
+          - {scenario: db-native-owner, backend: mysql}
+          - {scenario: db-native-owner, backend: pgsql}
+          - {scenario: db-native-owner, backend: sqlite}
+          - {scenario: db-callback-failure, backend: mysql}
+          - {scenario: db-callback-failure, backend: pgsql}
+          - {scenario: db-callback-failure, backend: sqlite}
           - {scenario: db-driver, backend: mysql}
           - {scenario: db-driver, backend: pgsql}
           - {scenario: db-driver, backend: sqlite}

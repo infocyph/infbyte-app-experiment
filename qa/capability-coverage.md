@@ -81,3 +81,5 @@ B18 adds nine cache, validation and security jobs. Distinguish native OTP recove
 B19 adds native runtime/routing/storage/communication/queue lanes and a separate PHPProbe engineering workflow. No generated matcher, no QA package added to no-dev production.
 
 B20 adds four connected checkout jobs; existing authenticated HTTP and separate failure reproductions remain required. See detailed expansion register for boundaries and unresolved coverage.
+
+B21 adds advanced DB transaction/lock contracts and native PDO ownership. No closure of all driver or deployment capabilities is asserted.

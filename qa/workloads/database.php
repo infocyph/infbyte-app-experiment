@@ -262,9 +262,15 @@ function replicas(Connection $primary): void
 require __DIR__ . '/database-data.php';
 require __DIR__ . '/database-operations.php';
 require __DIR__ . '/database-relations.php';
+require __DIR__ . '/database-advanced.php';
 
 $db = new Connection(config());
 match ($argv[1] ?? '') {
+    'serialization' => serializationRetry($db, (int) ($argv[2] ?? 0)),
+    'verify-serialization' => verifySerialization($db),
+    'lock-modes' => lockModes($db),
+    'native-owner' => nativeOwner($db),
+    'callback-failure' => callbackFailure($db),
     'driver' => driverWorkload($db),
     'relations' => relationsWorkload($db),
     'lock-wait' => lockWait($db),

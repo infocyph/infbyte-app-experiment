@@ -131,3 +131,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B20 — connected checkout workload
 - [x] Four real native HTTP-to-SQL-to-outbox-to-queue-to-encrypted-storage-to-SMTP lanes, with idempotent replay and rollback.
 - [ ] Hosted verification and remaining scenario families; no upstream changes.
+
+## B21 — advanced DB transaction contracts
+- [x] Nine hosted jobs for serialization retry, native lock modes, external ownership and post-commit failure.
+- [ ] Hosted qualification and remaining DB/other library capabilities. No upstream fixes.
