@@ -247,3 +247,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B49 — utility and DI boundaries
 - [x] Three independent UID, ArrayKit and InterMix workloads.
 - [ ] Hosted verification and method-option audit.
+
+## B50 — Webrick semantic composition
+- [x] Representation and signed-request scenarios.
+- [ ] Hosted verification and remaining algorithm/streaming variants.

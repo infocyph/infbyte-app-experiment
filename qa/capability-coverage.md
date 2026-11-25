@@ -139,3 +139,5 @@ B47 adds actual trusted/untrusted mailbox TLS, STARTTLS/STLS and IMAP IDLE arriv
 B48 adds real SSH host-pin verification and local journal/atomic publication coverage.
 
 B49 covers remaining UID facade families, array path/transform semantics and DI environment binding.
+
+B50 adds conditional mutation, negotiation/compression/security middleware composition and signed URL trust/rotation.

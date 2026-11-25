@@ -55,9 +55,12 @@ require __DIR__ . '/ecosystem-cache-faults.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
 require __DIR__ . '/ecosystem-storage-boundaries.php';
 require __DIR__ . '/ecosystem-utility-boundaries.php';
+require __DIR__ . '/ecosystem-http-semantics.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'http-representations' => httpRepresentationsWorkload(),
+    'http-signatures' => httpSignaturesWorkload(),
     'uid-families' => uidFamiliesWorkload(),
     'array-transforms' => arrayTransformsWorkload(),
     'di-environment' => diEnvironmentWorkload(),

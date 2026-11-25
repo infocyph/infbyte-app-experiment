@@ -207,3 +207,7 @@ I: real SFTP pinned host identity (fingerprints obtained from the disposable con
 ## B49 — utility families and environment contracts
 
 I: identifier generation for remaining facade families, both Sonyflake/Randflake formats, binary/TypeID round trips and deterministic namespaces; ArrayKit escaped paths, wildcard removal, typed access and 1000-row transformation isolation; InterMix environment-specific bindings, literals and invocation in dynamic and compiled containers. Hosted verification pending; not all utility method options are covered.
+
+## B50 — Webrick representation and signed-request semantics
+
+I: middleware composition for gzip, all ETag encoding modes, content/language negotiation, accumulated Vary, security headers, response lint, authoritative conditional GET and mutation rejection, and opt-in input normalization; independent signed absolute URL key rotation, expiry, host/query tamper and ignored-query policy. Hosted verification pending. Other coding algorithms and transport-specific streaming remain separate.
