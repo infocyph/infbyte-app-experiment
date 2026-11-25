@@ -1168,6 +1168,30 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-array-projection-group-keys, backend: pgsql}
+          - {scenario: ecosystem-array-projection-group-callback, backend: pgsql}
+          - {scenario: ecosystem-array-projection-key-collision, backend: pgsql}
+          - {scenario: ecosystem-array-projection-pluck-null, backend: pgsql}
+          - {scenario: ecosystem-array-projection-derived-strict, backend: pgsql}
+          - {scenario: ecosystem-array-projection-derived-structural, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-null, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-like, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-text, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-first, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-range, backend: pgsql}
+          - {scenario: ecosystem-array-projection-query-callback, backend: pgsql}
+          - {scenario: ecosystem-array-projection-partition-keys, backend: pgsql}
+          - {scenario: ecosystem-array-projection-skip-boundary, backend: pgsql}
+          - {scenario: ecosystem-array-projection-rekey-collision, backend: pgsql}
+          - {scenario: ecosystem-array-projection-combine-keys, backend: pgsql}
+          - {scenario: ecosystem-array-projection-strict-set, backend: pgsql}
+          - {scenario: ecosystem-array-projection-recursive-sort, backend: pgsql}
+          - {scenario: ecosystem-array-projection-sort-budget, backend: pgsql}
+          - {scenario: ecosystem-array-projection-config-required, backend: pgsql}
+          - {scenario: ecosystem-array-projection-config-sequence, backend: pgsql}
+          - {scenario: ecosystem-array-projection-config-file-reload, backend: pgsql}
+          - {scenario: ecosystem-array-projection-config-enum, backend: pgsql}
+          - {scenario: ecosystem-array-projection-config-snapshots, backend: pgsql}
           - {scenario: ecosystem-validation-db-correlation, backend: pgsql}
           - {scenario: ecosystem-validation-db-correlation, backend: mysql}
           - {scenario: ecosystem-validation-db-correlation, backend: mariadb}

@@ -85,6 +85,7 @@ require __DIR__ . '/ecosystem-utility-lifecycle.php';
 require __DIR__ . '/ecosystem-value-crypto.php';
 require __DIR__ . '/ecosystem-array-contracts.php';
 require __DIR__ . '/ecosystem-array-boundaries.php';
+require __DIR__ . '/ecosystem-array-projections.php';
 require __DIR__ . '/ecosystem-granular-contracts.php';
 require __DIR__ . '/ecosystem-di-factories.php';
 require __DIR__ . '/ecosystem-di-runtime-contracts.php';
@@ -301,6 +302,30 @@ match ($argv[1] ?? '') {
     'array-facade-rejection' => arrayFacadeRejectionWorkload(),
     'config-typed-defaults' => configTypedDefaultsWorkload(),
     'config-lazy-defaults' => configLazyDefaultsWorkload(),
+    'array-projection-group-keys' => arrayProjectionGroupKeys(),
+    'array-projection-group-callback' => arrayProjectionGroupCallback(),
+    'array-projection-key-collision' => arrayProjectionKeyCollision(),
+    'array-projection-pluck-null' => arrayProjectionPluckNull(),
+    'array-projection-derived-strict' => arrayProjectionDerivedStrict(),
+    'array-projection-derived-structural' => arrayProjectionDerivedStructural(),
+    'array-projection-query-null' => arrayProjectionQueryNull(),
+    'array-projection-query-like' => arrayProjectionQueryLike(),
+    'array-projection-query-text' => arrayProjectionQueryText(),
+    'array-projection-query-first' => arrayProjectionQueryFirst(),
+    'array-projection-query-range' => arrayProjectionQueryRange(),
+    'array-projection-query-callback' => arrayProjectionQueryCallback(),
+    'array-projection-partition-keys' => arrayProjectionPartitionKeys(),
+    'array-projection-skip-boundary' => arrayProjectionSkipBoundary(),
+    'array-projection-rekey-collision' => arrayProjectionRekeyCollision(),
+    'array-projection-combine-keys' => arrayProjectionCombineKeys(),
+    'array-projection-strict-set' => arrayProjectionStrictSet(),
+    'array-projection-recursive-sort' => arrayProjectionRecursiveSort(),
+    'array-projection-sort-budget' => arrayProjectionSortBudget(),
+    'array-projection-config-required' => arrayProjectionConfigRequired(),
+    'array-projection-config-sequence' => arrayProjectionConfigSequence(),
+    'array-projection-config-file-reload' => arrayProjectionConfigFileReload(),
+    'array-projection-config-enum' => arrayProjectionConfigEnum(),
+    'array-projection-config-snapshots' => arrayProjectionConfigSnapshots(),
     'array-set-contracts' => arraySetContractsWorkload(),
     'array-dto-guard' => arrayDtoGuardWorkload(),
     'array-helper-boundaries' => arrayHelperBoundariesWorkload(),
