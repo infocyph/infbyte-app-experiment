@@ -163,3 +163,5 @@ B59 adds actual AMQP dead-letter routing and unacknowledged recovery plus SQS-co
 B60 adds account lockout, device trust, remember family rotation and independent SQL replay race.
 
 B61 adds real TLS concurrent pool, deadlines, upload/multipart and download integrity.
+
+B62 adds real outbound HTTP/3 interoperability based on the published Runwire 3.1 fixtures.

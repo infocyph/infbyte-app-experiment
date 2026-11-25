@@ -11,6 +11,7 @@ case "$SCENARIO" in
   ecosystem-otp-durable) bash "$GITHUB_WORKSPACE/qa/workloads/otp-durable.sh" ;;
   ecosystem-supervisor|ecosystem-http-framing) bash "$GITHUB_WORKSPACE/qa/workloads/runtime-boundaries.sh" ;;
   ecosystem-scylla|ecosystem-redis-failover) bash "$GITHUB_WORKSPACE/qa/workloads/cache-ha.sh" ;;
+  ecosystem-wire-outbound-h3) bash "$GITHUB_WORKSPACE/qa/workloads/outbound-h3.sh" ;;
   ecosystem-wire-*) bash "$GITHUB_WORKSPACE/qa/workloads/wire.sh" ;;
   ecosystem-module-*) bash "$GITHUB_WORKSPACE/qa/workloads/module-matrix.sh" ;;
   ecosystem-amqp|ecosystem-sqs|ecosystem-amqp-dlq|ecosystem-sqs-fifo) bash "$GITHUB_WORKSPACE/qa/workloads/brokers.sh" ;;

@@ -15,6 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-wire-outbound-h3, backend: pgsql}
           - {scenario: ecosystem-http-pool, backend: pgsql}
           - {scenario: ecosystem-http-transfer, backend: pgsql}
           - {scenario: ecosystem-auth-lifecycle, backend: mysql}
@@ -325,7 +326,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php || '8.6' }}
-          extensions: pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, curl, mbstring, intl, sodium, zip, fileinfo, apcu, shmop, sysvsem${{ matrix.scenario == 'cache-memcached' && ', memcached' || '' }}${{ matrix.backend == 'mssql' && ', pdo_sqlsrv' || '' }}${{ matrix.host == 'swoole' && ', swoole' || '' }}${{ matrix.host == 'openswoole' && ', openswoole' || '' }}${{ matrix.scenario == 'ecosystem-ftp' && ', ftp' || '' }}${{ matrix.scenario == 'ecosystem-scylla' && ', cassandra' || '' }}${{ matrix.scenario == 'ecosystem-wire-http3' && ', quic' || '' }}
+          extensions: pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, curl, mbstring, intl, sodium, zip, fileinfo, apcu, shmop, sysvsem${{ matrix.scenario == 'cache-memcached' && ', memcached' || '' }}${{ matrix.backend == 'mssql' && ', pdo_sqlsrv' || '' }}${{ matrix.host == 'swoole' && ', swoole' || '' }}${{ matrix.host == 'openswoole' && ', openswoole' || '' }}${{ matrix.scenario == 'ecosystem-ftp' && ', ftp' || '' }}${{ matrix.scenario == 'ecosystem-scylla' && ', cassandra' || '' }}${{ (matrix.scenario == 'ecosystem-wire-http3' || matrix.scenario == 'ecosystem-wire-outbound-h3') && ', quic' || '' }}
           tools: composer:v2
           ini-values: apc.enable_cli=1
           coverage: none

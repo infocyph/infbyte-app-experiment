@@ -295,3 +295,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B61 — HTTP concurrency and transfer
 - [x] Real HTTP multi pool and streaming/multipart transfer scenarios.
 - [ ] Hosted qualification and remaining inbound/transport variants.
+
+## B62 — native outbound HTTP/3
+- [x] Independent real QUIC peer, upload/trailer, multiplex/cancel and HEAD cases.
+- [ ] Hosted qualification and remaining transport variants.
