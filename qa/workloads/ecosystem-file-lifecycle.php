@@ -332,3 +332,94 @@ function safeFileLockContracts(): void
     }
     echo "Independent file handle lock contention, release and disposal passed\n";
 }
+
+function archiveGranularWorkload(string $variant): void
+{
+    $root = evidenceDirectory() . '/archive-' . $variant;
+    $source = $root . '/source';
+    $destination = $root . '/extract';
+    verify(mkdir($source, 0700, true) && mkdir($destination, 0700), 'Archive fixture creation failed.');
+    $files = ['a.txt' => str_repeat('a', 64), 'b.bin' => random_bytes(96)];
+    foreach ($files as $name => $bytes) {
+        verify(file_put_contents($source . '/' . $name, $bytes) === strlen($bytes), 'Archive fixture write failed.');
+    }
+    $path = $root . '/archive.zip';
+    $compression = new FileCompression($path, true);
+    if ($variant === 'extensions') {
+        verify(mkdir($source . '/nested', 0700), 'Nested source creation failed.');
+        verify(file_put_contents($source . '/nested/c.txt', 'nested') === 6, 'Nested source write failed.');
+        $compression->compressWithFilter($source, ['txt'])->save();
+        $names = array_values(array_filter($compression->listFiles(), static fn(string $name): bool => !str_ends_with($name, '/')));
+        sort($names);
+        verify($names === ['source/a.txt', 'source/nested/c.txt'], 'Extension filter lost or invented file entries.');
+        $compression->decompress($destination);
+        verify(file_get_contents($destination . '/source/a.txt') === $files['a.txt']
+            && file_get_contents($destination . '/source/nested/c.txt') === 'nested'
+            && !file_exists($destination . '/source/b.bin'), 'Filtered nested extraction differs.');
+        return;
+    }
+    if ($variant === 'hooks') {
+        $events = [];
+        foreach (['beforeAdd', 'afterAdd', 'beforeSave', 'afterSave'] as $event) {
+            $compression->registerHook($event, static function (...$arguments) use (&$events, $event): void {
+                $events[] = [$event, ...$arguments];
+            });
+        }
+        $compression->addFile($source . '/a.txt', 'renamed.txt')->save()->save();
+        verify($events === [
+            ['beforeAdd', $source . '/a.txt', 'renamed.txt'],
+            ['afterAdd', $source . '/a.txt', 'renamed.txt'],
+            ['beforeSave', $path],
+            ['afterSave', $path],
+        ], 'Archive hooks lost order, arguments or idempotent save semantics.');
+        $native = new ZipArchive();
+        verify($native->open($path) === true && $native->getFromName('renamed.txt') === $files['a.txt'] && $native->close(), 'Hook-observed archive not independently readable.');
+        return;
+    }
+    if ($variant === 'aes128') {
+        $password = bin2hex(random_bytes(24));
+        expectFailure(static fn() => $compression->setPassword(''), \Infocyph\Pathwise\Exceptions\CompressionException::class, 'Empty password accepted.');
+        expectFailure(static fn() => $compression->setEncryptionAlgorithm(ZipArchive::EM_NONE), \Infocyph\Pathwise\Exceptions\CompressionException::class, 'Unencrypted algorithm accepted as encryption.');
+        $compression->setPassword($password)->setEncryptionAlgorithm(ZipArchive::EM_AES_128)
+            ->addFile($source . '/b.bin', 'binary')->save();
+        $native = new ZipArchive();
+        verify($native->open($path) === true, 'Native AES-128 archive open failed.');
+        $stat = $native->statName('binary');
+        verify(is_array($stat) && $stat['encryption_method'] === ZipArchive::EM_AES_128, 'Archive encryption algorithm differs.');
+        verify($native->getFromName('binary') === false, 'Encrypted entry readable without password.');
+        verify($native->setPassword($password) && $native->getFromName('binary') === $files['b.bin'] && $native->close(), 'Native AES-128 decryption differs.');
+        new FileCompression($path)->setPassword($password)->decompress($destination);
+        verify(file_get_contents($destination . '/binary') === $files['b.bin'], 'Pathwise AES-128 extraction differs.');
+        return;
+    }
+    $compression->batchAddFiles([$source . '/a.txt' => 'a.txt', $source . '/b.bin' => 'b.bin'])->save();
+    verify(file_put_contents($destination . '/sentinel', 'original') === 8, 'Destination sentinel failed.');
+    if ($variant === 'selection') {
+        foreach ([
+            ['a.txt' => 'new.txt', 'b.bin' => 'NEW.TXT'],
+            ['a.txt' => 'new.txt', 'missing.txt' => 'other.txt'],
+        ] as $mapping) {
+            expectFailure(static fn() => $compression->batchExtractFiles($mapping, $destination), \Infocyph\Pathwise\Exceptions\CompressionException::class, 'Invalid selection accepted.');
+            verify(scandir($destination) === ['.', '..', 'sentinel'], 'Invalid selection partially published files.');
+        }
+        expectFailure(static fn() => $compression->batchExtractFiles(['a.txt' => 'new.txt', 'b.bin' => '../escaped'], $destination), UnsafeArchiveEntryException::class, 'Unsafe selected destination accepted.');
+        verify(scandir($destination) === ['.', '..', 'sentinel'] && !file_exists($root . '/escaped')
+            && file_get_contents($destination . '/sentinel') === 'original', 'Rejected selection mutated destination.');
+        $compression->batchExtractFiles(['b.bin' => 'renamed.bin'], $destination);
+        verify(file_get_contents($destination . '/renamed.bin') === $files['b.bin'] && !file_exists($destination . '/a.txt'), 'Valid selection retry differs.');
+        return;
+    }
+    if ($variant === 'limits') {
+        expectFailure(static fn() => $compression->setExtractionLimits(maxEntries: -1), InvalidArgumentException::class, 'Negative limit accepted.');
+        expectFailure(static fn() => $compression->setExtractionLimits(maxCompressionRatio: INF), InvalidArgumentException::class, 'Infinite ratio accepted.');
+        expectFailure(static fn() => $compression->setExtractionLimits(maxEntryUncompressedBytes: 95)->decompress($destination), UnsafeArchiveEntryException::class, 'One-byte limit excess accepted.');
+        verify(scandir($destination) === ['.', '..', 'sentinel'], 'Rejected boundary extraction published files.');
+        $compression->setExtractionLimits(maxEntries: 2, maxEntryUncompressedBytes: 96, maxTotalUncompressedBytes: 160, maxCompressionRatio: 0)->decompress($destination);
+        foreach ($files as $name => $bytes) {
+            verify(file_get_contents($destination . '/' . $name) === $bytes, 'Exact-limit extraction differs.');
+        }
+        verify(file_get_contents($destination . '/sentinel') === 'original', 'Exact-limit extraction changed unrelated data.');
+        return;
+    }
+    throw new InvalidArgumentException('Unknown archive variant.');
+}

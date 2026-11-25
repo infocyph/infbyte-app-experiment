@@ -549,6 +549,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-archive-extensions, backend: pgsql}
+          - {scenario: ecosystem-archive-hooks, backend: pgsql}
+          - {scenario: ecosystem-archive-aes128, backend: pgsql}
+          - {scenario: ecosystem-archive-selection, backend: pgsql}
           - {scenario: ecosystem-sqs-tls-contracts, backend: mssql}
           - {scenario: ecosystem-business-cache-queue, backend: pgsql}
           - {scenario: ecosystem-business-cache-queue, backend: mysql}
@@ -815,6 +819,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-archive-limits, backend: pgsql}
           - {scenario: ecosystem-wire-http2-aggregate-drain, backend: pgsql}
           - {scenario: ecosystem-wire-http2-aggregate-reset, backend: pgsql}
           - {scenario: ecosystem-wire-http2-aggregate-isolation, backend: pgsql}

@@ -648,3 +648,9 @@ I: three actual TLS H2 lanes (drain, reset, independent connection). Independent
 ## B181 — Native MongoDB TLS and SQS-compatible verified HTTPS
 
 I: eight lanes, three native MongoDB driver contracts (TLS trust, strict CAS/consume race, TLS stop/restart) and five SQL-backed SQS-compatible HTTPS edge/receipt reconciliation lanes. Distinct wrong CA, hostname and plaintext rejection; actual MongoDB service and isolated TLS edge to emulator. No cloud-provider certification; private fixture key material removed by cleanup. CORE-01, DATA, SEC, OPS, EXEC-03: source/matrix wiring reviewed; hosted outcomes deferred. 1112 routine rows.
+
+## B182 — Pathwise granular archive contracts
+
+- Five independent workloads: nested extension filtering, ordered add/save hook arguments and idempotent save, native AES-128 interoperability and invalid encryption configuration, selected-entry collision/missing/traversal rejection with no partial publication, and exact extraction limits with invalid/one-byte-over rejection.
+- Evidence: actual ZIP files and independent ZipArchive inspection; hosted execution pending. No production/vendor code modified. CORE-01 / SEC / DATA / EXEC-03: preserve boundaries, assert actual effects, defer hosted outcome review.
+- Routine workload matrix: 1,117 entries; ecosystem shards each 256, database 249, application 100.
