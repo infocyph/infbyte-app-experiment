@@ -807,6 +807,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-wire-http2-aggregate-drain, backend: pgsql}
+          - {scenario: ecosystem-wire-http2-aggregate-reset, backend: pgsql}
+          - {scenario: ecosystem-wire-http2-aggregate-isolation, backend: pgsql}
           - {scenario: ecosystem-amqp-crash, backend: pgsql}
           - {scenario: ecosystem-amqp-crash, backend: mysql}
           - {scenario: ecosystem-amqp-crash, backend: mariadb}

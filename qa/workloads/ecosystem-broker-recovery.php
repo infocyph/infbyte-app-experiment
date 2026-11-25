@@ -396,7 +396,11 @@ function amqpCrashContracts(bool $seed): void
         brokerRecordEffect($db, $first->envelope()->message);
         verify(file_put_contents($root . '/reserved-id', $first->messageId, LOCK_EX) !== false && touch($root . '/seeded'), 'Reservation marker failed.');
         cacheWaitMarker($root . '/stopped');
-        expectFailure(static fn() => $transport->acknowledge($first), \PhpAmqpLib\Exception\AMQPExceptionInterface::class, 'Crashed broker acknowledged outstanding delivery.');
+        expectFailure(static function () use ($transport, $first, $channel, $queue): void {
+            $transport->acknowledge($first);
+            // basic.ack is asynchronous; only an ordered broker round trip confirms settlement.
+            $channel->queue_declare($queue, true);
+        }, \PhpAmqpLib\Exception\AMQPExceptionInterface::class, 'Crashed broker acknowledged outstanding delivery.');
         verify(touch($root . '/observed'), 'Crash evidence marker unavailable.');
         // The killed connection cannot be reused; do not attempt to settle its receipt.
         return;

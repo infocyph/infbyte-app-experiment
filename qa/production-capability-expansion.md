@@ -734,3 +734,7 @@ I: 15 lanes, five SQL drivers each for actual RabbitMQ SIGKILL with publisher-co
 ## B179 — Database execution policy composition and observer ownership
 
 I: 20 lanes, four contracts on five actual SQL drivers. Nested cancellation with independent mutation oracle, composed non-extending deadlines and nested timeout restoration on exception, actual missing-table native errors with bounded custom retry/final failure events and no transaction-local query retry, query observer ordering/metadata, quiet scopes and observer-failure diagnostics. No vendor changes or detector suppression. CORE-01, DATA, OBS, OPS, EXEC-03: matrix/dispatch wiring reviewed; hosted outcomes deferred. 1101 routine rows.
+
+## B180 — HTTP/2 multiplexed connection response budget
+
+I: three actual TLS H2 lanes (drain, reset, independent connection). Independent h2 peer advertises zero stream receive credit, holds two 24 KiB bodies within separate 32 KiB stream limits, observes third rejection at the 64 KiB aggregate limit, then grants credit or resets and verifies recovered exact binary digests. Second connection must retain independent capacity. Also corrected B178 asynchronous acknowledgement oracle with an ordered round trip, and B179 closure-reference capture during retry evidence collection (source review, no runtime outcome analysis). CORE-01, DATA, OPS, EXEC-03: wiring reviewed; hosted outcomes deferred. 1104 routine rows.

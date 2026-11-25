@@ -142,6 +142,37 @@ if (in_array($mode, ['http2-admission', 'http3-admission'], true)) {
         }
     };
 }
+if (str_starts_with($mode, 'http2-aggregate-')) {
+    $ordinary = $http;
+    $http = static function (HttpRequest $request, ResponseWriterInterface $writer) use ($ordinary, $root): void {
+        if (preg_match('~^/aggregate/([a-z0-9-]+)$~D', $request->target, $match) !== 1) {
+            $ordinary($request, $writer);
+            return;
+        }
+        $id = $match[1];
+        $request->context->cancellation->onCancel(static function () use ($root, $id): void {
+            file_put_contents($root . '/aggregate-cancel-' . $id, 'cancelled', LOCK_EX);
+        });
+        if (!$writer->start(200, Headers::fromArray(['Content-Type' => 'application/octet-stream']))->accepted()) {
+            throw new RuntimeException('Aggregate fixture header write rejected.');
+        }
+        $body = str_repeat(hash('sha256', $id, true), 768);
+        $result = $writer->write($body);
+        $record = [
+            'accepted' => $result->accepted(),
+            'state' => $result->state->value,
+            'buffered' => $result->bufferedBytes,
+            'length' => strlen($body),
+            'sha256' => hash('sha256', $body),
+        ];
+        if (!$writer->end()->accepted()) {
+            throw new RuntimeException('Aggregate fixture terminal write rejected.');
+        }
+        if (file_put_contents($root . '/aggregate-' . $id, json_encode($record, JSON_THROW_ON_ERROR), LOCK_EX) === false) {
+            throw new RuntimeException('Aggregate fixture evidence unavailable.');
+        }
+    };
+}
 $server = match ($mode) {
     'tcp' => StreamServer::tcp('127.0.0.1:18785', $codec, $echo),
     'unix' => StreamServer::unix($root . '/peer.sock', $codec, $echo),
@@ -155,6 +186,7 @@ $server = match ($mode) {
     'http2-admission' => new Server('h2-admission', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')),
     'http3-admission' => (new Server('h3-admission', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')))->withHttp3(),
     'http2' => new Server('tls', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')),
+    'http2-aggregate-drain', 'http2-aggregate-reset', 'http2-aggregate-isolation' => new Server('h2-aggregate', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem'), http2: new Http2Limits(maxPendingResponseBytesPerStream: 32768, responseLowWatermarkBytes: 8192, responseHighWatermarkBytes: 16384, maxPendingResponseBytesPerConnection: 65536, streamIdleTimeoutSeconds: 30.0)),
     'http2-flow' => new Server('tls-flow', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem'), http2: new Http2Limits(maxPendingResponseBytesPerStream: 32768, responseLowWatermarkBytes: 8192, responseHighWatermarkBytes: 16384, maxPendingResponseBytesPerConnection: 65536, streamIdleTimeoutSeconds: 15.0)),
     default => throw new InvalidArgumentException('Unknown wire workload.'),
 };

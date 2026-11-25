@@ -443,18 +443,22 @@ function databaseRuntimePolicyContracts(Connection $db, string $contract): void
             $failed = [];
             \Infocyph\DBLayer\Events\Events::listen('db.query.failed', static function (\Infocyph\DBLayer\Events\DatabaseEvents\QueryFailed $event) use (&$failed): void { $failed[] = $event; });
             try {
-                $failure(static fn() => $db->withQueryRetryPolicy(static function (Throwable $error, int $attempt, string $sql, array $bindings) use (&$attempts): bool {
+                $failure(static function () use ($db, $invalid, &$attempts) {
+                    return $db->withQueryRetryPolicy(static function (Throwable $error, int $attempt, string $sql, array $bindings) use (&$attempts): bool {
                     check($error instanceof PDOException && str_contains($sql, 'lab_missing_policy_table') && $bindings === [42], 'Retry callback metadata differs.');
                     $attempts[] = $attempt;
-                    return true;
-                }, $invalid));
+                        return true;
+                    }, $invalid);
+                });
                 check($attempts === [1, 2, 3, 4] && count($failed) === 1 && $failed[0]->attempts === 5, 'Unbounded retry or duplicate final failure event.');
                 $failure($invalid);
                 check(count($failed) === 2 && $failed[1]->attempts === 1, 'Temporary retry policy leaked.');
                 $calls = 0;
                 $db->beginTransaction();
                 try {
-                    $failure(static fn() => $db->withQueryRetryPolicy(static function () use (&$calls): bool { ++$calls; return true; }, $invalid));
+                    $failure(static function () use ($db, $invalid, &$calls) {
+                        return $db->withQueryRetryPolicy(static function () use (&$calls): bool { ++$calls; return true; }, $invalid);
+                    });
                     check($calls === 0 && $failed[2]->attempts === 1, 'Query retry executed inside managed transaction.');
                 } finally {
                     $db->rollbackTransaction();
