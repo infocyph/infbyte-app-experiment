@@ -309,3 +309,7 @@ I: isolated Redis TLS-only listener; application-injected verified phpredis clie
 ## B64 — actual PostgreSQL TLS
 
 I: enable SSL on the isolated PostgreSQL service with a generated certificate, verify-full using native libpq trust, assert pg_stat_ssl transport evidence, committed transfer and reconnect, wrong hostname/CA rejection, and required-TLS policy rejecting sslmode=disable. No private key artifact. Hosted verification pending. Other SQL driver TLS variants remain open.
+
+## B65 — MySQL-family TLS and PostgreSQL policy fixture correction
+
+I: isolated MySQL 8.4 and MariaDB 11.4 services with disposable CA-signed server certificates; mandatory verified TLS, server cipher evidence, committed transfer and reconnect, reachable wrong-IP identity and wrong-CA rejection, and required-TLS configuration without CA rejection. Correct B64 PostgreSQL required TLS to use the documented nested `security.require_tls` setting. No keys or certificates in artifacts. Two independent hosted jobs added (252 routine matrix rows); exact-head evidence pending. SQL Server TLS, query-cache stampede and other gap-register rows remain open. Before growing beyond 256 rows, partition the matrix without losing dispatcher audit or existing lanes.
