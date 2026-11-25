@@ -186,7 +186,7 @@ function databaseRightJoinContracts(Connection $db): void
     $project = static fn(array $rows): array => array_map(static fn(array $row): array => [
         (int) $row['target_id'], $row['record_id'] === null ? null : (int) $row['record_id'],
     ], $rows);
-    $base = $db->table('lab_records')->as('r')->select('t.id AS target_id')->addSelectAs('r.id', 'record_id');
+    $base = $db->table('lab_records')->as('r')->addSelectAs('t.id', 'target_id')->addSelectAs('r.id', 'record_id');
     $direct = $base->cloneBuilder()->rightJoinAs('lab_right_target', 't', 'r.id', '=', 't.id')
         ->where('t.tenant_id', '=', 1)->orderBy('t.id');
     $targets = $db->table('lab_right_target')->select('id')->where('tenant_id', '=', 1);
