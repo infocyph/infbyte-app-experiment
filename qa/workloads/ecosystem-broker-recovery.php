@@ -129,6 +129,8 @@ final class LabAcknowledgementUnknown extends RuntimeException {}
 
 function brokerAcknowledgementWorkload(string $provider): void
 {
+    $wire = $provider === 'amqp-wire';
+    $root = $wire ? (string) getenv('LAB_AMQP_FAULT_ROOT') : '';
     [$db, $serializer, , $clock] = messagingSetup();
     $db->statement('CREATE TABLE lab_job_attempts (id VARCHAR(100) PRIMARY KEY, attempts INTEGER NOT NULL)');
     $invoker = new \Infocyph\Omnibus\Handler\HandlerInvoker(new \Infocyph\Omnibus\Handler\HandlerMap([
@@ -155,31 +157,47 @@ function brokerAcknowledgementWorkload(string $provider): void
             'credentials' => ['key' => 'fixture', 'secret' => 'fixture'], 'http' => ['connect_timeout' => 3, 'timeout' => 10]]);
         $url = $client->createQueue(['QueueName' => 'ack-contract'])['QueueUrl'];
     }
-    $connect = static function (?Closure $fault = null) use ($provider, $serializer, $client, $url, &$connection) {
+    $connect = static function (?Closure $fault = null) use ($provider, $serializer, $client, $url, &$connection, $wire) {
         if ($provider === 'sqs') {
             return new SqsTransport(new LabSqsBackend($client, $url, ackFault: $fault), $serializer);
         }
-        $connection = new \PhpAmqpLib\Connection\AMQPStreamConnection('127.0.0.1', 15672, 'experiment', 'fixture-only-password');
+        $port = $wire && $fault !== null ? 15673 : 15672;
+        $connection = new \PhpAmqpLib\Connection\AMQPStreamConnection('127.0.0.1', $port, 'experiment', 'fixture-only-password', connection_timeout: 3.0, read_write_timeout: 5.0);
         $channel = $connection->channel();
         $channel->queue_declare('ack-contract', false, true, false, false);
         return new AmqpTransport(new LabAmqpBackend($channel, $fault), $serializer);
     };
-    $disconnect = static function () use (&$connection): void {
+    $disconnect = static function () use (&$connection, $wire): void {
         if ($connection !== null) {
-            $connection->close();
-            $connection = null;
+            try {
+                $connection->close();
+            } catch (\PhpAmqpLib\Exception\AMQPExceptionInterface $failure) {
+                if (!$wire) {
+                    throw $failure;
+                }
+            } finally {
+                $connection = null;
+            }
         }
     };
     try {
         foreach (['before', 'after'] as $phase) {
-            $transport = $connect(static function (string $boundary) use ($phase): void {
-                if ($phase === $boundary) {
+            if ($wire) {
+                verify(file_put_contents($root . '/phase', $phase, LOCK_EX) === strlen($phase), 'Wire fault arm failed.');
+            }
+            $transport = $connect(static function (string $boundary) use ($phase, $wire): void {
+                if (!$wire && $phase === $boundary) {
                     throw new LabAcknowledgementUnknown('Injected acknowledgement boundary failure.');
                 }
             });
             $transport->send(new Envelope(new LabJob($phase, 42)), 'ack-contract');
             $worker = $consumer($transport);
-            expectFailure(static fn() => $worker->run('ack-contract', 1, 2.0), LabAcknowledgementUnknown::class, 'Consumer concealed unknown settlement.');
+            $failureType = $wire ? \PhpAmqpLib\Exception\AMQPExceptionInterface::class : LabAcknowledgementUnknown::class;
+            expectFailure(static fn() => $worker->run('ack-contract', 1, 2.0), $failureType, 'Consumer concealed unknown settlement.');
+            if ($wire) {
+                $expected = $phase === 'before' ? 'basic.ack withheld' : 'queue.declare-ok withheld after basic.ack';
+                verify(is_file($root . '/' . $phase) && trim((string) file_get_contents($root . '/' . $phase)) === $expected, 'Expected AMQP wire settlement fault was not observed.');
+            }
             verify($db->table('lab_job_effects')->where('id', '=', $phase)->count() === 1, 'Durable effect lost before settlement.');
             $disconnect();
             $replacement = $connect();

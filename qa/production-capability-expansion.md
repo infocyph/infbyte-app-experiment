@@ -473,3 +473,7 @@ I: isolated Pgpool-II built from Debian packages uses PostgreSQL streaming repli
 ## B115 — SFTP interrupted staged publication and explicit recovery
 
 I: pinned-host real SFTP v3 upload with an 8 MiB disposable source, a stream-consumption barrier after 2 MiB and direct server file-size evidence proving partial staging before an abrupt container stop. Require transport failure, previous publication and foreign tenant preservation, explicit partial staging cleanup, streamed retry, exact byte/digest reconciliation and subsequent publication to a new identity. No atomic overwrite or rename acknowledgement guarantee is inferred. 372 routine rows; hosted qualification pending (SEC, DATA, OPS, EXEC-03).
+
+## B116 — AMQP wire-level settlement ambiguity
+
+I: isolated plaintext AMQP 0-9-1 frame relay forwards real RabbitMQ traffic without logging authentication or message contents. Withhold basic.ack before forwarding, or forward basic.ack then withhold the broker's subsequent ordered queue.declare-ok response. Require actual transport exception and exact relay markers, then use an independent direct client to verify redelivery only for the unsettled message, single durable SQL effect per identity and no handler-failure misclassification. AMQP basic.ack is asynchronous; queue.declare-ok is an ordering barrier, not a native acknowledgement response. 373 routine rows; hosted qualification pending (DATA, OPS, EXEC-03).

@@ -101,6 +101,7 @@ match ($argv[1] ?? '') {
     'http-transfer' => httpTransferWorkload(),
     'amqp-dlq' => amqpDlqWorkload(),
     'amqp-ack-uncertain' => brokerAcknowledgementWorkload('amqp'),
+    'amqp-wire-ack' => brokerAcknowledgementWorkload('amqp-wire'),
     'sqs-ack-uncertain' => brokerAcknowledgementWorkload('sqs'),
     'amqp-tls-seed' => amqpTlsSeed(),
     'amqp-tls-recover' => amqpTlsRecover(),
