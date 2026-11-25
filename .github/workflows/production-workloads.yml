@@ -168,6 +168,7 @@ jobs:
           - {scenario: ecosystem-otp-drift, backend: pgsql}
           - {scenario: ecosystem-supervisor, backend: pgsql}
           - {scenario: ecosystem-http-framing, backend: pgsql}
+          - {scenario: ecosystem-http-backpressure, backend: pgsql}
           - {scenario: ecosystem-wire-http3, backend: pgsql}
           - {scenario: ecosystem-wire-mtls, backend: pgsql}
           - {scenario: ecosystem-scylla, backend: pgsql, php: '8.4'}

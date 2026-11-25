@@ -8,6 +8,9 @@ use Infocyph\Runwire\Http\Http1\Http1Limits;
 use Infocyph\Runwire\Http\HttpRequest;
 use Infocyph\Runwire\Http\RequestBodyInterface;
 use Infocyph\Runwire\Http\ResponseWriterInterface;
+use Infocyph\Runwire\CancellationToken;
+use Infocyph\Runwire\Network\ConnectionLimits;
+use Infocyph\Runwire\Network\Enum\WriteState;
 use Infocyph\Runwire\Runtime;
 use Infocyph\Runwire\Runtime\Enum\RuntimeDriver;
 use Infocyph\Runwire\RuntimeOptions;
@@ -46,16 +49,76 @@ $handler = static function (HttpRequest $request, ResponseWriterInterface $write
     $body->onEnd($finish);
     $finish($body);
 };
+if ($mode === 'http-backpressure') {
+    $ordinary = $handler;
+    $handler = static function (HttpRequest $request, ResponseWriterInterface $writer) use ($root, $ordinary): void {
+        if ($request->target === '/aborted-upload') {
+            $request->context->cancellation->onCancel(static function (CancellationToken $token) use ($root): void {
+                file_put_contents($root . '/cancelled.log', $token->reason()?->value . PHP_EOL, FILE_APPEND | LOCK_EX);
+            });
+            file_put_contents($root . '/upload-ready', '1', LOCK_EX);
+            return;
+        }
+        if ($request->target !== '/pressured-stream') {
+            $ordinary($request, $writer);
+            return;
+        }
+
+        $size = 8192;
+        $count = 128;
+        $index = $pressure = $drains = $peak = 0;
+        $start = $writer->start(200, Headers::fromArray([
+            'Content-Type' => 'application/octet-stream',
+            'Content-Length' => (string) ($size * $count),
+        ]));
+        if (!$start->accepted()) {
+            throw new RuntimeException('Response headers rejected.');
+        }
+        $oversized = $writer->write(str_repeat('x', $size + 1));
+        if ($oversized->state !== WriteState::REJECTED_LIMIT) {
+            throw new RuntimeException('Oversized response write was not rejected.');
+        }
+        $writer->onTerminal(static function () use ($root, &$index, &$pressure, &$drains, &$peak): void {
+            file_put_contents($root . '/terminal.log', json_encode([
+                'chunks' => $index, 'pressure' => $pressure, 'drains' => $drains, 'peak' => $peak,
+            ], JSON_THROW_ON_ERROR) . PHP_EOL, FILE_APPEND | LOCK_EX);
+        });
+        $pump = static function (ResponseWriterInterface $response) use ($size, $count, &$index, &$pressure, &$peak): void {
+            while ($index < $count) {
+                $chunk = str_repeat(chr($index % 256), $size);
+                $result = $response->write($chunk);
+                $peak = max($peak, $result->bufferedBytes);
+                if (!$result->accepted()) {
+                    throw new RuntimeException('Bounded chunk rejected: ' . $result->state->value);
+                }
+                ++$index;
+                if ($result->pressured()) {
+                    ++$pressure;
+                    return;
+                }
+            }
+            if (!$response->end()->accepted()) {
+                throw new RuntimeException('Response completion rejected.');
+            }
+        };
+        $writer->onDrain(static function (ResponseWriterInterface $response) use ($pump, &$drains): void {
+            ++$drains;
+            $pump($response);
+        });
+        $pump($writer);
+    };
+}
 $runtime = Runtime::create(new RuntimeOptions(
     driver: RuntimeDriver::NATIVE,
     workerRecycle: new WorkerRecyclePolicy(maxRequests: $mode === 'supervisor' ? 20 : 0),
 ));
-$server = new Server('boundary', '127.0.0.1:18786', $handler, workers: 2, http1: new Http1Limits(
+$server = new Server('boundary', '127.0.0.1:18786', $handler, workers: $mode === 'http-backpressure' ? 1 : 2, connection: $mode === 'http-backpressure' ? new ConnectionLimits(sendLowWatermarkBytes: 1024, sendHighWatermarkBytes: 4096, maxSendBufferBytes: 16384, maxWriteBytesPerTick: 4096) : new ConnectionLimits(), http1: new Http1Limits(
     maxRequestLineBytes: 1024,
     maxHeaderLineBytes: 1024,
     maxHeaderBytes: 4096,
     maxHeaderCount: 24,
     maxBodyBytes: 65536,
+    maxResponseChunkBytes: $mode === 'http-backpressure' ? 8192 : 65536,
     headerTimeoutSeconds: 2.0,
     bodyIdleTimeoutSeconds: 2.0,
 ));

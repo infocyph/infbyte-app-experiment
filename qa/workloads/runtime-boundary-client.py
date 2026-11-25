@@ -130,9 +130,51 @@ def framing():
         list(pool.map(lambda i: exchange(f"/recovered/{i}", payload), range(40)))
     print("HTTP/1: chunked and 60 KiB body digest, conflicting framing, resource limits, slow headers and recovery")
 
+def backpressure():
+    eventually(lambda: exchange("/ready"))
+    root = os.environ["LAB_BOUNDARY_ROOT"]
+    conn = http.client.HTTPConnection(*ADDRESS, timeout=15)
+    try:
+        conn.request("GET", "/pressured-stream", headers={"Connection": "close"})
+        response = conn.getresponse()
+        assert response.status == 200
+        assert int(response.getheader("Content-Length")) == 8192 * 128
+        for index in range(128):
+            assert response.read(8192) == bytes([index]) * 8192, index
+            time.sleep(0.002)
+        assert response.read() == b""
+    finally:
+        conn.close()
+    terminal = os.path.join(root, "terminal.log")
+    eventually(lambda: os.path.exists(terminal))
+    with open(terminal, encoding="utf-8") as stream:
+        records = [json.loads(line) for line in stream]
+    assert len(records) == 1, records
+    record = records[0]
+    assert record["chunks"] == 128
+    assert record["pressure"] > 0 and record["drains"] > 0, record
+    assert 4096 <= record["peak"] <= 16384, record
+    with socket.create_connection(ADDRESS, timeout=5) as upload:
+        upload.sendall(b"POST /aborted-upload HTTP/1.1\r\nHost: localhost\r\nContent-Length: 1000\r\n\r\nshort")
+        eventually(lambda: os.path.exists(os.path.join(root, "upload-ready")))
+        upload.shutdown(socket.SHUT_RDWR)
+    cancelled = os.path.join(root, "cancelled.log")
+    eventually(lambda: os.path.exists(cancelled))
+    with open(cancelled, encoding="utf-8") as stream:
+        reasons = stream.read().splitlines()
+    assert len(reasons) == 1 and reasons[0], reasons
+    for index in range(8):
+        exchange(f"/after-abort/{index}", b"healthy")
+    with open(terminal, encoding="utf-8") as stream:
+        assert len(stream.readlines()) == 1
+    print(json.dumps({"stream": record, "cancelled": reasons, "recovery_requests": 8}))
+
+
 if sys.argv[1] == "supervisor":
     supervisor()
 elif sys.argv[1] == "http-framing":
     framing()
+elif sys.argv[1] == "http-backpressure":
+    backpressure()
 else:
     raise ValueError("Unknown runtime boundary")

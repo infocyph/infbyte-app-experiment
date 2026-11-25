@@ -329,3 +329,7 @@ I: independent TalkingBytes host-controlled unary exchange lane tests cancellati
 ## B79 — Foundation-owned real HTTP OAuth endpoints
 
 I: four isolated native/PostgreSQL and FPM/MySQL fused/sharded lanes enable OAuth/OIDC with disposable private keys, provision the real auth schema and confidential client, compile the release without duplicate routes, exercise metadata/JWKS, malformed form/query/credential combinations, no-store/error semantics, client credentials, durable introspection across host replacement and revocation/reissuance. Secret fixture in runner temp only; no secret response bodies in evidence. Also fixes the B68 matcher selection omission in bootstrap. Browser consent and edge integration remain open. 286 routine rows; hosted evidence pending.
+
+## B80 — native HTTP/1 backpressure and request abort
+
+I: actual socket lane sets a 4 KiB write budget, 4 KiB high watermark and 16 KiB send ceiling; a slow independent reader checks 128 ordered 8 KiB chunks, rejected oversized write, observed pressure and drain, bounded buffered bytes, exactly one successful terminal event. Incomplete request body disconnect must invoke cancellation once; subsequent requests prove continued service. HTTP/2, HTTP/3 and other transport/host variants stay open. 287 routine rows; hosted verification pending.
