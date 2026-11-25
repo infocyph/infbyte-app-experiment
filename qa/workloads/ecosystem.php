@@ -51,6 +51,7 @@ require __DIR__ . '/ecosystem-contracts.php';
 require __DIR__ . '/ecosystem-webrick.php';
 require __DIR__ . '/ecosystem-telemetry.php';
 require __DIR__ . '/ecosystem-jose.php';
+require __DIR__ . '/ecosystem-crypto-rotation.php';
 require __DIR__ . '/ecosystem-mailbox.php';
 require __DIR__ . '/ecosystem-brokers.php';
 require __DIR__ . '/ecosystem-invalidation.php';
@@ -317,6 +318,31 @@ match ($argv[1] ?? '') {
     'foundation-paths-explicit' => foundationPathProviderContracts(false),
     'foundation-notifications-templates' => foundationNotificationProviderContracts('templates'),
     'foundation-notifications-spool' => foundationNotificationProviderContracts('spool'),
+    'jwt-rotation-eddsa' => jwtRotationWorkload('EdDSA'),
+    'jwt-rotation-es256' => jwtRotationWorkload('ES256'),
+    'jwt-rotation-es384' => jwtRotationWorkload('ES384'),
+    'jwt-rotation-es512' => jwtRotationWorkload('ES512'),
+    'jwt-rotation-ps256' => jwtRotationWorkload('PS256'),
+    'jwt-rotation-ps384' => jwtRotationWorkload('PS384'),
+    'jwt-rotation-ps512' => jwtRotationWorkload('PS512'),
+    'jwt-rotation-rs256' => jwtRotationWorkload('RS256'),
+    'jwt-rotation-rs384' => jwtRotationWorkload('RS384'),
+    'jwt-rotation-rs512' => jwtRotationWorkload('RS512'),
+    'jwt-rotation-hs256' => jwtRotationWorkload('HS256'),
+    'jwt-rotation-hs384' => jwtRotationWorkload('HS384'),
+    'jwt-rotation-hs512' => jwtRotationWorkload('HS512'),
+    'signing-readiness-eddsa' => signingReadinessWorkload('EdDSA'),
+    'signing-readiness-es256' => signingReadinessWorkload('ES256'),
+    'signing-readiness-es384' => signingReadinessWorkload('ES384'),
+    'signing-readiness-es512' => signingReadinessWorkload('ES512'),
+    'signing-readiness-ps256' => signingReadinessWorkload('PS256'),
+    'signing-readiness-ps384' => signingReadinessWorkload('PS384'),
+    'signing-readiness-ps512' => signingReadinessWorkload('PS512'),
+    'signing-readiness-rs256' => signingReadinessWorkload('RS256'),
+    'signing-readiness-rs384' => signingReadinessWorkload('RS384'),
+    'signing-readiness-rs512' => signingReadinessWorkload('RS512'),
+    'purpose-token-rotation' => signedPayloadRotationWorkload(true),
+    'signed-payload-rotation' => signedPayloadRotationWorkload(false),
     'foundation-resource-contracts' => foundationResourceContracts(),
     'cache-redis-cluster-bulk' => cacheBulkWorkload('redis-cluster'),
     'cache-redis-cluster-tags' => cacheTagsWorkload('redis-cluster'),

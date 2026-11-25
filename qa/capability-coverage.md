@@ -615,3 +615,10 @@ I: 18 jobs. Explicitly configured published provider graph in worker execution: 
 ## B174 — DBLayer advanced query and execution contracts
 
 I: 25 real SQL lanes across PostgreSQL/MySQL/MariaDB/SQLite/SQL Server: structured ranking/window aggregation and invalid identifiers, bound recursive tenant/depth traversal, generated identity native/fallback and unsupported bulk boundary, composite-key upsert-returning projection and rollback, immutable compiler mutation payload/binding/execution reconciliation. Independent connection/PHP oracles and native capability checks. CORE-01, DATA, TYPE, SEC, EXEC-03: source/matrix wiring inspected; hosted outcomes deferred. 1011 routine rows.
+
+### B175 — Epicrypt operation-level rotation and signing readiness (25 lanes)
+
+- 13 JWT signing algorithms: actual old/new tokens, verified key identity, tampering, unknown/disabled/wrong-purpose/wrong-issuer/wrong-algorithm rejection, exclusive fallback expiry.
+- 10 asymmetric signing-readiness algorithms: public JWKS eligibility, no private fields, reconstructed public-key verification, mismatched-pair rejection, expired fallback removal on rebuild.
+- Purpose-token and signed-payload: fallback provenance, context boundaries and deterministic expiration; purpose-token activation and reserved metadata rejection.
+- Implementation committed; hosted execution and qualification pending. No vendor changes.

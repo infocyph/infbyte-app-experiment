@@ -787,6 +787,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-jwt-rotation-eddsa, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-es256, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-es384, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-es512, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-ps256, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-ps384, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-ps512, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-rs256, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-rs384, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-rs512, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-hs256, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-hs384, backend: pgsql}
+          - {scenario: ecosystem-jwt-rotation-hs512, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-eddsa, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-es256, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-es384, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-es512, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-ps256, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-ps384, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-ps512, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-rs256, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-rs384, backend: pgsql}
+          - {scenario: ecosystem-signing-readiness-rs512, backend: pgsql}
+          - {scenario: ecosystem-purpose-token-rotation, backend: pgsql}
+          - {scenario: ecosystem-signed-payload-rotation, backend: pgsql}
           - {scenario: ecosystem-foundation-json-offset, backend: pgsql}
           - {scenario: ecosystem-foundation-json-offset, backend: mysql}
           - {scenario: ecosystem-foundation-json-offset, backend: mariadb}
