@@ -103,3 +103,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 - [x] Add six independent scenarios (schema/migrations, query builder, repositories, cache consistency, streaming/keyset, security) across MySQL/PostgreSQL/SQLite, 18 jobs.
 - [x] Follow direct-main workflow; remove PR-only trigger introduced in B12. Keep previous mandatory scenarios.
 - [ ] Hosted evidence and remaining detailed DBLayer cases. No upstream fixes.
+
+## B14 — database operational mechanics
+- [x] Add ten independent hosted lanes for locking/isolation, pool lifecycle, query budgets, SQLite WAL and physical standby replay/outage/restart.
+- [ ] Hosted evidence and remaining detailed cases. Library remediation deferred.

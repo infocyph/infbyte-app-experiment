@@ -63,3 +63,7 @@ All items below are I (hosted verification pending), not closure of their broade
 | db-security / DB-14 | Bound hostile string, raw policy, identifier rejection, cursor signature/tamper/filter binding | TLS, rate budgets, hooks, monitoring, query cancellation and statement cache |
 
 SQLite file storage now exercised in these six lanes; WAL and competing writer behavior remain open. No upstream changes.
+
+## B14 — operational database paths
+
+I: independent lanes for shared row locking, bounded real lock waits and release (DB-03); repeatable-read snapshot, phantom/dirty-read checks (DB-03); SQLite WAL reader/writer contention (DB-08); idle pool expiry, active cursor discard and callback/iterator ownership (DB-07); nested query timeout restoration, cancelled/expired mutation rejection, statistics and explicit reconnect (DB-14/15); physical standby replay pause/resume, sticky routing under actual lag, real reader stop/restart and alternate-reader fallback (DB-05). All hosted results pending. Remaining: serialization retry, advisory/NOWAIT/SKIP LOCKED, cooldown expiry in same instance, MySQL/MariaDB replication, full driver/proxy and feature coverage.

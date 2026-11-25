@@ -252,9 +252,18 @@ function replicas(Connection $primary): void
 }
 
 require __DIR__ . '/database-data.php';
+require __DIR__ . '/database-operations.php';
 
 $db = new Connection(config());
 match ($argv[1] ?? '') {
+    'lock-wait' => lockWait($db),
+    'pool-lifecycle' => poolLifecycle($db),
+    'budgets' => budgets($db),
+    'isolation' => isolation($db),
+    'wal' => wal($db),
+    'replica-lag' => replicaLag($db),
+    'replica-partial' => replicaPartial(),
+    'replica-recover' => replicaRecover(),
     'schema' => schemaWorkload($db),
     'query' => queryWorkload($db),
     'repository' => repositoryWorkload($db),

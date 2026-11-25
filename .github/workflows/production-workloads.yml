@@ -15,6 +15,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-lock-wait, backend: mysql}
+          - {scenario: db-lock-wait, backend: pgsql}
+          - {scenario: db-pool-lifecycle, backend: mysql}
+          - {scenario: db-pool-lifecycle, backend: pgsql}
+          - {scenario: db-budgets, backend: mysql}
+          - {scenario: db-budgets, backend: pgsql}
+          - {scenario: db-isolation, backend: mysql}
+          - {scenario: db-isolation, backend: pgsql}
+          - {scenario: db-wal, backend: sqlite}
+          - {scenario: db-replica-fault, backend: pgsql}
           - {scenario: db-schema, backend: mysql}
           - {scenario: db-schema, backend: pgsql}
           - {scenario: db-schema, backend: sqlite}
