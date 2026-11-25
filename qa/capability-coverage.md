@@ -223,3 +223,7 @@ I: RabbitMQ TLS-only actual broker with isolated CA/DNS SAN and wrong trust reje
 ## B76 — utility lifecycle and failure boundaries
 
 I: three new independent lanes: UID filesystem fork reservation identity, replacement gaps, overflow/corruption, clock regression, symlink and lock timeout; ArrayKit dotenv raw/resolved references, invalid input, detached/cyclic snapshot and compiled generations; InterMix Fence singleton/multiton/limit/requirements and Remix macro/retry lifecycle. Reuses published public APIs and existing fork harness; no upstream changes. CORE/TYPE/SEC/DATA/OPS lifecycle and ownership assertions, FLOW/EXEC hosted syntax/runtime pending. 278 routine rows. Further variants remain explicitly open.
+
+## B77 — actual remote storage outage and explicit recovery
+
+I: independent MinIO S3 and pinned SFTP v3 jobs reuse actual adapter provisioning. Seed durable binary and foreign-tenant content, stop service and confirm port unavailable, require read/write/delete failure, restart same service, verify original digests and no phantom object, explicitly retry streamed publication and reconcile tenant isolation. No automatic mutation replay or cloud-provider certification claimed; mid-transfer acknowledgement ambiguity remains open. Hosted verification pending. 280 routine rows.

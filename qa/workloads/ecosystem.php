@@ -54,6 +54,7 @@ require __DIR__ . '/ecosystem-validation-matrix.php';
 require __DIR__ . '/ecosystem-cache-faults.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
 require __DIR__ . '/ecosystem-storage-boundaries.php';
+require __DIR__ . '/ecosystem-storage-outage.php';
 require __DIR__ . '/ecosystem-utility-boundaries.php';
 require __DIR__ . '/ecosystem-http-semantics.php';
 require __DIR__ . '/ecosystem-file-lifecycle.php';
@@ -95,6 +96,9 @@ match ($argv[1] ?? '') {
     'array-transforms' => arrayTransformsWorkload(),
     'di-environment' => diEnvironmentWorkload(),
     'sftp-trust' => sftpTrustWorkload(),
+    'storage-outage-seed' => storageOutageWorkload('seed'),
+    'storage-outage-denied' => storageOutageWorkload('denied'),
+    'storage-outage-recover' => storageOutageWorkload('recover'),
     'file-transactions' => fileTransactionsWorkload(),
     'mailbox-tls' => mailboxTlsWorkload(),
     'mailbox-untrusted' => mailboxUntrustedWorkload(),

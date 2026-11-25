@@ -148,6 +148,8 @@ jobs:
           - {scenario: ecosystem-array-transforms, backend: pgsql}
           - {scenario: ecosystem-di-environment, backend: pgsql}
           - {scenario: ecosystem-sftp-trust, backend: pgsql}
+          - {scenario: ecosystem-sftp-outage, backend: pgsql}
+          - {scenario: ecosystem-s3-outage, backend: pgsql}
           - {scenario: ecosystem-file-transactions, backend: pgsql}
           - {scenario: ecosystem-mailbox-tls, backend: pgsql}
           - {scenario: ecosystem-mailbox-idle, backend: pgsql}

@@ -41,7 +41,7 @@ case "$SCENARIO" in
     composer require mongodb/mongodb --no-interaction --prefer-dist --no-progress
     if [[ "$SCENARIO" == ecosystem-gridfs ]]; then composer require league/flysystem-gridfs --no-interaction --prefer-dist --no-progress; fi
     ;;
-  ecosystem-s3|ecosystem-async-s3)
+  ecosystem-s3|ecosystem-async-s3|ecosystem-s3-outage)
     containers+=(lab-s3)
     export LAB_S3_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
     docker run -d --name lab-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" minio/minio:latest server /data
@@ -50,9 +50,9 @@ case "$SCENARIO" in
       sleep 1
     done
     curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null
-    if [[ "$SCENARIO" == ecosystem-s3 ]]; then composer require league/flysystem-aws-s3-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-async-aws-s3 --no-interaction --prefer-dist --no-progress; fi
+    if [[ "$SCENARIO" != ecosystem-async-s3 ]]; then composer require league/flysystem-aws-s3-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-async-aws-s3 --no-interaction --prefer-dist --no-progress; fi
     ;;
-  ecosystem-sftp|ecosystem-sftp2|ecosystem-sftp-trust)
+  ecosystem-sftp|ecosystem-sftp2|ecosystem-sftp-trust|ecosystem-sftp-outage)
     containers+=(lab-sftp)
     export LAB_SFTP_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
     docker run -d --name lab-sftp -p 127.0.0.1:12222:22 atmoz/sftp:latest "experiment:$LAB_SFTP_SECRET:1001::upload"
@@ -105,4 +105,32 @@ case "$SCENARIO" in
 esac
 composer check-platform-reqs --no-dev
 composer show --format=json > "$EVIDENCE/packages.json"
-php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
+if [[ "$SCENARIO" == ecosystem-s3-outage || "$SCENARIO" == ecosystem-sftp-outage ]]; then
+  probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
+  if [[ "$SCENARIO" == ecosystem-s3-outage ]]; then
+    export LAB_STORAGE_BACKEND=s3
+    service=lab-s3
+    port=19000
+  else
+    export LAB_STORAGE_BACKEND=sftp
+    service=lab-sftp
+    port=12222
+  fi
+  timeout 60s php "$probe" storage-outage-seed | tee "$EVIDENCE/storage-seed.log"
+  docker stop -t 10 "$service" >/dev/null
+  if timeout 2 bash -c "exec 3<>/dev/tcp/127.0.0.1/$port" 2>/dev/null; then exit 1; fi
+  timeout 60s php "$probe" storage-outage-denied | tee "$EVIDENCE/storage-denied.log"
+  docker start "$service" >/dev/null
+  ready=0
+  for attempt in {1..60}; do
+    if [[ "$service" == lab-s3 ]]; then
+      if curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null; then ready=1; break; fi
+    elif ssh-keyscan -T 2 -p 12222 127.0.0.1 >/dev/null 2>&1; then ready=1; break
+    fi
+    sleep 1
+  done
+  test "$ready" = 1
+  timeout 60s php "$probe" storage-outage-recover | tee "$EVIDENCE/storage-recovery.log"
+else
+  php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
+fi
