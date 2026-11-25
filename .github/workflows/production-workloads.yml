@@ -109,6 +109,9 @@ jobs:
         include:
           - {scenario: ecosystem-wire-outbound-h3, backend: pgsql}
           - {scenario: ecosystem-cache-tls, backend: pgsql}
+          - {scenario: ecosystem-valkey-tls, backend: pgsql}
+          - {scenario: ecosystem-counter-restart, backend: pgsql}
+          - {scenario: ecosystem-valkey-counter-restart, backend: pgsql}
           - {scenario: ecosystem-counter-contracts, backend: pgsql}
           - {scenario: ecosystem-otp-valkey, backend: pgsql}
           - {scenario: ecosystem-otp-phpfiles, backend: pgsql}

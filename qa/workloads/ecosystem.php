@@ -74,6 +74,9 @@ require __DIR__ . '/ecosystem-counter-otp-contracts.php';
 $start = hrtime(true);
 match ($argv[1] ?? '') {
     'cache-tls' => cacheTlsWorkload(),
+    'counter-tls-seed' => counterTlsWorkload('seed'),
+    'counter-tls-offline' => counterTlsWorkload('offline'),
+    'counter-tls-recover' => counterTlsWorkload('recover'),
     'counter-contracts' => counterContractsWorkload(),
     'otp-valkey' => otpAdditionalBackendWorkload('valkey'),
     'otp-phpfiles' => otpAdditionalBackendWorkload('phpfiles'),

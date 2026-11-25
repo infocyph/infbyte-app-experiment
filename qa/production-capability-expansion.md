@@ -341,3 +341,7 @@ I: independent published-package lane tests constructor/static recipes, detached
 ## B82 — Git-aware PHPProbe scope and graph API semantics
 
 I: two independent engineering-only modes. Real disposable Git repository proves committed, working-tree and untracked PHP selection, deleted file omission, exclusions, and unchanged invalid file isolation against full-scan failures. Programmatic graph extraction checks input-order/duplicate stability, provenance, external reference distinction, relationship edges, unresolved call semantics, and exact CLI/API agreement without executing source. Seven engineering jobs; 288 routine production scenarios unchanged. Hosted verification pending; no upstream changes.
+
+## B83 — Valkey TLS and persistent Redis-compatible counter restart
+
+I: three additional independent lanes exercise real Valkey TLS trust/name rejection, atomic operations and cold-key race, and Redis/Valkey TLS counter persistence with AOF, actual stop/restart, fail-closed fresh connection, exact integer and TTL state, and twelve concurrent recovery increments. Existing Redis TLS lane also asserts wrong peer name. This tests restart, not automatic cluster election or lost increment acknowledgements. 291 routine scenarios; hosted verification pending.
