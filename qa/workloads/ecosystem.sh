@@ -7,6 +7,7 @@ case "$SCENARIO" in
   ecosystem-release-cutover) bash "$GITHUB_WORKSPACE/qa/workloads/release-cutover.sh" ;;
   ecosystem-tenants) bash "$GITHUB_WORKSPACE/qa/workloads/tenants.sh" ;;
   ecosystem-mailbox-tls|ecosystem-mailbox-idle) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox-tls.sh" ;;
+  ecosystem-cache-tls) bash "$GITHUB_WORKSPACE/qa/workloads/cache-tls.sh" ;;
   ecosystem-cache-outage) bash "$GITHUB_WORKSPACE/qa/workloads/cache-outage.sh" ;;
   ecosystem-otp-durable) bash "$GITHUB_WORKSPACE/qa/workloads/otp-durable.sh" ;;
   ecosystem-supervisor|ecosystem-http-framing) bash "$GITHUB_WORKSPACE/qa/workloads/runtime-boundaries.sh" ;;

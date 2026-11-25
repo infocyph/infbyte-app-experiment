@@ -259,3 +259,8 @@ I: two independent actual TLS peer lanes: 64 correlated curl-multi requests, sto
 ## B62 — outbound native QUIC HTTP/3
 
 I: reuse the released Runwire 3.1 independent interoperability fixtures (adapted to the installed consumer vendor autoload; private reflection diagnostics removed). Actual aioquic server validates one-shot response, upload and bidirectional trailers, four sibling streams, independent sibling cancellation, HEAD metadata/body and event-loop resource release. Mandatory ext-quic, no TCP fallback; fixtures are stored in this repository, not fetched dynamically from unreleased upstream code. Hosted verification pending. Additional outbound HTTP/1–2 proxy and flow-control variants remain open.
+
+
+## B63 — TLS-only Redis and concurrent cold-key computation
+
+I: isolated Redis TLS-only listener; application-injected verified phpredis client (the built-in Redis DSN parser does not advertise TLS); wrong CA and plaintext rejection, 12 independent connections racing on a cold key, exactly one compute callback, fresh-client read and strict atomic claim/CAS/consume. Hosted verification pending. Other backend-specific TLS and stampede variants remain open.

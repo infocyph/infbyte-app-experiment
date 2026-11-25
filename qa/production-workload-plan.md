@@ -299,3 +299,8 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B62 — native outbound HTTP/3
 - [x] Independent real QUIC peer, upload/trailer, multiplex/cancel and HEAD cases.
 - [ ] Hosted qualification and remaining transport variants.
+
+
+## B63 — TLS-only Redis and concurrent cold-key computation
+
+I: isolated Redis TLS-only listener; application-injected verified phpredis client (the built-in Redis DSN parser does not advertise TLS); wrong CA and plaintext rejection, 12 independent connections racing on a cold key, exactly one compute callback, fresh-client read and strict atomic claim/CAS/consume. Hosted verification pending. Other backend-specific TLS and stampede variants remain open.

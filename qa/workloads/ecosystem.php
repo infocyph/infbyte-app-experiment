@@ -61,9 +61,11 @@ require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
 require __DIR__ . '/ecosystem-broker-boundaries.php';
 require __DIR__ . '/ecosystem-http-transfer.php';
+require __DIR__ . '/ecosystem-cache-tls.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'cache-tls' => cacheTlsWorkload(),
     'http-pool' => httpPoolWorkload(),
     'http-transfer' => httpTransferWorkload(),
     'amqp-dlq' => amqpDlqWorkload(),

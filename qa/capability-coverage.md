@@ -165,3 +165,8 @@ B60 adds account lockout, device trust, remember family rotation and independent
 B61 adds real TLS concurrent pool, deadlines, upload/multipart and download integrity.
 
 B62 adds real outbound HTTP/3 interoperability based on the published Runwire 3.1 fixtures.
+
+
+## B63 — TLS-only Redis and concurrent cold-key computation
+
+I: isolated Redis TLS-only listener; application-injected verified phpredis client (the built-in Redis DSN parser does not advertise TLS); wrong CA and plaintext rejection, 12 independent connections racing on a cold key, exactly one compute callback, fresh-client read and strict atomic claim/CAS/consume. Hosted verification pending. Other backend-specific TLS and stampede variants remain open.
