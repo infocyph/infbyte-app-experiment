@@ -223,3 +223,22 @@ function portableBackupVerify(Connection $live): void
     check((int) $restored->scalar('SELECT COUNT(*) FROM lab_backup_ledger') === 101 && (int) $live->scalar('SELECT COUNT(*) FROM lab_backup_orders WHERE id = 102') === 0, 'Restored writes crossed source boundary.');
     echo json_encode(['snapshot' => $snapshot, 'live' => $current, 'independent_restore_write' => true], JSON_THROW_ON_ERROR), PHP_EOL;
 }
+
+function mysqlPhysicalBackupSource(Connection $db): void
+{
+    $digest = portableBackupDigest($db);
+    check($digest['lab_backup_orders']['count'] === 101 && $digest['lab_backup_ledger']['count'] === 101, 'Source writer did not commit after physical backup.');
+    check((int) $db->scalar('SELECT COUNT(*) FROM lab_backup_orders o JOIN lab_backup_ledger l ON o.id = l.id WHERE o.amount = l.debit AND o.amount = l.credit') === 101, 'Source ledger diverged.');
+    echo json_encode(['source' => $digest], JSON_THROW_ON_ERROR), PHP_EOL;
+}
+
+function mysqlPhysicalBackupVerify(Connection $db): void
+{
+    $expected = json_decode((string) file_get_contents(getenv('LAB_BACKUP_ROOT') . '/expected.json'), true, flags: JSON_THROW_ON_ERROR);
+    $actual = portableBackupDigest($db);
+    check($actual === $expected, 'Physical restoration included an uncommitted or partial transaction.');
+    check((int) $db->scalar('SELECT COUNT(*) FROM lab_backup_orders o JOIN lab_backup_ledger l ON o.id = l.id WHERE o.amount = l.debit AND o.amount = l.credit') === 100, 'Physical recovery ledger diverged.');
+    activeBackupRows($db, 102, 102);
+    check((int) $db->scalar('SELECT COUNT(*) FROM lab_backup_ledger') === 101 && (int) $db->scalar('SELECT COUNT(*) FROM lab_backup_orders WHERE id = 101') === 0, 'Restored database write or rollback boundary failed.');
+    echo json_encode(['physical_restore' => $actual, 'post_restore_write' => true], JSON_THROW_ON_ERROR), PHP_EOL;
+}

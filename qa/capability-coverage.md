@@ -495,3 +495,7 @@ I: two independent MySQL/PostgreSQL consumer lanes execute four separate process
 ## B144 — Compiled application streaming cancellation and owned-resource cleanup
 
 I: four independent native/FPM fused/sharded production lanes use the existing transfer application and real HTTP connections. HEAD must not start a producer, a normal stream must reconcile exact bytes and digest, aborted responses must stop before exhaustion and publish a single terminal record, and an independent process must acquire the producer's exclusive filesystem lease after completion or abort. FPM script shutdown is recorded separately from generator finalization; persistent native workers must use generator finalization. Repeated waves and host replacement must retain clean staging and healthy routes. 441 routine rows; hosted qualification pending (REQUEST, MEM, OPS, EXEC-03). No production library changes.
+
+## B145 — Native MySQL-family physical backup and isolated restoration
+
+I: two jobs use actual MySQL CLONE / MariaDB Backup rather than logical exports. A separate DBLayer worker retains an uncommitted paired transaction during physical backup, then commits on the source. The copied physical files boot a separate database on a distinct endpoint after the source stops. Verify the initial digest, absence of the uncommitted pair, ledger consistency and an independent post-restore write. Native backup tool availability, engine startup and runtime assertions require hosted qualification (DATA, OPS, EXEC-03). 443 routine matrix rows; no upstream changes.

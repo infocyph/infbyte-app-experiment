@@ -89,6 +89,8 @@ jobs:
           - {scenario: db-primary-promotion, backend: pgsql}
           - {scenario: db-active-backup, backend: pgsql}
           - {scenario: db-physical-backup, backend: pgsql}
+          - {scenario: db-mysql-physical-backup, backend: mysql}
+          - {scenario: db-mysql-physical-backup, backend: mariadb}
           - {scenario: db-portable-backup, backend: mysql}
           - {scenario: db-portable-backup, backend: mariadb}
           - {scenario: db-portable-backup, backend: sqlite}

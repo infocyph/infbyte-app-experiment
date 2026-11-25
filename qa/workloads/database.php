@@ -275,7 +275,7 @@ require __DIR__ . '/database-sqlserver-ag.php';
 require __DIR__ . '/database-cache-race.php';
 require __DIR__ . '/database-active-backup.php';
 
-$db = new Connection(config());
+$db = new Connection(config(($argv[1] ?? '') === 'mysql-physical-verify' ? ['port' => 3308] : []));
 match ($argv[1] ?? '') {
     'tls' => databaseTlsWorkload(),
     'sqlserver-tls' => sqlServerTlsWorkload(),
@@ -290,6 +290,8 @@ match ($argv[1] ?? '') {
     'portable-backup-sqlite' => portableBackupSqlite(),
     'portable-backup-mssql' => portableBackupSqlServer(),
     'portable-backup-verify' => portableBackupVerify($db),
+    'mysql-physical-source' => mysqlPhysicalBackupSource($db),
+    'mysql-physical-verify' => mysqlPhysicalBackupVerify($db),
     'physical-backup-seed' => physicalBackupSeed($db),
     'physical-backup-wait' => physicalBackupWait($db),
     'physical-backup-expected' => physicalBackupExpected($db),
