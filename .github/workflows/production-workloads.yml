@@ -762,6 +762,24 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-foundation-json-offset, backend: pgsql}
+          - {scenario: ecosystem-foundation-json-offset, backend: mysql}
+          - {scenario: ecosystem-foundation-json-offset, backend: mariadb}
+          - {scenario: ecosystem-foundation-json-cursor, backend: pgsql}
+          - {scenario: ecosystem-foundation-json-cursor, backend: mysql}
+          - {scenario: ecosystem-foundation-json-cursor, backend: mariadb}
+          - {scenario: ecosystem-foundation-json-validation, backend: pgsql}
+          - {scenario: ecosystem-foundation-json-validation, backend: mysql}
+          - {scenario: ecosystem-foundation-json-validation, backend: mariadb}
+          - {scenario: ecosystem-foundation-json-native, backend: pgsql}
+          - {scenario: ecosystem-foundation-json-tunneled, backend: pgsql}
+          - {scenario: ecosystem-foundation-logging-throttle, backend: pgsql}
+          - {scenario: ecosystem-foundation-logging-sample-zero, backend: pgsql}
+          - {scenario: ecosystem-foundation-logging-concurrent, backend: pgsql}
+          - {scenario: ecosystem-foundation-paths-auto, backend: pgsql}
+          - {scenario: ecosystem-foundation-paths-explicit, backend: pgsql}
+          - {scenario: ecosystem-foundation-notifications-templates, backend: pgsql}
+          - {scenario: ecosystem-foundation-notifications-spool, backend: pgsql}
           - {scenario: ecosystem-gridfs-publication-before, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-gridfs-publication-after, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-ftp-rename-before, backend: pgsql}

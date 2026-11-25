@@ -701,3 +701,7 @@ I: six jobs: FTP and SFTP-v2 rename before/after settlement uncertainty and inte
 ## B172 — GridFS native chunk and metadata settlement
 
 I: two independent PHP 8.4 native MongoDB extension jobs. Actual standalone MongoDB wire proxy forwards OP_QUERY/OP_MSG, parses bounded BSON metadata insert and independently verifies persisted contiguous chunks before withholding metadata request or successful response. Fault client disables retryable writes; independent absence or full-content verification precedes any recovery publication. SDK compensation may remove a committed stage; partial visible stage is rejected. No mock of GridFS. CORE-01, DATA, SEC, MEM, EXEC-03: source/matrix wiring inspected; hosted outcome deferred. 968 routine rows.
+
+## B173 — Foundation specialist provider lifecycle
+
+I: 18 jobs. Explicitly configured published provider graph in worker execution: JSON dispatch native/tunneled errors and three-driver offset/cursor/validation projection; configured file logger with sampling, exception throttling, nested redaction and twelve-process exact append reconciliation; core runtime-directory automatic/explicit boot; all auth templates and configured mail notification spool send/peek/claim/archive. Web-only built-ins explicitly registered for worker use; not a claim of compiled web-host qualification. CORE-01, DATA, OBS, SEC, EXEC-03: source/matrix wiring inspected; hosted outcomes deferred. 986 routine rows.

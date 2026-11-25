@@ -64,6 +64,7 @@ require __DIR__ . '/ecosystem-cache-atomic.php';
 require __DIR__ . '/ecosystem-cache-contracts.php';
 require __DIR__ . '/ecosystem-cache-locking.php';
 require __DIR__ . '/ecosystem-foundation-contracts.php';
+require __DIR__ . '/ecosystem-foundation-providers.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
 require __DIR__ . '/ecosystem-storage-boundaries.php';
 require __DIR__ . '/ecosystem-storage-outage.php';
@@ -304,6 +305,18 @@ match ($argv[1] ?? '') {
     'foundation-webhook-rotation-sqlite' => foundationWebhookRotationContracts('sqlite'),
     'foundation-webhook-rotation-pdo' => foundationWebhookRotationContracts('pdo'),
     'foundation-validator-profile' => foundationValidatorProfileContracts(),
+    'foundation-json-offset' => foundationJsonProviderContracts('offset'),
+    'foundation-json-cursor' => foundationJsonProviderContracts('cursor'),
+    'foundation-json-validation' => foundationJsonProviderContracts('validation'),
+    'foundation-json-native' => foundationJsonProviderContracts('native'),
+    'foundation-json-tunneled' => foundationJsonProviderContracts('tunneled'),
+    'foundation-logging-throttle' => foundationLoggingProviderContracts('throttle'),
+    'foundation-logging-sample-zero' => foundationLoggingProviderContracts('sample-zero'),
+    'foundation-logging-concurrent' => foundationLoggingProviderContracts('concurrent'),
+    'foundation-paths-auto' => foundationPathProviderContracts(true),
+    'foundation-paths-explicit' => foundationPathProviderContracts(false),
+    'foundation-notifications-templates' => foundationNotificationProviderContracts('templates'),
+    'foundation-notifications-spool' => foundationNotificationProviderContracts('spool'),
     'foundation-resource-contracts' => foundationResourceContracts(),
     'cache-redis-cluster-bulk' => cacheBulkWorkload('redis-cluster'),
     'cache-redis-cluster-tags' => cacheTagsWorkload('redis-cluster'),
