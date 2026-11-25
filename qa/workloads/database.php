@@ -266,6 +266,7 @@ require __DIR__ . '/database-relations-advanced.php';
 require __DIR__ . '/database-advanced.php';
 require __DIR__ . '/database-binlog.php';
 require __DIR__ . '/database-proxy.php';
+require __DIR__ . '/database-pgpool.php';
 require __DIR__ . '/database-faults.php';
 require __DIR__ . '/database-uncertain.php';
 require __DIR__ . '/database-tls.php';
@@ -301,6 +302,10 @@ match ($argv[1] ?? '') {
     'connection-loss' => connectionLoss($db),
     'mysql-proxy-worker' => mysqlProxyWorker((int) ($argv[2] ?? 0)),
     'proxy-seed' => proxySeed($db),
+    'pgpool-seed' => pgpoolSeed($db),
+    'pgpool-work' => pgpoolWork(),
+    'pgpool-outage' => pgpoolOutage(),
+    'pgpool-recover' => pgpoolRecover(),
     'maxscale-seed' => maxscaleSeed(),
     'maxscale-work' => maxscaleWork(),
     'maxscale-outage' => maxscaleOutage(),

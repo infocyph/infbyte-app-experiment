@@ -371,3 +371,7 @@ I: independent sanitizer lane checks 40 direct/named/compiled cases with explici
 ## B113 — InterMix graph rejection, recovery and release artifact preservation
 
 I: independent DI lane checks missing aliases, cyclic aliases, invalid named constructor arguments and property metadata, strict validation, dynamic/compiled build rejection, immutable prior artifact digest and usability, repair of the rejected mutable builder, and dynamic/compiled parity after correction. Transitive singleton-to-scoped capture must be rejected while scoped roots resolve correctly across successful and failed request scopes. 370 routine rows; hosted qualification pending (TYPE, CONFIG, OPS, EXEC-03).
+
+## B114 — Pgpool-II physical streaming-replica routing and recovery
+
+I: isolated Pgpool-II built from Debian packages uses PostgreSQL streaming replication with a real standby, standby-only read weight, monitored node roles and bounded health checks. DBLayer transactions verify primary affinity after a write, nested savepoint rollback and callbacks, then reconcile durable balances. Stop the standby, require proxy down-state and primary fallback, commit another transfer, restart the standby and explicitly restart the proxy to reattach; require replica read and durable reconciliation. No automatic promotion or automatic reattachment claim. 371 routine rows; hosted qualification pending (DATA, OPS, EXEC-03). Configuration reference: https://www.pgpool.net/docs/4.6/en/html/example-cluster.html

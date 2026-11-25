@@ -33,6 +33,7 @@ jobs:
           - {scenario: db-connection-loss, backend: mariadb}
           - {scenario: db-connection-loss, backend: pgsql}
           - {scenario: db-proxy-session, backend: pgsql}
+          - {scenario: db-pgpool, backend: pgsql}
           - {scenario: db-proxy-transaction, backend: pgsql}
           - {scenario: db-binlog-replica, backend: mysql}
           - {scenario: db-binlog-replica, backend: mariadb}

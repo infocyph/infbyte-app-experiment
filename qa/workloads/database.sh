@@ -57,9 +57,11 @@ case "$SCENARIO" in
     if (( failed )); then exit 1; fi
     php "$probe" verify-deadlock | tee "$EVIDENCE/database.log"
     ;;
-  db-replicas|db-replica-fault|db-primary-promotion)
+  db-replicas|db-replica-fault|db-primary-promotion|db-pgpool)
+    ports=(5433 5434)
+    if [[ "$SCENARIO" == db-pgpool ]]; then ports=(5433); fi
     cleanup() {
-      for port in 5433 5434; do
+      for port in "${ports[@]}"; do
         docker logs "lab-standby-$port" > "$EVIDENCE/standby-$port.log" 2>&1 || :
         docker rm -f "lab-standby-$port" >/dev/null 2>&1 || :
       done
@@ -69,7 +71,7 @@ case "$SCENARIO" in
     # Retain WAL between each base backup and the standby connection, including restart.
     docker exec "$POSTGRES_SERVICE" psql -v ON_ERROR_STOP=1 -U experiment -d experiment -c "ALTER SYSTEM SET wal_keep_size = '256MB'"
     docker exec "$POSTGRES_SERVICE" psql -v ON_ERROR_STOP=1 -U experiment -d experiment -c 'SELECT pg_reload_conf()'
-    for port in 5433 5434; do
+    for port in "${ports[@]}"; do
       docker run -d --name "lab-standby-$port" --network host \
         -e PGPASSWORD=experiment -e STANDBY_PORT="$port" \
         --entrypoint bash postgres:17 -e -c '
@@ -78,7 +80,7 @@ case "$SCENARIO" in
           exec gosu postgres postgres -D /tmp/standby -p "$STANDBY_PORT" -c listen_addresses=127.0.0.1
         '
     done
-    for port in 5433 5434; do
+    for port in "${ports[@]}"; do
       ready=0
       for attempt in $(seq 1 60); do
         if docker exec "lab-standby-$port" pg_isready -h 127.0.0.1 -p "$port"; then ready=1; break; fi
@@ -86,7 +88,9 @@ case "$SCENARIO" in
       done
       test "$ready" = 1
     done
-    if [[ "$SCENARIO" == db-replicas ]]; then
+    if [[ "$SCENARIO" == db-pgpool ]]; then
+      bash "$GITHUB_WORKSPACE/qa/workloads/database-pgpool.sh"
+    elif [[ "$SCENARIO" == db-replicas ]]; then
       php "$probe" replicas | tee "$EVIDENCE/database.log"
     elif [[ "$SCENARIO" == db-primary-promotion ]]; then
       php "$probe" promotion-seed | tee "$EVIDENCE/promotion-seed.log"
