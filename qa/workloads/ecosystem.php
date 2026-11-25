@@ -62,6 +62,7 @@ require __DIR__ . '/ecosystem-remote-jwks.php';
 require __DIR__ . '/ecosystem-broker-boundaries.php';
 require __DIR__ . '/ecosystem-http-transfer.php';
 require __DIR__ . '/ecosystem-cache-tls.php';
+require __DIR__ . '/ecosystem-route-boundaries.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
@@ -136,6 +137,8 @@ match ($argv[1] ?? '') {
     'crypto-file' => cryptoFileWorkload(),
     'crypto-envelope' => cryptoEnvelopeWorkload(),
     'routing' => routingWorkload(),
+    'route-attributes' => routeAttributeWorkload(),
+    'compression-codings' => compressionCodingsWorkload(),
     'coroutines' => coroutinesWorkload(),
     'async-files' => asyncFilesWorkload(),
     'pathwise-upload' => pathwiseUploadWorkload(),

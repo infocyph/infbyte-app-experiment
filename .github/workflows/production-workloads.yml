@@ -206,6 +206,9 @@ jobs:
           - {scenario: ecosystem-connected, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-routing, backend: pgsql, matcher: fused}
           - {scenario: ecosystem-routing, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-route-attributes, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-route-attributes, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-compression-codings, backend: pgsql}
           - {scenario: ecosystem-coroutines, backend: pgsql}
           - {scenario: ecosystem-async-files, backend: pgsql}
           - {scenario: ecosystem-pathwise-upload, backend: pgsql}

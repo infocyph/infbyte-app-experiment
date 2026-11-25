@@ -33,11 +33,12 @@ final class Transfer
         $results = [];
         foreach ($files as $file) {
             $target = dirname(__DIR__) . '/storage/lab-transfers/' . bin2hex(random_bytes(16));
+            $expectedSize = $file->getSize();
             $file->moveTo($target);
             try {
                 $hash = hash_file('sha256', $target);
                 $size = filesize($target);
-                ensure(is_string($hash) && is_int($size) && $size === $file->getSize(), 'Moved file bytes differ.');
+                ensure(is_string($hash) && is_int($size) && $size === $expectedSize, 'Moved file bytes differ.');
                 $rejected = false;
                 try {
                     $file->getStream();
