@@ -9,6 +9,8 @@ use function Experiment\ensure;
 
 $prefix = $argv[1] ?? '';
 $iterations = (int) ($argv[2] ?? 0);
+$duration = (int) ($argv[3] ?? 0);
+$until = hrtime(true) + $duration * 1_000_000_000;
 $endpoint = getenv('LAB_HTTP_URL');
 $buyer = file_get_contents($root . '/storage/lab-private/buyer');
 $foreign = file_get_contents($root . '/storage/lab-private/foreign');
@@ -34,7 +36,7 @@ $request = static function (string $method, string $id, ?string $token, int $exp
     return $payload;
 };
 
-for ($i = 0; $i < $iterations; ++$i) {
+for ($i = 0; $duration > 0 ? hrtime(true) < $until : $i < $iterations; ++$i) {
     $id = $prefix . '-' . $i;
     $start = hrtime(true);
     $request('POST', $id, null, 401);

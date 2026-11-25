@@ -110,6 +110,20 @@ function configuration(): array
         $config['app']['capabilities'] = ['cache', 'database', 'filesystem', 'validation', 'runwire'];
     }
 
+    if (getenv('SCENARIO') === 'oauth') {
+        $keyRoot = $root . '/storage/lab-oauth-keys';
+        $config['auth']['oauth'] = [
+            'enabled' => true, 'issuer' => 'https://identity.example.test',
+            'resource_audiences' => ['https://api.example.test'], 'scope_permissions' => [],
+            'grants' => ['authorization_code', 'client_credentials', 'refresh_token'],
+            'signing' => [
+                'algorithm' => 'ES256', 'active_key_id' => 'lab-key',
+                'private_key' => $keyRoot . '/private.pem',
+                'public_keys' => [['id' => 'lab-key', 'path' => $keyRoot . '/public.pem', 'status' => 'active']],
+            ],
+        ];
+    }
+
     return $config;
 }
 

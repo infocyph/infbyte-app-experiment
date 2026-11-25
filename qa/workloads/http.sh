@@ -95,6 +95,29 @@ for concurrency in 1 4 8 16; do
   # Force an independent host generation of processes after the first concurrent phase.
   if (( concurrency == 4 )); then stop_host; start_host; fi
 done
+if [[ "${SOAK:-0}" == 1 ]]; then
+  start="$(date +%s%3N)"
+  pids=()
+  for worker in $(seq 1 8); do
+    php "$GITHUB_WORKSPACE/qa/workloads/http-client.php" "soak-$worker" 0 90 > "$EVIDENCE/soak-$worker.jsonl" 2> "$EVIDENCE/soak-error-$worker.log" &
+    pids+=("$!")
+  done
+  (
+    while kill -0 "${pids[0]}" 2>/dev/null; do
+      date -u +%FT%TZ
+      ps -o pid,ppid,rss,etimes,comm -p "$host" --ppid "$host" || :
+      sleep 10
+    done
+  ) > "$EVIDENCE/soak-process-memory.txt" &
+  monitor=$!
+  failed=0
+  for pid in "${pids[@]}"; do if ! wait "$pid"; then failed=1; fi; done
+  wait "$monitor"
+  if (( failed )); then cat "$EVIDENCE"/soak-error-*.log >&2; exit 1; fi
+  count="$(cat "$EVIDENCE"/soak-*.jsonl | wc -l)"
+  php "$GITHUB_WORKSPACE/qa/workloads/report.php" "$count" "$(( $(date +%s%3N) - start ))" 8 "$EVIDENCE"/soak-*.jsonl | tee "$EVIDENCE/soak-summary.json"
+  total="$((total + count))"
+fi
 stop_host
 php "$probe" verify "$total"
 printf '%s authorized business cycles (%s total HTTP requests) verified on %s.\n' "$total" "$((total * 5))" "$HOST_MODE" >> "$GITHUB_STEP_SUMMARY"

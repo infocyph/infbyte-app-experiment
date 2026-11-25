@@ -58,3 +58,10 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 - [x] Preserve two distinct Foundation 4.0.1 defect reproductions: OTP recovery-factor ID 77 bytes against VARCHAR(64) (MySQL job 138972714891); PostgreSQL authorization DISTINCT of JSON metadata (job 138972715049). Isolate authorization, OTP and passkey lanes so one defect cannot prevent exercising the others. No upstream edits, schema widening, ignored errors or acceptance waivers.
 - [x] Queue failures now report actual native failure class/reason, attempted message identity and kind, with exact expected permanent-failure invariant. Record signed webhook delivery details on failure.
 - [ ] Re-run all lanes on this commit; investigate remaining defects.
+
+## B6 — expanded protocol, storage and sustained workloads
+- [x] Add streamed 128 KiB file upload/read integrity, rename, directory reconciliation, parent traversal rejection, native atomic CAS/consume, shared lock-ledger contention, TTL expiry.
+- [x] Add real published OAuth client credentials, introspection and revocation, public authorization code + PKCE, consent and code replay rejection on both SQL backends, with native auth schema installer and disposable signing keys.
+- [x] Add independent native gRPC job: private PHP INI, real loopback HTTP/2 peer, selected published communication feature, 1/4/8 parallel clients, 1,300 successful unary exchanges plus matching UNIMPLEMENTED responses, channel cleanup and latency evidence.
+- [x] Add 90-second concurrent business-cycle soak on PostgreSQL native HTTP host and periodic process RSS observations. This is a bounded shared-runner workload, not a dedicated-host capacity result.
+- [ ] All B5/B6 hosted acceptance results and corrections. OIDC-specific, DPoP/PAT, browser session/CSRF/risk, HOTP/AOTP and registration, distributed multi-host/remote storage, advanced cluster/outbox/replica modes, full streaming HTTP, coordinated backup and long-duration endurance remain separate qualification gaps. No claims of exhaustive native library API coverage.

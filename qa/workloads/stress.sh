@@ -23,11 +23,17 @@ if [[ "$SCENARIO" == protocols ]]; then
   done
   curl --silent --fail --max-time 2 http://127.0.0.1:18888/health >/dev/null
 fi
+if [[ "$SCENARIO" == oauth ]]; then
+  umask 077
+  mkdir -p "$PROJECT/storage/lab-oauth-keys"
+  openssl ecparam -name prime256v1 -genkey -noout -out "$PROJECT/storage/lab-oauth-keys/private.pem"
+  openssl ec -in "$PROJECT/storage/lab-oauth-keys/private.pem" -pubout -out "$PROJECT/storage/lab-oauth-keys/public.pem"
+fi
 php "$probe" setup
 total=0
 for concurrency in 1 4 8; do
   iterations=40
-  if [[ "$SCENARIO" == accounts || "$SCENARIO" == security || "$SCENARIO" == passkey || "$SCENARIO" == authorization ]]; then iterations=8; fi
+  if [[ "$SCENARIO" == accounts || "$SCENARIO" == security || "$SCENARIO" == passkey || "$SCENARIO" == authorization || "$SCENARIO" == oauth ]]; then iterations=8; fi
   if [[ "$SCENARIO" == queue ]]; then iterations=20; fi
   start="$(date +%s%3N)"
   pids=()

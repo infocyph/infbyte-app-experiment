@@ -9,6 +9,8 @@ require __DIR__ . '/bootstrap.php';
 $app = application();
 $scenario = match (getenv('SCENARIO')) {
     'orders' => new Orders($app),
+    'storage' => new Storage($app),
+    'oauth' => new OAuth($app),
     'accounts' => new Accounts($app),
     'mail' => new Mail($app),
     'security', 'passkey', 'authorization' => new Security($app),
