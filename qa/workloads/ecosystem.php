@@ -50,9 +50,12 @@ require __DIR__ . '/ecosystem-invalidation.php';
 require __DIR__ . '/ecosystem-storage-adapters.php';
 require __DIR__ . '/ecosystem-cache-ha.php';
 require __DIR__ . '/ecosystem-otp-boundaries.php';
+require __DIR__ . '/ecosystem-validation-matrix.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'validation-rules' => validationRulesWorkload(),
+    'validation-database' => validationDatabaseWorkload(),
     'otp-backends' => otpBackendsWorkload(),
     'otp-drift' => otpDriftWorkload(),
     'scylla' => scyllaWorkload(),

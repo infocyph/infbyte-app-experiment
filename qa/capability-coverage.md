@@ -129,3 +129,5 @@ B42 adds real migration recovery, lost transactions and ProxySQL concurrency. Ho
 B43 adds native runtime control/recycling/reload and HTTP wire framing/limits/recovery.
 
 B44 adds native shared OTP backend coverage and independent durable Foundation recovery race, drift and rotation. Known upstream defects remain reproducible.
+
+B45 maps every current ReqShield built-in enum token to representative executable cases, with database rules on all three existing data backends. Hosted verification pending.

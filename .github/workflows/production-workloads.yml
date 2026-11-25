@@ -15,6 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-validation-rules, backend: pgsql}
+          - {scenario: ecosystem-validation-database, backend: mysql}
+          - {scenario: ecosystem-validation-database, backend: pgsql}
+          - {scenario: ecosystem-validation-database, backend: sqlite}
           - {scenario: ecosystem-otp-durable, backend: mysql}
           - {scenario: ecosystem-otp-durable, backend: pgsql}
           - {scenario: ecosystem-otp-backends, backend: mysql}

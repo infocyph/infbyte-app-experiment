@@ -187,3 +187,7 @@ I: two actual native-server lanes. Supervisor uses protected Unix control, overs
 ## B44 — durable OTP and factor lifecycle
 
 I: five independent lanes: actual Foundation recovery-code store on MySQL/PostgreSQL with 12 separate consumers of one proof, regenerated/foreign account rejection and replacement-process exhaustion; GenericOtp shared replay, key and expiry across Redis/file/SQLite/SQL backends; TOTP SHA1/256/512 × 6/8 digits, bounded drift, non-regressing replay state and rotation enrollment/grace boundary. Durable recovery intentionally retains published schema behavior and may reproduce the known recovery ID-width defect. Proofs live only in runner-private temporary storage, never artifacts. Hosted qualification pending.
+
+## B45 — ReqShield built-in rule inventory
+
+I: representative positive/negative or exclusion fixtures for every current BuiltinRule enum token (108 at authoring), including dynamic/compiled parity, repeated validation, real upload-content spoof checks and callback/bail behavior. Separate MySQL/PostgreSQL/SQLite database-rule lanes run 260 exists and 260 unique candidates, concrete error correlation, ignore and soft-delete semantics, missing provider and real dropped-table failure. Active URL uses public example.com DNS and reserved .invalid; no HTTP request. The executable enum comparison fails on added/removed tokens, not a claim of every parameter combination. Hosted verification pending.

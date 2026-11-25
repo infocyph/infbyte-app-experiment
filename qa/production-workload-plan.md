@@ -227,3 +227,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B44 — durable OTP and factor lifecycle
 - [x] Five durable, backend matrix, drift and rotation lanes.
 - [ ] Hosted qualification and remaining auth lifecycle/provider combinations.
+
+## B45 — validation rule and database matrix
+- [x] Representative fixtures for every current built-in rule token and three real database lanes.
+- [ ] Hosted verification; expanded parameter/cast/sanitizer and wildcard variations remain open.
