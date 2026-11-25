@@ -77,6 +77,14 @@ function databaseCacheRaceAdvance(Connection $db): void
     check(balance($db, 1) === 125 && balance($db, 2) === 75, 'Committed transfer failed reconciliation.');
 }
 
+function databaseCacheOverlapSeed(Connection $db): void
+{
+    if (getenv('DB_BACKEND') === 'sqlite') {
+        check(strtolower((string) $db->getPdo()->query('PRAGMA journal_mode = WAL')->fetchColumn()) === 'wal', 'WAL not active.');
+    }
+    setup($db);
+}
+
 function databaseCacheOverlapHold(Connection $db): void
 {
     $pdo = $db->getPdo();
@@ -101,19 +109,33 @@ function databaseCacheOverlapHold(Connection $db): void
 function databaseCacheOverlapRead(Connection $db, bool $verify): void
 {
     configureRaceCache($db);
-    $postgres = getenv('DB_BACKEND') === 'pgsql';
+    $driver = (string) getenv('DB_BACKEND');
+    if ($driver === 'sqlite') {
+        $root = (string) getenv('EVIDENCE');
+        $pdo = $db->getPdo();
+        check($pdo->sqliteCreateFunction('lab_overlap_gate', static function (int $value) use ($verify, $root): int {
+            if (!$verify) {
+                check($value === 100, 'SQLite reader acquired the wrong snapshot.');
+                check(touch($root . '/overlap-reader-blocked'), 'SQLite SQL callback marker failed.');
+                waitFor(static fn(): bool => is_file($root . '/overlap-release'), 'SQLite reader release missing.', 45);
+            }
+            return 1;
+        }, 1), 'SQLite SQL gate registration failed.');
+    }
     // Depend on the actual row value, so the old result has been read before blocking.
-    $gate = $postgres
-        ? 'pg_advisory_xact_lock(712821 + balance) AS gate'
-        : "GET_LOCK(CONCAT('lab-cache-overlap-', balance), 45) AS gate";
+    $gate = match ($driver) {
+        'pgsql' => 'pg_advisory_xact_lock(712821 + balance) AS gate',
+        'sqlite' => 'lab_overlap_gate(balance) AS gate',
+        default => "GET_LOCK(CONCAT('lab-cache-overlap-', balance), 45) AS gate",
+    };
     $query = $db->table('lab_balances')->select('balance')
         ->selectRaw($gate)
         ->where('id', '=', 1)->cacheTags('overlap-test')->cacheFor(120);
     $db->resetStats();
     $rows = $query->get();
     check(count($rows) === 1, 'Overlap result row count differs.');
-    if (!$postgres) {
-        check((int) $rows[0]['gate'] === 1, 'Reader did not acquire the named lock.');
+    if ($driver !== 'pgsql') {
+        check((int) $rows[0]['gate'] === 1, 'Reader did not complete the SQL gate.');
     }
     $value = (int) $rows[0]['balance'];
     if (!$verify) {
@@ -130,8 +152,11 @@ function databaseCacheOverlapRead(Connection $db, bool $verify): void
 function databaseCacheOverlapCommit(Connection $db): void
 {
     configureRaceCache($db);
-    $postgres = getenv('DB_BACKEND') === 'pgsql';
-    waitFor(static fn(): bool => (int) ($postgres
+    $driver = (string) getenv('DB_BACKEND');
+    if ($driver === 'sqlite') {
+        waitFor(static fn(): bool => is_file(getenv('EVIDENCE') . '/overlap-reader-blocked'), 'SQLite reader never reached its SQL callback.', 25);
+    } else {
+        waitFor(static fn(): bool => (int) ($driver === 'pgsql'
         ? $db->scalar(
             "SELECT COUNT(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND wait_event = 'advisory' AND query LIKE ? AND pid <> pg_backend_pid()",
             ['%pg_advisory_xact_lock(712821 + balance)%'],
@@ -140,6 +165,7 @@ function databaseCacheOverlapCommit(Connection $db): void
             "SELECT COUNT(*) FROM information_schema.PROCESSLIST WHERE ID <> CONNECTION_ID() AND LOWER(STATE) = 'user lock' AND INFO LIKE ?",
             ["%GET_LOCK(CONCAT('lab-cache-overlap-', balance)%"],
         )) === 1, 'No actual in-flight SQL lock wait observed.', 25);
+    }
     $db->transaction(static function (Connection $transaction): void {
         $transaction->table('lab_balances')->where('id', '=', 1)->update(['balance' => 125]);
         $transaction->table('lab_balances')->where('id', '=', 2)->update(['balance' => 75]);

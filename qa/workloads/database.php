@@ -282,6 +282,7 @@ match ($argv[1] ?? '') {
     'sqlserver-ag-read' => sqlServerAgRead(),
     'sqlserver-ag-promoted' => sqlServerAgPromoted(),
     'cache-race-seed' => setup($db),
+    'cache-overlap-seed' => databaseCacheOverlapSeed($db),
     'active-backup-seed' => activeBackupSeed($db),
     'active-backup-gate' => activeBackupGate($db),
     'active-backup-snapshot' => activeBackupSnapshot($db),
