@@ -267,3 +267,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B54 — inventory and closure audit
 - [x] Executable matrix dispatch/identity checks, published source inventory and consolidated residual register.
 - [ ] Close remaining concrete gaps in production-gap-register.md; verify hosted scenario evidence. No upstream remediation in Phase 1.
+
+## B55 — Pathwise lifecycle
+- [x] Index/retention/deduplication, archive boundaries and live watcher scenarios.
+- [ ] Hosted qualification and remote interruption/remaining adapter contracts.

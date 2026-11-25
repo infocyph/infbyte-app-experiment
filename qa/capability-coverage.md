@@ -149,3 +149,5 @@ B52 adds live additive migration and old/new compiled deployment generation over
 B53 adds connected business dependency outage, worker reservation loss and restored ledger digest checks.
 
 B54 adds executable matrix/public declaration inventory and the [current residual register](production-gap-register.md). Historical broad rows are not a claim of complete implementation.
+
+B55 adds exact local indexing, retention, hard-link deduplication, ZIP safety and live watcher coverage.

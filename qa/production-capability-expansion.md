@@ -227,3 +227,7 @@ I: two PostgreSQL × fused/sharded connected checkout lanes. After 160 durable o
 ## B54 — executable matrix and published source inventory
 
 I: independent audit lane checks normalized job identities, fused/sharded-only routing, matrix ceiling, dispatch coverage and referenced shell/PHP files; emits actual resolved Infocyph package versions and lexical declared public-method/type inventory without loading optional classes. It deliberately does not measure behavioral coverage. [Consolidated remaining register](production-gap-register.md) distinguishes implemented families from remaining executable cases and environmental qualification. All B41–B53 additions are committed; exact-head hosted verification pending. Full public production-contract closure is not established.
+
+## B55 — Pathwise indexing, retention, archive and watcher lifecycle
+
+I: three independent lanes: 120-file exact checksum index, stream iteration, preview/apply retention and actual hard-link deduplication; bounded ZIP extraction rejects traversal and oversized entries before mutating existing destination and accepts a valid archive; independent child-process file changes observed by live watcher and final snapshot. These exercise local storage, not remote interruption or all archive/ownership variants. FLOW-02: no skipped or weakened gates; DATA/OPS: disposable files and child reaped; hosted verification pending.
