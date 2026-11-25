@@ -1847,6 +1847,30 @@ jobs:
           - {scenario: ecosystem-otp-cluster-valkey-shard-loss-mobile, backend: pgsql}
           - {scenario: ecosystem-otp-cluster-valkey-shard-loss-ocra-counter, backend: pgsql}
           - {scenario: ecosystem-otp-cluster-valkey-shard-loss-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv4-global, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv6-global, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv4-no-reserved, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv6-no-reserved, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv4-no-private, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv6-no-private, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv4-short-alias, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-ipv6-short-alias, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-v1, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-v2, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-v3, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-v5, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-reversed-range, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-uuid-exclude-one, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-decimal-lower-bound, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-decimal-upper-bound, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-decimal-zero-range, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-fractional-multiple, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-negative-multiple, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-min-digits-leading-zero, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-max-digits-leading-zero, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-hex-short, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-hex-unprefixed, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-regex-alternation, backend: pgsql}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

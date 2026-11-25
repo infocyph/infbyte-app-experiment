@@ -946,3 +946,7 @@ I: 27 independent workloads (read fallback, rejected writes and optional Webrick
 ## B220 — OTP Redis/Valkey Cluster minority and missing-shard failure/recovery
 
 I: 24 independent lanes (two real six-node cluster topologies × complete loss of one state-owning primary/replica pair or loss of two primary/replica pairs × all six factor contracts). Native cluster failure and write rejection verified while remaining nodes are alive, valid pending/next and spent proofs rejected, stopped nodes restarted with durable AOF, native rejected mutation absent, and fresh client exact replay/race/owner reconciliation. Does not claim automatic failover when the state-owning replica is also stopped. CORE-01, SEC, DATA, OPS, EXEC-03: source/dispatch and matrix inspected; hosted execution pending. 1,929 routine entries, 1,142 distinct names, 21 engineering modes.
+
+## B221 — ReqShield granular parameter boundaries
+
+I: 24 independently executable rule-option lanes in both mutable and compiled validators, with positive/negative/reuse assertions: IP version aliases and global/private/reserved ranges, UUID explicit/reversed-range/exclusion versions, decimal exact range boundaries, fractional and negative multiples, leading-zero digit bounds, hex short/unprefixed forms and regex alternation. No network requests or external DNS dependence in these lanes. CORE-01, TYPE, SEC, EXEC-03: source and dispatch inspected; hosted execution pending. 1,953 routine entries, 1,166 distinct scenario names, 21 engineering modes.

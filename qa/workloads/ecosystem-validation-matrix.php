@@ -419,3 +419,36 @@ function validationPathOptionsContracts(): void
     }
     echo "Portable absolute/relative path classification and filename/input boundaries passed\n";
 }
+
+function validationGranularOptionContracts(string $contract): void
+{
+    [$rule, $positive, $negative] = match ($contract) {
+        'ipv4-global' => ['ip:v4,global', '8.8.8.8', '100.64.0.1'],
+        'ipv6-global' => ['ip:v6,global', '2001:4860:4860::8888', '2001:db8::1'],
+        'ipv4-no-reserved' => ['ip:v4,no_reserved', '10.0.0.1', '127.0.0.1'],
+        'ipv6-no-reserved' => ['ip:v6,no_reserved', 'fd00::1', '::1'],
+        'ipv4-no-private' => ['ip:v4,no_private', '8.8.8.8', '172.16.0.1'],
+        'ipv6-no-private' => ['ip:v6,no_private', '2001:4860:4860::8888', 'fd00::1'],
+        'ipv4-short-alias' => ['ip:4,priv', '192.168.1.1', 'fd00::1'],
+        'ipv6-short-alias' => ['ip:6,priv', 'fd00::1', '10.0.0.1'],
+        'uuid-v1' => ['uuid:1', '550e8400-e29b-11d4-a716-446655440000', '550e8400-e29b-21d4-a716-446655440000'],
+        'uuid-v2' => ['uuid:2', '550e8400-e29b-21d4-a716-446655440000', '550e8400-e29b-31d4-a716-446655440000'],
+        'uuid-v3' => ['uuid:3', '550e8400-e29b-31d4-a716-446655440000', '550e8400-e29b-51d4-a716-446655440000'],
+        'uuid-v5' => ['uuid:5', '550e8400-e29b-51d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440000'],
+        'uuid-reversed-range' => ['uuid:4-2', '550e8400-e29b-21d4-a716-446655440000', '550e8400-e29b-51d4-a716-446655440000'],
+        'uuid-exclude-one' => ['uuid:!1', '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-11d4-a716-446655440000'],
+        'decimal-lower-bound' => ['decimal:2,4', '-10.00', '-10.0'],
+        'decimal-upper-bound' => ['decimal:2,4', '10.0000', '10.00000'],
+        'decimal-zero-range' => ['decimal:0,2', '0', '0.001'],
+        'fractional-multiple' => ['multiple_of:0.25', '2.75', '2.6'],
+        'negative-multiple' => ['multiple_of:5', '-15', '-14'],
+        'min-digits-leading-zero' => ['min_digits:5', '00001', '0001'],
+        'max-digits-leading-zero' => ['max_digits:5', '00001', '000001'],
+        'hex-short' => ['hex_color', '#a0F', '#a0F1'],
+        'hex-unprefixed' => ['hex_color', 'aabbcc', 'aabbcg'],
+        'regex-alternation' => ['regex:/^(?:alpha|beta)$/', 'beta', 'alpha-beta'],
+        default => throw new InvalidArgumentException('Unknown granular validation contract.'),
+    };
+    validationPair($contract, $rule, ['v' => $positive], ['v' => $negative]);
+    echo "Granular validation $contract passed in mutable and compiled validators\n";
+}
