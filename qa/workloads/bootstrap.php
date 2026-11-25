@@ -145,7 +145,7 @@ function configuration(): array
         $config['app']['capabilities'] = ['cache', 'database', 'filesystem', 'validation', 'runwire'];
     }
 
-    if (in_array(getenv('SCENARIO'), ['oauth', 'refresh', 'oidc', 'dpop', 'oauth-http', 'ecosystem-jwt-replay'], true)) {
+    if (in_array(getenv('SCENARIO'), ['oauth', 'refresh', 'oidc', 'dpop', 'oauth-http', 'ecosystem-jwt-replay', 'ecosystem-consent-lifecycle'], true)) {
         $keyRoot = $root . '/storage/lab-oauth-keys';
         $config['auth']['oauth'] = [
             'enabled' => true, 'issuer' => 'https://identity.example.test',
@@ -159,7 +159,7 @@ function configuration(): array
         ];
     }
 
-    if (in_array(getenv('SCENARIO'), ['oidc', 'oauth-http'], true)) {
+    if (in_array(getenv('SCENARIO'), ['oidc', 'oauth-http', 'ecosystem-consent-lifecycle'], true)) {
         $keyRoot = $root . '/storage/lab-oidc-keys';
         $config['auth']['oauth']['resource_audiences'][] = 'https://identity.example.test/oidc/userinfo';
         $config['auth']['oauth']['oidc'] = [

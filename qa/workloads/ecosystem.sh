@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 case "$SCENARIO" in
-  ecosystem-auth-lifecycle|ecosystem-jwt-replay) bash "$GITHUB_WORKSPACE/qa/workloads/auth-lifecycle.sh" ;;
+  ecosystem-auth-lifecycle|ecosystem-jwt-replay|ecosystem-consent-lifecycle) bash "$GITHUB_WORKSPACE/qa/workloads/auth-lifecycle.sh" ;;
   ecosystem-remote-jwks) bash "$GITHUB_WORKSPACE/qa/workloads/jwks.sh" ;;
   ecosystem-jwks-dns-*) bash "$GITHUB_WORKSPACE/qa/workloads/jwks-dns.sh" ;;
   ecosystem-di-preload)

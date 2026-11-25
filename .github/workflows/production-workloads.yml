@@ -187,6 +187,8 @@ jobs:
           - {scenario: ecosystem-auth-lifecycle, backend: mysql}
           - {scenario: ecosystem-jwt-replay, backend: mysql}
           - {scenario: ecosystem-auth-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-consent-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-consent-lifecycle, backend: mysql}
           - {scenario: ecosystem-jwt-replay, backend: pgsql}
           - {scenario: ecosystem-amqp-dlq, backend: pgsql}
           - {scenario: ecosystem-amqp-ack-uncertain, backend: pgsql}

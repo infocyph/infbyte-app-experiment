@@ -621,3 +621,7 @@ I: three independent lanes exercise collection presence and ownership through ar
 ## B142 — Real broker consumer failure contracts and matrix capacity
 
 I: four independent AMQP/SQS-compatible plus MySQL/PostgreSQL jobs exercise transient retry with real broker redelivery, SQS delayed visibility, retry exhaustion, explicitly non-retryable failure, raw decode failure, durable SQL failure and business effect reconciliation, and actual RabbitMQ terminal DLX routing. Split the growing ecosystem matrix into two independently bounded reusable-worker shards and retain all prior entries; update the inventory shard validation without weakening uniqueness or dispatch checks. 435 routine rows; hosted qualification pending (DATA, OPS, EXEC-03). No upstream modifications.
+
+## B143 — Durable OAuth/OIDC consent and public subject lifecycle
+
+I: two independent MySQL/PostgreSQL consumer lanes execute four separate processes against real Foundation OAuth stores. Grant distinct account/client/scope/audience identities, verify idempotent canonical scope fingerprints, revoke only matching account/client grants, regrant the old identity and reconcile a fresh process. Issue signed ID/access tokens and require public subject stability across clients, independent subject identity for a second account, verified nonce and actual UserInfo email projection. No token or signing material enters evidence; consent revocation is not asserted to revoke already issued tokens. 437 routine rows; hosted qualification pending (SEC, DATA, CONFIG, EXEC-03).
