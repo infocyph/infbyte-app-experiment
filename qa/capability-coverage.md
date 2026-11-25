@@ -133,3 +133,5 @@ B44 adds native shared OTP backend coverage and independent durable Foundation r
 B45 maps every current ReqShield built-in enum token to representative executable cases, with database rules on all three existing data backends. Hosted verification pending.
 
 B46 adds actual Redis outage/fail-open/fail-closed and independent node process invalidation/cursor reconciliation.
+
+B47 adds actual trusted/untrusted mailbox TLS, STARTTLS/STLS and IMAP IDLE arrival.

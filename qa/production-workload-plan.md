@@ -235,3 +235,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B46 — cache fault and process coherence
 - [x] Actual Redis outage policies/restart and multiprocess distributed cache invalidation.
 - [ ] Hosted verification and remaining backend-specific failure contracts.
+
+## B47 — mailbox trust and IDLE
+- [x] Actual IMAP/POP3 implicit and negotiated TLS and new-message IDLE lane.
+- [ ] Hosted verification and remaining communication/broker variants.

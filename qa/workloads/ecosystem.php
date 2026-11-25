@@ -52,9 +52,13 @@ require __DIR__ . '/ecosystem-cache-ha.php';
 require __DIR__ . '/ecosystem-otp-boundaries.php';
 require __DIR__ . '/ecosystem-validation-matrix.php';
 require __DIR__ . '/ecosystem-cache-faults.php';
+require __DIR__ . '/ecosystem-mailbox-tls.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'mailbox-tls' => mailboxTlsWorkload(),
+    'mailbox-untrusted' => mailboxUntrustedWorkload(),
+    'mailbox-idle' => mailboxIdleWorkload(),
     'cache-outage' => cacheOutageWorkload(),
     'invalidation-processes' => invalidationProcessesWorkload(),
     'validation-rules' => validationRulesWorkload(),

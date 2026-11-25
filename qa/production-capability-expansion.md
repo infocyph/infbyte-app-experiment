@@ -195,3 +195,7 @@ I: representative positive/negative or exclusion fixtures for every current Buil
 ## B46 — cache outage and independent process coherence
 
 I: real disposable Redis AOF stop/restart with existing fail-open/fail-closed clients and replacement-client durable reconciliation; eight independent SQLite-backed local node processes consuming real Redis Stream key/tag invalidations, checking unrelated entries and cursor persistence. No transparent reconnection guarantee asserted. TLS and remaining backend-specific failure contracts remain open. Hosted verification pending.
+
+## B47 — inbound mail TLS and real IDLE
+
+I: independent Dovecot TLS/STARTTLS/STLS lane tests implicit and negotiated TLS for IMAP and POP3, rejection without private trust anchor, trusted message fetch; second lane observes actual new-mail arrival via IMAP IDLE and successful DONE/session reuse. Private keys remain outside artifacts and trust anchor supplied only to test PHP invocation. Hosted verification pending; broker HA/FIFO and other communication policies remain open.
