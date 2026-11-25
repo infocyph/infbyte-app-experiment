@@ -29,6 +29,8 @@ jobs:
           - {scenario: http, backend: pgsql, host: native}
           - {scenario: http, backend: mysql, host: native}
           - {scenario: http, backend: pgsql, host: fpm}
+          - {scenario: protocols, backend: pgsql}
+          - {scenario: operations, backend: pgsql}
     services:
       postgres:
         image: postgres:17
@@ -114,13 +116,20 @@ jobs:
           php-fpm8.6 -v
           nginx -v
       - name: Execute independent concurrent business workers and reconcile state
-        if: matrix.scenario != 'http'
+        if: matrix.scenario != 'http' && matrix.scenario != 'operations'
         shell: bash
         run: bash qa/workloads/stress.sh
       - name: Exercise compiled production HTTP application and host replacement
         if: matrix.scenario == 'http'
         shell: bash
         run: bash qa/workloads/http.sh
+      - name: Exercise distributed scheduling, state restore, release rollback and backend failure
+        if: matrix.scenario == 'operations'
+        env:
+          POSTGRES_SERVICE: ${{ job.services.postgres.id }}
+          REDIS_SERVICE: ${{ job.services.redis.id }}
+        shell: bash
+        run: bash qa/workloads/operations.sh
       - uses: actions/upload-artifact@v7
         if: always()
         with:

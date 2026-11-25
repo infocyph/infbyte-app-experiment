@@ -12,8 +12,9 @@ $scenario = match (getenv('SCENARIO')) {
     'accounts' => new Accounts($app),
     'mail' => new Mail($app),
     'security', 'passkey' => new Security($app),
-    'http' => new Orders($app),
+    'http', 'operations' => new Orders($app),
     'queue' => new Queues($app),
+    'protocols' => new Protocols($app),
     default => throw new \InvalidArgumentException('Unknown workload.'),
 };
 $mode = $argv[1] ?? '';
@@ -24,6 +25,12 @@ if ($mode === 'setup') {
     }
 } elseif ($mode === 'verify') {
     $app->execution()->run(static fn() => $scenario->verify((int) ($argv[2] ?? 0)));
+} elseif ($mode === 'crash-seed' && $scenario instanceof Queues) {
+    $app->execution()->run($scenario->seedCrash(...));
+} elseif ($mode === 'crash-reserve' && $scenario instanceof Queues) {
+    $scenario->reserveCrash();
+} elseif ($mode === 'crash-verify' && $scenario instanceof Queues) {
+    $app->execution()->run($scenario->verifyCrash(...));
 } elseif ($mode === 'drain' && $scenario instanceof Queues) {
     $scenario->drain();
 } elseif ($mode === 'worker') {

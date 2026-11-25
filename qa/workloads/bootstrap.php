@@ -71,6 +71,15 @@ function configuration(): array
             'consumer' => ['transport' => 'database'],
             'retry' => ['maximum_attempts' => 2, 'initial_delay_seconds' => 0.0, 'multiplier' => 1.0, 'maximum_delay_seconds' => 0.0, 'jitter_ratio' => 0.0],
         ],
+        'communication' => [
+            'http' => ['default_client' => 'lab', 'clients' => ['lab' => [
+                'timeoutSeconds' => 5, 'connectTimeoutSeconds' => 2,
+            ]]],
+            'webhooks' => [
+                'default_inbound' => 'lab',
+                'inbound' => ['lab' => ['secret' => getenv('AUTH_TOKEN_SECRET'), 'max_age_seconds' => 300]],
+            ],
+        ],
         'notifications' => ['email' => [
             'default_sender' => 'mailpit',
             'senders' => ['mailpit' => ['transport' => 'mailpit']],
@@ -93,6 +102,12 @@ function configuration(): array
         $config['cache']['serialization'] = ['allow_object_payloads' => false, 'allow_closure_payloads' => false];
         $config['notifications']['auth'] = ['sender' => 'mailpit', 'from' => 'security@example.test'];
         $config['notifications']['email']['default_from'] = 'security@example.test';
+    }
+
+    if (getenv('SCENARIO') === 'operations') {
+        $config['app']['env'] = 'production';
+        $config['app']['debug'] = false;
+        $config['app']['capabilities'] = ['cache', 'database', 'filesystem', 'validation', 'runwire'];
     }
 
     return $config;

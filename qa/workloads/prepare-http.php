@@ -20,6 +20,12 @@ foreach ($config as $key => $value) {
     ensure(file_put_contents($path, "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($merged, true) . ";\n", LOCK_EX) !== false, 'Config fixture write failed.');
     chmod($path, 0600);
 }
+if (getenv('SCENARIO') === 'operations') {
+    $console = $root . '/routes/console.php';
+    ensure(file_put_contents($console, "<?php\n\ndeclare(strict_types=1);\n\nreturn ['lab:report' => \\Experiment\\ReportCommand::class];\n", LOCK_EX) !== false, 'Command registration failed.');
+    ensure(copy(__DIR__ . '/schedule-routes.php', $root . '/routes/schedule.php'), 'Schedule registration failed.');
+    return;
+}
 $route = $root . '/routes/api.php';
 $original = file_get_contents($route);
 $addition = file_get_contents(__DIR__ . '/http-routes.php');

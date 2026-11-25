@@ -13,6 +13,16 @@ if [[ "$SCENARIO" == mail ]]; then
   done
   curl --silent --fail --max-time 2 http://127.0.0.1:8025/api/v1/messages > /dev/null
 fi
+if [[ "$SCENARIO" == protocols ]]; then
+  php -S 127.0.0.1:18888 "$GITHUB_WORKSPACE/qa/workloads/webhook-peer.php" > "$EVIDENCE/peer.log" 2>&1 &
+  peer=$!
+  trap 'kill "$peer" 2>/dev/null || :; wait "$peer" 2>/dev/null || :' EXIT
+  for attempt in $(seq 1 30); do
+    if curl --silent --fail --max-time 2 http://127.0.0.1:18888/health >/dev/null; then break; fi
+    sleep 1
+  done
+  curl --silent --fail --max-time 2 http://127.0.0.1:18888/health >/dev/null
+fi
 php "$probe" setup
 total=0
 for concurrency in 1 4 8; do
@@ -50,3 +60,23 @@ for concurrency in 1 4 8; do
   php "$probe" verify "$total"
 done
 printf 'Verified %s completed business operations across concurrency levels 1, 4, 8.\n' "$total" | tee -a "$GITHUB_STEP_SUMMARY"
+
+if [[ "$SCENARIO" == queue ]]; then
+  php "$probe" crash-seed
+  php "$probe" crash-reserve > "$EVIDENCE/queue-crash.log" 2>&1 &
+  doomed=$!
+  for attempt in $(seq 1 50); do
+    if [[ -f "$RUNNER_TEMP/receipt-reserved" ]]; then break; fi
+    if ! kill -0 "$doomed" 2>/dev/null; then cat "$EVIDENCE/queue-crash.log" >&2; exit 1; fi
+    sleep 0.1
+  done
+  test -f "$RUNNER_TEMP/receipt-reserved"
+  kill -KILL "$doomed"
+  status=0
+  wait "$doomed" || status=$?
+  [[ "$status" == 137 ]]
+  sleep 4
+  php "$probe" drain
+  php "$probe" crash-verify
+  echo "Abrupt queue worker death, lease expiration and durable effect recovery verified." >> "$GITHUB_STEP_SUMMARY"
+fi

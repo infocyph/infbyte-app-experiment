@@ -68,6 +68,34 @@ final readonly class Queues
     }
 
     /** @throws \Throwable */
+    public function seedCrash(): void
+    {
+        $this->app->make(MessageBus::class)->dispatch(new Receipt('crash-recovered', 'normal'));
+    }
+
+    /** @throws \Throwable */
+    public function reserveCrash(): never
+    {
+        $transport = $this->app->make(DBLayerTransport::class);
+        foreach ($transport->receive('receipts', 1, 3.0) as $reservation) {
+            ensure($reservation->envelope()->message instanceof Receipt, 'Unexpected crash fixture.');
+            ensure($reservation->envelope()->message->id === 'crash-recovered', 'Wrong reserved message.');
+            ensure(file_put_contents(getenv('RUNNER_TEMP') . '/receipt-reserved', 'reserved', LOCK_EX) !== false, 'Reservation handshake failed.');
+            // Supervisor deliberately terminates this process without ack/release.
+            sleep(30);
+        }
+        throw new \RuntimeException('Crash reservation was not terminated by the supervisor.');
+    }
+
+    /** @throws \Throwable */
+    public function verifyCrash(): void
+    {
+        $db = $this->app->make(DBLayerFactory::class)->connection();
+        ensure($this->app->make(DBLayerTransport::class)->size('receipts') === 0, 'Crash recovery left a pending message.');
+        ensure(countValue($db->scalar('SELECT COUNT(*) FROM experiment_receipts WHERE id = ?', ['crash-recovered'])) === 1, 'Crash recovery did not produce exactly one effect.');
+    }
+
+    /** @throws \Throwable */
     public function verify(int $expected): void
     {
         $db = $this->app->make(DBLayerFactory::class)->connection();
