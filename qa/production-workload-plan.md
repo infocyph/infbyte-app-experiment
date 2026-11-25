@@ -521,3 +521,7 @@ I: isolated plaintext AMQP 0-9-1 frame relay forwards real RabbitMQ traffic with
 ## B117 — SQS-compatible wire-level delete settlement ambiguity
 
 I: local HTTP fault relay connected through cURL CONNECT_TO retains the real SDK's origin URL and request signature. Supports AWS JSON and Query DeleteMessage dispatch, drops the complete request before forwarding or withholds an actual HTTP 200 origin response, and marks duplicate fault requests. SDK retries disabled for the faulted client; direct replacement consumer reconciles visibility-timeout redelivery versus settled absence and verifies one durable SQL effect per identity. No real AWS exactly-once or provider availability claim. 374 routine rows; hosted qualification pending (DATA, OPS, EXEC-03).
+
+## B118 — SQL Server encrypted commit response loss
+
+I: real SQL Server/ODBC lane confirms encrypted transport using the connection DMV. A bounded opaque TCP relay is armed only after the final application statement and before native commit, holds subsequent server bytes without inspecting TLS or TDS, and closes only after a separate direct SQL process observes the committed ledger and both conserved balances. Require the application to report unknown commit, one execution, no confirmed-commit callback, clean reconnect and durable idempotency reconciliation. This establishes the observed commit/client-response-loss boundary, not a decoded TDS COMMIT frame or certificate identity qualification (separate B74). 375 routine rows; hosted qualification pending (DATA, SEC, OPS, EXEC-03).

@@ -298,6 +298,7 @@ match ($argv[1] ?? '') {
     'cache-race-verify' => databaseCacheRaceVerify((int) ($argv[2] ?? -1)),
     'cache-race-advance' => databaseCacheRaceAdvance($db),
     'commit-uncertain' => uncertainCommitWorkload($db),
+    'commit-observe' => sqlServerCommitObserve($db),
     'migration-fault' => migrationFault($db),
     'connection-loss' => connectionLoss($db),
     'mysql-proxy-worker' => mysqlProxyWorker((int) ($argv[2] ?? 0)),

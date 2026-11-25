@@ -11,27 +11,39 @@ function uncertainCommitWorkload(Connection $direct): void
     $direct->statement('CREATE TABLE lab_commit_ledger (id VARCHAR(40) PRIMARY KEY, amount INTEGER NOT NULL)');
     $port = (int) getenv('LAB_COMMIT_PROXY_PORT');
     check($port > 0, 'Proxy port missing.');
-    // The protocol-aware fault proxy is an isolated plaintext loopback fixture.
-    $settings = ['port' => $port, 'timeout' => 3];
+    $sqlServer = getenv('DB_BACKEND') === 'mssql';
+    $root = (string) getenv('LAB_COMMIT_PROXY_ROOT');
+    // PostgreSQL and MySQL-family use a plaintext protocol relay. SQL Server retains encryption.
+    $settings = ['port' => $port, 'timeout' => $sqlServer ? 20 : 3];
     if ($direct->getDriverName() === 'pgsql') {
         $settings['sslmode'] = 'disable';
     }
     $db = new Connection(config($settings));
+    if ($sqlServer) {
+        check(strtoupper((string) $db->scalar('SELECT encrypt_option FROM sys.dm_exec_connections WHERE session_id = @@SPID')) === 'TRUE', 'SQL Server commit fault connection is not encrypted.');
+    }
     $attempts = 0;
     $effects = 0;
     $failure = false;
     try {
-        $db->transaction(static function (Connection $active) use (&$attempts, &$effects): void {
+        $db->transaction(static function (Connection $active) use (&$attempts, &$effects, $sqlServer, $root): void {
             ++$attempts;
             $active->table('lab_commit_ledger')->insert(['id' => 'checkout-42', 'amount' => 10]);
             $active->update('UPDATE lab_balances SET balance = balance - 10 WHERE id = ?', [1]);
             $active->update('UPDATE lab_balances SET balance = balance + 10 WHERE id = ?', [2]);
             $active->afterCommit(static function () use (&$effects): void { ++$effects; });
+            if ($sqlServer) {
+                check(touch($root . '/arm'), 'Commit response gate arm failed.');
+                waitFor(static fn(): bool => is_file($root . '/armed'), 'Encrypted response gate was not armed.', 10);
+            }
         }, attempts: 3);
     } catch (DBException) {
         $failure = true;
     }
-    check(is_file(getenv('LAB_COMMIT_PROXY_ROOT') . '/ack-dropped'), 'Fault never reached a real COMMIT acknowledgement.');
+    check(is_file($root . '/ack-dropped'), 'Fault never reached a real COMMIT acknowledgement.');
+    if ($sqlServer) {
+        check(is_file($root . '/commit-observed'), 'Independent observer did not confirm the durable SQL Server commit.');
+    }
     check($failure && $attempts === 1 && $effects === 0, 'Ambiguous commit replayed or reported a confirmed outcome.');
     check($direct->table('lab_commit_ledger')->count() === 1 && balance($direct, 1) === 90 && balance($direct, 2) === 110, 'Committed database state did not reconcile.');
     // An independent execution must resolve the uncertain result by durable identity.
@@ -47,4 +59,23 @@ function uncertainCommitWorkload(Connection $direct): void
     });
     check($result === 'already-committed' && balance($direct, 1) + balance($direct, 2) === 200, 'Recovery did not preserve financial invariants.');
     echo "Actual dropped database COMMIT acknowledgement, no automatic replay/callback and durable idempotency reconciliation passed\n";
+}
+
+function sqlServerCommitObserve(Connection $direct): void
+{
+    $root = (string) getenv('LAB_COMMIT_PROXY_ROOT');
+    waitFor(static fn(): bool => is_file($root . '/response-held'), 'No encrypted server response was held after arming.', 40);
+    // Never release the fault gate for an uncommitted or partially committed transaction.
+    $direct->getPdo()->exec('SET LOCK_TIMEOUT 1000');
+    waitFor(static function () use ($direct): bool {
+        try {
+            return $direct->table('lab_commit_ledger')->count() === 1
+                && (int) $direct->table('lab_commit_ledger')->where('id', '=', 'checkout-42')->value('amount') === 10
+                && balance($direct, 1) === 90 && balance($direct, 2) === 110;
+        } catch (DBException) {
+            return false;
+        }
+    }, 'Independent SQL Server observer did not see a complete durable commit.', 12);
+    check(touch($root . '/commit-observed'), 'Durable commit marker failed.');
+    echo "Encrypted server response held; independent committed ledger and balances reconciled\n";
 }
