@@ -399,3 +399,7 @@ I: four independent MySQL/PostgreSQL jobs. Sync and durable SQL transport share 
 ## B120 — TalkingBytes HTTP proxy and mutation retry safety
 
 I: two independent lanes reuse real TLS origin. Mutation lane requires unkeyed POST to stop on 503, keyed/generated-key/explicit opt-in attempts to preserve exact body and stable identity, and deadline/cancellation to prevent a second actual request. Proxy lane uses a fixed-target loopback authenticated CONNECT fixture, checks invalid credentials, origin TLS verification, proxy authorization not reaching origin, host allowlist and strict private-network policy before proxy contact. No general-purpose proxy or external target. 381 routine rows; hosted qualification pending (SEC, DATA, OPS, EXEC-03).
+
+## B121 — ArrayKit helper boundaries and configuration mutation lifecycle
+
+I: independent helper lane verifies native reference key-preserving operations, early callback exit, pagination/offset bounds, falsey semantics, finite overflow-safe statistics, seeded shuffle, random/range bounds, guarded nested budgets and cycle termination, associative transpose and distinct config-list semantics. Configuration lane exercises typed cached reads, fill/append/prepend/forget, snapshot restore, read-only rejection, compiled artifact roundtrip, failed reload preserving active generation and replacement without stale lazy namespace resurrection. 383 routine rows; hosted qualification pending (TYPE, CONFIG, DATA, EXEC-03).

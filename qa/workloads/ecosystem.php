@@ -135,6 +135,8 @@ match ($argv[1] ?? '') {
     'array-transforms' => arrayTransformsWorkload(),
     'array-set-contracts' => arraySetContractsWorkload(),
     'array-dto-guard' => arrayDtoGuardWorkload(),
+    'array-helper-boundaries' => arrayHelperBoundariesWorkload(),
+    'config-mutation-lifecycle' => configMutationLifecycleWorkload(),
     'di-environment' => diEnvironmentWorkload(),
     'sftp-trust' => sftpTrustWorkload(),
     'sftp-publication-seed' => sftpPublicationFaultWorkload('seed'),

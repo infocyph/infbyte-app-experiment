@@ -225,6 +225,8 @@ jobs:
           - {scenario: ecosystem-array-transforms, backend: pgsql}
           - {scenario: ecosystem-array-set-contracts, backend: pgsql}
           - {scenario: ecosystem-array-dto-guard, backend: pgsql}
+          - {scenario: ecosystem-array-helper-boundaries, backend: pgsql}
+          - {scenario: ecosystem-config-mutation-lifecycle, backend: pgsql}
           - {scenario: ecosystem-di-environment, backend: pgsql}
           - {scenario: ecosystem-sftp-trust, backend: pgsql}
           - {scenario: ecosystem-sftp-outage, backend: pgsql}
