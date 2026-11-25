@@ -22,7 +22,7 @@ if [[ "$SCENARIO" == browser ]]; then
   php -r 'file_put_contents($argv[1],str_repeat("0123456789abcdef",8192),LOCK_EX);' "$PROJECT/storage/lab-public/report.bin"
 elif [[ "$SCENARIO" == oauth-http ]]; then
   php "$GITHUB_WORKSPACE/qa/workloads/oauth-http-seed.php"
-elif [[ "$SCENARIO" == transfer ]]; then
+elif [[ "$SCENARIO" == transfer || "$SCENARIO" == transfer-cleanup ]]; then
   mkdir -m 700 "$PROJECT/storage/lab-transfers"
 else
   php "$probe" setup
@@ -134,6 +134,13 @@ if [[ "$SCENARIO" == oauth-http ]]; then
   start_host
   php "$GITHUB_WORKSPACE/qa/workloads/oauth-http-client.php" recover | tee "$EVIDENCE/oauth-http-recover.log"
   rm -f "$RUNNER_TEMP/oauth-http-fixture.json"
+  exit 0
+fi
+if [[ "$SCENARIO" == transfer-cleanup ]]; then
+  php "$GITHUB_WORKSPACE/qa/workloads/transfer-cleanup-client.php" | tee "$EVIDENCE/stream-cleanup.log"
+  stop_host
+  start_host
+  php "$GITHUB_WORKSPACE/qa/workloads/transfer-cleanup-client.php" | tee "$EVIDENCE/stream-cleanup-replacement.log"
   exit 0
 fi
 if [[ "$SCENARIO" == transfer ]]; then

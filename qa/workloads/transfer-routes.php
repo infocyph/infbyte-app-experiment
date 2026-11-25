@@ -7,3 +7,5 @@ use Experiment\Transfer;
 /** @var \Infocyph\Webrick\Router\Definition\Registrar $router */
 $router->post('/lab/transfer', Transfer::upload(...));
 $router->get('/lab/events', Transfer::events(...));
+
+$router->get('/lab/stream-cleanup', Transfer::cleanupStream(...));

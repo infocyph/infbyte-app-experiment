@@ -89,7 +89,7 @@ function configuration(): array
             ]],
         ]],
     ];
-    if (in_array(getenv('SCENARIO'), ['http', 'browser', 'transfer', 'oauth-http', 'ecosystem-connected', 'ecosystem-recovery', 'ecosystem-active-recovery', 'ecosystem-endurance', 'ecosystem-tenants', 'ecosystem-release-cutover', 'ecosystem-risk-edge'], true)) {
+    if (in_array(getenv('SCENARIO'), ['http', 'browser', 'transfer', 'transfer-cleanup', 'oauth-http', 'ecosystem-connected', 'ecosystem-recovery', 'ecosystem-active-recovery', 'ecosystem-endurance', 'ecosystem-tenants', 'ecosystem-release-cutover', 'ecosystem-risk-edge'], true)) {
         $matcher = getenv('LAB_MATCHER') ?: 'fused';
         ensure(in_array($matcher, ['fused', 'sharded'], true), 'Unsupported laboratory matcher.');
         $config['router'] = ['matcher' => $matcher];

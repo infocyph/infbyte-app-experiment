@@ -59,7 +59,7 @@ function auditMatrix(string $repository, string $workloads): array
             }
         } elseif (str_starts_with($scenario, 'db-')) {
             auditAssert(auditShellRoute($database, $scenario) !== null, 'Missing database dispatch: ' . $scenario);
-        } elseif (!in_array($scenario, ['http', 'browser', 'operations', 'transfer', 'oauth-http'], true)) {
+        } elseif (!in_array($scenario, ['http', 'browser', 'operations', 'transfer', 'transfer-cleanup', 'oauth-http'], true)) {
             auditAssert(str_contains($stress, "'" . $scenario . "'"), 'Missing business workload branch: ' . $scenario);
         }
     }

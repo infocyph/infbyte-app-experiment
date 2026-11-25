@@ -64,4 +64,46 @@ final class Transfer
             }
         }, headers: ['Content-Type' => 'text/event-stream']);
     }
+
+    public static function cleanupStream(Request $request): Response
+    {
+        $id = $request->getHeaderLine('X-Lab-Stream-Id');
+        $mode = $request->getHeaderLine('X-Lab-Stream-Mode');
+        if (preg_match('/^[a-f0-9]{32}$/D', $id) !== 1 || !in_array($mode, ['complete', 'abort'], true)) {
+            return Response::json(['error' => 'invalid fixture'], 400);
+        }
+        $root = dirname(__DIR__) . '/storage/lab-transfers/';
+        $total = $mode === 'complete' ? 16 : 512;
+        return Response::stream(static function () use ($root, $id, $total): \Generator {
+            $lease = fopen($root . $id . '.lease', 'x+b');
+            ensure(is_resource($lease) && flock($lease, LOCK_EX | LOCK_NB), 'Stream lease acquisition failed.');
+            $produced = 0;
+            $closed = false;
+            $cleanup = static function (string $owner) use ($root, $id, $lease, &$produced, &$closed): void {
+                if ($closed) {
+                    return;
+                }
+                $closed = true;
+                flock($lease, LOCK_UN);
+                fclose($lease);
+                $record = json_encode(['chunks' => $produced, 'owner' => $owner, 'pid' => getmypid()], JSON_THROW_ON_ERROR);
+                ensure(file_put_contents($root . $id . '.tmp', $record, LOCK_EX) !== false
+                    && rename($root . $id . '.tmp', $root . $id . '.terminal'), 'Terminal evidence publication failed.');
+            };
+            // Classic FPM may terminate script execution on disconnect. Record that
+            // distinct lifecycle path without retaining shutdown callbacks in workers.
+            if (PHP_SAPI === 'fpm-fcgi') {
+                register_shutdown_function(static fn() => $cleanup('sapi-shutdown'));
+            }
+            try {
+                for ($sequence = 0; $sequence < $total; ++$sequence) {
+                    ++$produced;
+                    yield str_repeat(chr($sequence % 256), 8192);
+                    usleep(10000);
+                }
+            } finally {
+                $cleanup('generator-finally');
+            }
+        }, headers: ['Content-Type' => 'application/octet-stream', 'Cache-Control' => 'no-store', 'X-Accel-Buffering' => 'no']);
+    }
 }
