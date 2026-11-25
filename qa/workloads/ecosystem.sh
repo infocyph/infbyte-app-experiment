@@ -12,7 +12,7 @@ case "$SCENARIO" in
   ecosystem-scylla|ecosystem-redis-failover) bash "$GITHUB_WORKSPACE/qa/workloads/cache-ha.sh" ;;
   ecosystem-wire-*) bash "$GITHUB_WORKSPACE/qa/workloads/wire.sh" ;;
   ecosystem-module-*) bash "$GITHUB_WORKSPACE/qa/workloads/module-matrix.sh" ;;
-  ecosystem-amqp|ecosystem-sqs) bash "$GITHUB_WORKSPACE/qa/workloads/brokers.sh" ;;
+  ecosystem-amqp|ecosystem-sqs|ecosystem-amqp-dlq|ecosystem-sqs-fifo) bash "$GITHUB_WORKSPACE/qa/workloads/brokers.sh" ;;
   ecosystem-imap|ecosystem-pop3) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox.sh" ;;
   ecosystem-redis-cluster|ecosystem-mongodb|ecosystem-s3|ecosystem-sftp|ecosystem-sftp-trust|ecosystem-ftp|ecosystem-webdav|ecosystem-gridfs|ecosystem-sftp2|ecosystem-async-s3|ecosystem-azure|ecosystem-gcs|ecosystem-storage-local-modes) bash "$GITHUB_WORKSPACE/qa/workloads/remote-services.sh" ;;
   ecosystem-http-policy) bash "$GITHUB_WORKSPACE/qa/workloads/http-policy.sh" ;;

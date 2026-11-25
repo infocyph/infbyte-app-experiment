@@ -67,16 +67,23 @@ final readonly class LabAmqpBackend implements AmqpBackend
 
 final readonly class LabSqsBackend implements SqsBackend
 {
-    public function __construct(private SqsClient $client, private string $url) {}
+    public function __construct(private SqsClient $client, private string $url, private bool $fifo = false) {}
 
     public function capabilities(): BrokerCapabilities
     {
-        return new BrokerCapabilities(true, true, false, 10);
+        return new BrokerCapabilities(!$this->fifo, true, false, 10);
     }
 
     public function send(string $queue, string $messageId, string $payload, float $delaySeconds): void
     {
-        $this->client->sendMessage(['QueueUrl' => $this->url, 'MessageBody' => $payload, 'DelaySeconds' => (int) ceil($delaySeconds), 'MessageAttributes' => ['LabId' => ['DataType' => 'String', 'StringValue' => $messageId]]]);
+        $request = ['QueueUrl' => $this->url, 'MessageBody' => $payload, 'MessageAttributes' => ['LabId' => ['DataType' => 'String', 'StringValue' => $messageId]]];
+        if ($this->fifo) {
+            $request['MessageGroupId'] = 'orders';
+            $request['MessageDeduplicationId'] = $messageId;
+        } else {
+            $request['DelaySeconds'] = (int) ceil($delaySeconds);
+        }
+        $this->client->sendMessage($request);
     }
 
     public function receive(string $queue, int $limit, float $visibilitySeconds): array

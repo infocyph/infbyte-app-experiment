@@ -59,9 +59,12 @@ require __DIR__ . '/ecosystem-http-semantics.php';
 require __DIR__ . '/ecosystem-file-lifecycle.php';
 require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
+require __DIR__ . '/ecosystem-broker-boundaries.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'amqp-dlq' => amqpDlqWorkload(),
+    'sqs-fifo' => sqsFifoWorkload(),
     'remote-jwks' => remoteJwksWorkload(),
     'uid-provider-boundaries' => uidProviderBoundariesWorkload(),
     'di-contextual' => diContextualWorkload(),

@@ -243,3 +243,7 @@ I: actual isolated TLS issuer, PSR-18 test transport restricted to one exact log
 ## B58 — real lost SQL commit acknowledgement
 
 I: PostgreSQL wire fault proxy forwards startup and real SQL traffic, observes the backend CommandComplete(COMMIT) response and drops that acknowledgement exactly once. A real DBLayer transaction asserts no replay, no confirmed-commit callback, durable ledger and balance conservation, explicit reconnect and idempotency reconciliation. Plaintext is constrained to a disposable loopback fixture; no query or credential content logged. DATA-01/02 and OPS: distinguish unknown from rollback and preserve durable state. Hosted verification pending. Other SQL protocols and HA topologies remain open.
+
+## B59 — actual broker DLQ and FIFO boundaries
+
+I: RabbitMQ durable dead-letter exchange and unacknowledged connection closure with redelivery identity; ElasticMQ FIFO single-group ordering, in-flight group blocking and stable message-ID deduplication through the documented application-owned SQS adapter. No exactly-once business effect claim and no AWS production certification. Hosted verification pending; broker TLS/outage and ambiguous acknowledgement remain open. DATA/OPS: real backend effects and bounded waiting.

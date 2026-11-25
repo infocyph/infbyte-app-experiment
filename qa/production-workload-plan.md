@@ -283,3 +283,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B58 — ambiguous database commit
 - [x] Real PostgreSQL COMMIT acknowledgement loss and idempotent recovery lane.
 - [ ] Hosted qualification, other driver protocols and remaining HA.
+
+## B59 — broker DLQ and FIFO
+- [x] RabbitMQ dead-letter/reconnection and SQS-compatible FIFO/deduplication lanes.
+- [ ] Hosted verification, provider-specific TLS/outage and acknowledgement uncertainty.
