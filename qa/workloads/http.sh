@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 unset COMPOSER_NO_DEV
 case "$SCENARIO" in
-  browser-policy-cors|browser-policy-representation)
+  browser-policy-cors|browser-policy-representation|browser-policy-trace|browser-policy-errors)
     export LAB_BROWSER_POLICY="${SCENARIO#browser-policy-}"
     export SCENARIO=browser
     ;;
@@ -175,6 +175,9 @@ if [[ "$SCENARIO" == transfer ]]; then
 fi
 if [[ "$SCENARIO" == browser && -n "${LAB_BROWSER_POLICY:-}" ]]; then
   client="$GITHUB_WORKSPACE/qa/workloads/browser-policy-client.php"
+  if [[ "$LAB_BROWSER_POLICY" == trace || "$LAB_BROWSER_POLICY" == errors ]]; then
+    client="$GITHUB_WORKSPACE/qa/workloads/browser-telemetry-client.php"
+  fi
   php "$client" | tee "$EVIDENCE/browser-policy.log"
   pids=()
   for worker in {1..4}; do
@@ -187,6 +190,9 @@ if [[ "$SCENARIO" == browser && -n "${LAB_BROWSER_POLICY:-}" ]]; then
   stop_host
   start_host
   php "$client" | tee "$EVIDENCE/browser-policy-replacement.log"
+  if [[ "$LAB_BROWSER_POLICY" == trace || "$LAB_BROWSER_POLICY" == errors ]]; then
+    cp "$PROJECT/storage/lab-web-telemetry.jsonl" "$EVIDENCE/web-telemetry.jsonl"
+  fi
   exit 0
 fi
 if [[ "$SCENARIO" == browser ]]; then

@@ -122,6 +122,11 @@ function configuration(): array
             'lock' => ['enabled' => true, 'store' => 'shared', 'wait' => 10.0, 'lease' => 30.0],
             'csrf' => ['check_origin' => true, 'origin' => 'https://experiment.test'],
         ];
+        if (in_array(getenv('LAB_BROWSER_POLICY'), ['trace', 'errors'], true)) {
+            $config['logging'] = ['driver' => 'file', 'level' => 'info', 'path' => $root . '/storage/lab-web-telemetry.jsonl',
+                'redact' => ['authorization', 'cookie', 'secret', 'token'],
+                'exceptions' => ['include_message' => false, 'include_trace' => false, 'sample_rate' => 1.0, 'throttle_seconds' => 0]];
+        }
         $sessionDriver = getenv('LAB_SESSION_DRIVER') ?: 'cache';
         ensure(in_array($sessionDriver, ['cache', 'file', 'database'], true), 'Unknown browser session driver.');
         $config['session']['driver'] = $sessionDriver;

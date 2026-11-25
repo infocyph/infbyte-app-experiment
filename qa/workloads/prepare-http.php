@@ -35,7 +35,11 @@ $addition = file_get_contents(__DIR__ . match (getenv('SCENARIO')) {
     'ecosystem-release-cutover' => '/release-routes.php',
     'ecosystem-risk-edge' => '/risk-edge-routes.php',
     'ecosystem-tenants' => '/tenant-routes.php',
-    'browser' => getenv('LAB_BROWSER_POLICY') ? '/browser-policy-routes.php' : '/browser-routes.php',
+    'browser' => match (getenv('LAB_BROWSER_POLICY')) {
+        'trace', 'errors' => '/browser-telemetry-routes.php',
+        'cors', 'representation' => '/browser-policy-routes.php',
+        default => '/browser-routes.php',
+    },
     'transfer', 'transfer-cleanup' => '/transfer-routes.php',
     'ecosystem-connected', 'ecosystem-recovery', 'ecosystem-active-recovery' => '/connected-routes.php',
     'ecosystem-endurance' => '/endurance-routes.php',
