@@ -1975,6 +1975,40 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
       php: ${{ matrix.php || '8.6' }}
 
+  ecosystem-specialist:
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-runwire-negotiation-h1-strict, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h1-preferred-fallback, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h1-reverse-fallback, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h1-reverse-strict, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h1-reverse-only, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h1-wrong-ca, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h1-wrong-peer, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h1-wrong-offer, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h1-h3-preferred, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h1-plaintext-h2, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h2-strict, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h2-preferred-fallback, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h2-reverse-fallback, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h2-reverse-strict, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h2-reverse-only, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h2-wrong-ca, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h2-wrong-peer, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h2-wrong-offer, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h2-h3-preferred, backend: pgsql}
+          - {scenario: ecosystem-runwire-negotiation-h2-plaintext-h2, backend: pgsql}
+    uses: ./.github/workflows/production-worker.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+      php: ${{ matrix.php || '8.6' }}
+
   application:
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:

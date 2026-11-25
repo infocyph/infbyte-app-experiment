@@ -11,6 +11,7 @@ use Infocyph\Runwire\Http\Client\ClientRedirectRetryPolicy;
 use Infocyph\Runwire\Http\Client\Http1PolicyClient;
 use Infocyph\Runwire\Http\Client\Http1OutboundClient;
 use Infocyph\Runwire\Http\Client\Http2OutboundClient;
+use Infocyph\Runwire\Http\Client\HttpNegotiatingOutboundClient;
 use Infocyph\Runwire\Http\Enum\ProtocolVersion;
 use Infocyph\Runwire\Http\Headers;
 use Infocyph\Runwire\Loop\SelectLoop;
@@ -195,4 +196,93 @@ function runwireH1PolicyContracts(string $contract): void
     $diagnostics = $loop->diagnostics();
     verify($diagnostics->readWatchers === 0 && $diagnostics->writeWatchers === 0 && $diagnostics->timersActive === 0, 'Policy run leaked loop resources.');
     echo "Native H1 policy $contract passed\n";
+}
+
+function runwireNegotiationContracts(string $protocol, string $contract): void
+{
+    $actual = $protocol === 'h1' ? ProtocolVersion::HTTP_1_1 : ProtocolVersion::HTTP_2;
+    $other = $protocol === 'h1' ? ProtocolVersion::HTTP_2 : ProtocolVersion::HTTP_1_1;
+    $alpn = static fn(ProtocolVersion $version): string => $version === ProtocolVersion::HTTP_2 ? 'h2' : 'http/1.1';
+    $loop = new SelectLoop();
+    $executor = new ProcessExecutor($loop, 1, 2);
+    $numeric = new Dialer($loop);
+    $dialer = new HappyEyeballsDialer($loop, $numeric, new AsyncDnsResolver($executor));
+    $base = '127.0.0.1:' . (int) getenv('LAB_RUNWIRE_OUTBOUND_PORT');
+    $ca = (string) getenv('LAB_RUNWIRE_OUTBOUND_CA');
+    $execute = static function (string $case) use ($actual, $other, $alpn, $loop, $dialer, $base, $ca): array {
+        $preferred = match ($case) {
+            'reverse-fallback', 'reverse-strict', 'reverse-only' => $other,
+            'h3-preferred' => ProtocolVersion::HTTP_3,
+            'plaintext-h2' => ProtocolVersion::HTTP_2,
+            default => $actual,
+        };
+        $allowed = match ($case) {
+            'preferred-fallback', 'reverse-fallback', 'reverse-strict' => [$preferred, $preferred === $actual ? $other : $actual],
+            'h3-preferred' => [ProtocolVersion::HTTP_3, $actual],
+            default => [$preferred],
+        };
+        $fallback = in_array($case, ['preferred-fallback', 'reverse-fallback', 'h3-preferred', 'plaintext-h2'], true);
+        $policy = new ClientProtocolPolicy($preferred, $allowed, allowFallback: $fallback, allowPlaintext: $case === 'plaintext-h2');
+        $options = $case === 'plaintext-h2' || $case === 'h3-preferred'
+            ? new DialOptions(connectTimeoutSeconds: 3.0)
+            : new DialOptions(connectTimeoutSeconds: 3.0, tls: new TlsClientOptions(
+                $case === 'wrong-peer' ? 'other.invalid' : '127.0.0.1',
+                caFile: $case === 'wrong-ca' ? (string) getenv('LAB_RUNWIRE_WRONG_CA') : $ca,
+                alpnProtocols: $case === 'wrong-offer' ? [$alpn($other)] : array_map($alpn, $fallback ? $allowed : [$preferred]),
+                handshakeTimeoutSeconds: 3.0,
+            ));
+        $path = $case === 'recovery' ? 'recovery' : 'get';
+        $request = new ClientRequest('GET', ($case === 'plaintext-h2' ? 'http://' : 'https://') . $base . '/' . $path,
+            Headers::fromArray(['x-lab-client' => 'native']), protocol: $policy);
+        $statuses = [];
+        $body = '';
+        $completed = 0;
+        $failure = null;
+        $watchdog = $loop->delay(10.0, static fn() => $loop->stop());
+        try {
+            try {
+                HttpNegotiatingOutboundClient::connect($loop, $dialer, $request,
+                    static function (int $status, Headers $headers) use (&$statuses, $actual, $alpn): void {
+                        $statuses[] = $status;
+                        verify($headers->all('x-lab-alpn') === [$alpn($actual)], 'Negotiated origin differs.');
+                    },
+                    static function (string $part) use (&$body): void { $body .= $part; },
+                    static function (?Connection $connection, ?Throwable $error) use (&$completed, &$failure, $loop): void {
+                        ++$completed;
+                        $failure = $error;
+                        $connection?->abort();
+                        $loop->stop();
+                    }, $options);
+            } catch (InvalidArgumentException|\Infocyph\Runwire\Exception\RuntimeUnavailableException $error) {
+                verify(in_array($case, ['wrong-peer', 'wrong-offer', 'h3-preferred', 'plaintext-h2'], true), 'Unexpected synchronous rejection.');
+                return [$statuses, $body, $error, 0];
+            }
+            $loop->run();
+            verify($completed === 1, 'Negotiated exchange did not settle exactly once.');
+            return [$statuses, $body, $failure, $completed];
+        } finally {
+            $loop->cancel($watchdog);
+        }
+    };
+    try {
+        [$statuses, $body, $failure, $completed] = $execute($contract);
+        if (in_array($contract, ['strict', 'preferred-fallback', 'reverse-fallback'], true)) {
+            verify($failure === null && $completed === 1 && $statuses === [200] && $body === 'native-response', 'Permitted protocol negotiation failed.');
+        } else {
+            verify($failure instanceof Throwable && $statuses === [] && $body === '', 'Forbidden negotiation admitted a response.');
+            if (in_array($contract, ['wrong-peer', 'wrong-offer', 'h3-preferred', 'plaintext-h2'], true)) {
+                verify($completed === 0 && $executor->diagnostics()['submitted'] === 0, 'Preflight rejection performed DNS or transport work.');
+            }
+        }
+        verify($dialer->pendingCount() === 0 && $numeric->pendingCount() === 0, 'Negotiation leaked a pending dial.');
+        [$statuses, $body, $failure, $completed] = $execute('recovery');
+        verify($failure === null && $completed === 1 && $statuses === [200] && $body === 'native-response', 'Healthy recovery after negotiation failed.');
+    } finally {
+        $dialer->close();
+        $numeric->close();
+        $executor->close();
+    }
+    $diagnostics = $loop->diagnostics();
+    verify($diagnostics->readWatchers === 0 && $diagnostics->writeWatchers === 0 && $diagnostics->timersActive === 0, 'Negotiation leaked loop resources.');
+    echo "Native TLS negotiation $protocol $contract passed\n";
 }
