@@ -333,3 +333,7 @@ I: four isolated native/PostgreSQL and FPM/MySQL fused/sharded lanes enable OAut
 ## B80 — native HTTP/1 backpressure and request abort
 
 I: actual socket lane sets a 4 KiB write budget, 4 KiB high watermark and 16 KiB send ceiling; a slow independent reader checks 128 ordered 8 KiB chunks, rejected oversized write, observed pressure and drain, bounded buffered bytes, exactly one successful terminal event. Incomplete request body disconnect must invoke cancellation once; subsequent requests prove continued service. HTTP/2, HTTP/3 and other transport/host variants stay open. 287 routine rows; hosted verification pending.
+
+## B81 — InterMix factory recipes and finalized graph
+
+I: independent published-package lane tests constructor/static recipes, detached reference-containing literal snapshots, graph metadata/freeze, strict compilation and digest, alias/tag identity, all three declarative and dynamic lifetimes, invalid recipes and strict opaque-factory rejection. Generate and parse preload artifact and verify builder finalization; actual OPcache startup and class coverage remain open. 288 routine rows; hosted verification pending.

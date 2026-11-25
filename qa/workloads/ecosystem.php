@@ -60,6 +60,7 @@ require __DIR__ . '/ecosystem-http-semantics.php';
 require __DIR__ . '/ecosystem-file-lifecycle.php';
 require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-utility-lifecycle.php';
+require __DIR__ . '/ecosystem-di-factories.php';
 require __DIR__ . '/ecosystem-grpc-inbound.php';
 require __DIR__ . '/ecosystem-validation-casts.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
@@ -91,6 +92,7 @@ match ($argv[1] ?? '') {
     'config-reference' => configReferenceWorkload(),
     'fence-remix' => fenceRemixWorkload(),
     'di-contextual' => diContextualWorkload(),
+    'di-factories' => diFactoriesWorkload(),
     'file-index-retention' => fileIndexRetentionWorkload(),
     'archive-security' => archiveSecurityWorkload(),
     'file-watch' => fileWatchWorkload(),
