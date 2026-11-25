@@ -104,6 +104,21 @@ function configuration(): array
         $config['notifications']['email']['default_from'] = 'security@example.test';
     }
 
+    if (getenv('SCENARIO') === 'browser') {
+        $config['app']['env'] = 'production';
+        $config['app']['debug'] = false;
+        $config['app']['capabilities'] = ['cache', 'session', 'filesystem', 'runwire'];
+        $config['cache']['serialization'] = ['allow_object_payloads' => false, 'allow_closure_payloads' => false];
+        $config['router'] = ['matcher' => getenv('LAB_MATCHER') ?: 'fused'];
+        $config['session'] = [
+            'driver' => 'cache',
+            'stores' => ['cache' => ['store' => 'shared']],
+            'cookie' => ['name' => 'lab_session', 'secure' => true, 'http_only' => true, 'same_site' => 'Strict', 'path' => '/'],
+            'lock' => ['enabled' => true, 'store' => 'shared', 'wait' => 10.0, 'lease' => 30.0],
+            'csrf' => ['check_origin' => true, 'origin' => 'https://experiment.test'],
+        ];
+    }
+
     if (getenv('SCENARIO') === 'operations') {
         $config['app']['env'] = 'production';
         $config['app']['debug'] = false;

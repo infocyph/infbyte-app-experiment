@@ -6,6 +6,8 @@ export AUTH_OTP_PROTECTION_KEY="$(php -r 'echo rtrim(strtr(base64_encode(random_
 export LAB_IMPORT_OLD_KEY="$(php -r 'echo bin2hex(random_bytes(32));')"
 export LAB_IMPORT_NEW_KEY="$(php -r 'echo bin2hex(random_bytes(32));')"
 export LAB_GENERIC_OTP_KEY="$(php -r 'echo bin2hex(random_bytes(32));')"
+export LAB_RISK_AUTHORITY_KEY="$(php -r 'echo bin2hex(random_bytes(32));')"
+export LAB_RISK_TELEMETRY_KEY="$(php -r 'echo bin2hex(random_bytes(32));')"
 export AUTH_TOKEN_SECRET="$(php -r 'echo bin2hex(random_bytes(32));')"
 cd "$PROJECT"
 probe="$GITHUB_WORKSPACE/qa/workloads/run.php"
@@ -36,7 +38,7 @@ php "$probe" setup
 total=0
 for concurrency in 1 4 8; do
   iterations=40
-  if [[ "$SCENARIO" == accounts || "$SCENARIO" == security || "$SCENARIO" == passkey || "$SCENARIO" == authorization || "$SCENARIO" == oauth ]]; then iterations=8; fi
+  if [[ "$SCENARIO" == accounts || "$SCENARIO" == security || "$SCENARIO" == passkey || "$SCENARIO" == authorization || "$SCENARIO" == oauth || "$SCENARIO" == risk ]]; then iterations=8; fi
   if [[ "$SCENARIO" == queue ]]; then iterations=20; fi
   start="$(php -r 'echo intdiv(hrtime(true), 1000000);')"
   pids=()

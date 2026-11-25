@@ -9,7 +9,12 @@ export LAB_HTTP_URL=http://127.0.0.1:18781
 cd "$PROJECT"
 probe="$GITHUB_WORKSPACE/qa/workloads/run.php"
 php "$GITHUB_WORKSPACE/qa/workloads/prepare-http.php"
-php "$probe" setup
+if [[ "$SCENARIO" == browser ]]; then
+  mkdir -p "$PROJECT/storage/lab-public"
+  php -r 'file_put_contents($argv[1],str_repeat("0123456789abcdef",8192),LOCK_EX);' "$PROJECT/storage/lab-public/report.bin"
+else
+  php "$probe" setup
+fi
 php infbyte config:validate --production
 php infbyte optimize --json=1 > "$RUNNER_TEMP/lab-release.json"
 php infbyte app:ready
@@ -84,6 +89,27 @@ CONF
   return 1
 }
 start_host
+if [[ "$SCENARIO" == browser ]]; then
+  client="$GITHUB_WORKSPACE/qa/workloads/browser-client.php"
+  umask 077
+  php "$client" initialize
+  pids=()
+  start="$(php -r 'echo intdiv(hrtime(true), 1000000);')"
+  for worker in $(seq 1 8); do
+    php "$client" worker "$worker" 25 > "$EVIDENCE/browser-$worker.jsonl" 2> "$EVIDENCE/browser-error-$worker.log" &
+    pids+=("$!")
+  done
+  failed=0
+  for pid in "${pids[@]}"; do if ! wait "$pid"; then failed=1; fi; done
+  if (( failed )); then cat "$EVIDENCE"/browser-error-*.log >&2; exit 1; fi
+  php "$GITHUB_WORKSPACE/qa/workloads/report.php" 200 "$(( $(php -r 'echo intdiv(hrtime(true), 1000000);') - start ))" 8 "$EVIDENCE"/browser-*.jsonl | tee "$EVIDENCE/browser-summary.json"
+  stop_host
+  start_host
+  php "$client" verify 200
+  stop_host
+  echo "Browser session lock, CSRF, rotation, flash, HTTP semantics, range and stream verified after replacement." >> "$GITHUB_STEP_SUMMARY"
+  exit 0
+fi
 total=0
 for concurrency in 1 4 8 16; do
   start="$(php -r 'echo intdiv(hrtime(true), 1000000);')"

@@ -11,6 +11,7 @@ $scenario = match (getenv('SCENARIO')) {
     'orders' => new Orders($app),
     'import' => new DataImport($app),
     'native-otp' => new NativeOtp($app),
+    'risk' => new Risk($app),
     'storage' => new Storage($app),
     'oauth' => new OAuth($app),
     'accounts' => new Accounts($app),

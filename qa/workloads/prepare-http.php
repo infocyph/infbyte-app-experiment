@@ -28,7 +28,7 @@ if (getenv('SCENARIO') === 'operations') {
 }
 $route = $root . '/routes/api.php';
 $original = file_get_contents($route);
-$addition = file_get_contents(__DIR__ . '/http-routes.php');
+$addition = file_get_contents(__DIR__ . (getenv('SCENARIO') === 'browser' ? '/browser-routes.php' : '/http-routes.php'));
 ensure(is_string($original) && is_string($addition), 'Missing route source.');
 $addition = substr($addition, strpos($addition, 'use Experiment'));
 ensure(file_put_contents($route, rtrim($original) . "\n\n" . $addition, LOCK_EX) !== false, 'Route registration failed.');

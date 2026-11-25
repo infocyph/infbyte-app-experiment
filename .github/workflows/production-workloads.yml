@@ -8,13 +8,18 @@ permissions:
   contents: read
 jobs:
   workload:
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / PHP ${{ matrix.php || '8.6' }}"
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'default' }} / PHP ${{ matrix.php || '8.6' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         include:
+          - {scenario: risk, backend: mysql}
+          - {scenario: risk, backend: pgsql}
+          - {scenario: browser, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser, backend: pgsql, host: native, matcher: generated}
+          - {scenario: browser, backend: pgsql, host: fpm, php: '8.4', matcher: sharded}
           - {scenario: import, backend: mysql}
           - {scenario: import, backend: pgsql}
           - {scenario: native-otp, backend: pgsql}
@@ -67,6 +72,7 @@ jobs:
     env:
       SCENARIO: ${{ matrix.scenario }}
       HOST_MODE: ${{ matrix.host || 'worker' }}
+      LAB_MATCHER: ${{ matrix.matcher || 'fused' }}
       DB_BACKEND: ${{ matrix.backend }}
       PHP_SERIES: ${{ matrix.php || '8.6' }}
       SOAK: ${{ matrix.scenario == 'http' && matrix.host == 'native' && matrix.backend == 'pgsql' && '1' || '0' }}
@@ -126,11 +132,11 @@ jobs:
           docker run --rm infbyte-lab-fpm php -m
           docker pull nginx:alpine
       - name: Execute independent concurrent business workers and reconcile state
-        if: matrix.scenario != 'http' && matrix.scenario != 'operations'
+        if: matrix.scenario != 'http' && matrix.scenario != 'operations' && matrix.scenario != 'browser'
         shell: bash
         run: bash qa/workloads/stress.sh
       - name: Exercise compiled production HTTP application and host replacement
-        if: matrix.scenario == 'http'
+        if: matrix.scenario == 'http' || matrix.scenario == 'browser'
         shell: bash
         run: bash qa/workloads/http.sh
       - name: Exercise distributed scheduling, state restore, release rollback and backend failure
@@ -143,7 +149,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: workload-${{ matrix.scenario }}-${{ matrix.backend }}-${{ matrix.host || 'worker' }}
+          name: workload-${{ matrix.scenario }}-${{ matrix.backend }}-${{ matrix.host || 'worker' }}-${{ matrix.matcher || 'default' }}
           path: ${{ runner.temp }}/workload-evidence/
           if-no-files-found: error
           retention-days: 30
