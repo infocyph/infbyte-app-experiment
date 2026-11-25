@@ -2,7 +2,10 @@
 set -Eeuo pipefail
 cd "$PROJECT"
 containers=()
+pids=()
 cleanup() {
+  for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || :; done
+  for pid in "${pids[@]}"; do wait "$pid" 2>/dev/null || :; done
   for name in "${containers[@]}"; do
     # Service output may include disposable credentials; retain only protocol evidence.
     docker rm -f "$name" >/dev/null 2>&1 || :
@@ -11,6 +14,7 @@ cleanup() {
 trap cleanup EXIT
 provision="$SCENARIO"
 case "$SCENARIO" in
+  ecosystem-*-remote-order-recovery) provision="${SCENARIO%-remote-order-recovery}" ;;
   ecosystem-*-archive-*) provision="${SCENARIO%-archive-*}" ;;
   ecosystem-gridfs-publication-before|ecosystem-gridfs-publication-after) provision=ecosystem-gridfs ;;
   ecosystem-ftp-rename-before|ecosystem-ftp-rename-after|ecosystem-ftp-interrupted-upload) provision=ecosystem-ftp ;;
@@ -124,6 +128,19 @@ case "$provision" in
     ;;
   *) exit 1 ;;
 esac
+if [[ "$SCENARIO" == *-remote-order-recovery ]]; then
+  containers+=(lab-remote-orders-broker)
+  composer require php-amqplib/php-amqplib --no-interaction --prefer-dist --no-progress
+  docker run -d --name lab-remote-orders-broker -p 127.0.0.1:15672:5672 -e RABBITMQ_DEFAULT_USER=experiment -e RABBITMQ_DEFAULT_PASS=fixture-only-password rabbitmq:4
+  broker_ready() {
+    for attempt in {1..90}; do
+      if docker exec lab-remote-orders-broker rabbitmq-diagnostics -q ping >/dev/null; then return; fi
+      sleep 1
+    done
+    return 1
+  }
+  broker_ready
+fi
 composer check-platform-reqs --no-dev
 composer show --format=json > "$EVIDENCE/packages.json"
 if [[ "$SCENARIO" == ecosystem-cache-mongodb-outage-* ]]; then
@@ -269,7 +286,7 @@ elif [[ "$SCENARIO" == ecosystem-sftp-publication-fault || "$SCENARIO" == ecosys
   done
   test "$ready" = 1
   timeout 90s php "$probe" sftp-publication-recover | tee "$EVIDENCE/sftp-recovery.log"
-elif [[ ( "$SCENARIO" == *-outage || "$SCENARIO" == *-archive-outage-* ) && "$provision" != "$SCENARIO" ]]; then
+elif [[ ( "$SCENARIO" == *-outage || "$SCENARIO" == *-archive-outage-* || "$SCENARIO" == *-remote-order-recovery ) && "$provision" != "$SCENARIO" ]]; then
   probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
   export LAB_STORAGE_BACKEND="${provision#ecosystem-}"
   service=""
@@ -291,7 +308,10 @@ elif [[ ( "$SCENARIO" == *-outage || "$SCENARIO" == *-archive-outage-* ) && "$pr
     return 1
   }
   ready_port
-  if [[ "$SCENARIO" == *-archive-outage-* ]]; then
+  if [[ "$SCENARIO" == *-remote-order-recovery ]]; then
+    timeout 120s php "$probe" remote-order-seed | tee "$EVIDENCE/remote-order-seed.log"
+    docker stop -t 10 lab-remote-orders-broker >/dev/null
+  elif [[ "$SCENARIO" == *-archive-outage-* ]]; then
     contract="${SCENARIO##*-}"
     timeout 90s php "$probe" archive-outage-phase seed "$contract" | tee "$EVIDENCE/storage-seed.log"
     timeout 180s php "$probe" archive-outage-phase hold "$contract" > "$EVIDENCE/archive-held.log" 2>&1 &
@@ -312,7 +332,17 @@ elif [[ ( "$SCENARIO" == *-outage || "$SCENARIO" == *-archive-outage-* ) && "$pr
     wait "$storage_peer" || :
   fi
   if timeout 2 bash -c "exec 3<>/dev/tcp/127.0.0.1/$port" 2>/dev/null; then exit 1; fi
-  if [[ "$SCENARIO" == *-archive-outage-* ]]; then
+  if [[ "$SCENARIO" == *-remote-order-recovery ]]; then
+    if timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/15672' 2>/dev/null; then exit 1; fi
+    for worker in {0..7}; do
+      timeout 90s php "$probe" remote-order-offline "$worker" > "$EVIDENCE/remote-order-worker-$worker.log" 2>&1 &
+      pids+=("$!")
+    done
+    failed=0
+    for pid in "${pids[@]}"; do if ! wait "$pid"; then failed=1; fi; done
+    pids=()
+    ((failed == 0))
+  elif [[ "$SCENARIO" == *-archive-outage-* ]]; then
     touch "$EVIDENCE/archive-outage/offline"
     result=0
     wait "$worker" || result=$?
@@ -355,7 +385,11 @@ elif [[ ( "$SCENARIO" == *-outage || "$SCENARIO" == *-archive-outage-* ) && "$pr
       done
       curl -fsS --max-time 2 'http://127.0.0.1:14443/storage/v1/b?project=experiment' >/dev/null ;;
   esac
-  if [[ "$SCENARIO" == *-archive-outage-* ]]; then
+  if [[ "$SCENARIO" == *-remote-order-recovery ]]; then
+    docker start lab-remote-orders-broker >/dev/null
+    broker_ready
+    timeout 180s php "$probe" remote-order-recover | tee "$EVIDENCE/remote-order-recover.log"
+  elif [[ "$SCENARIO" == *-archive-outage-* ]]; then
     timeout 120s php "$probe" archive-outage-phase recover "$contract" | tee "$EVIDENCE/storage-recovery.log"
   else
     timeout 90s php "$probe" storage-outage-recover | tee "$EVIDENCE/storage-recovery.log"

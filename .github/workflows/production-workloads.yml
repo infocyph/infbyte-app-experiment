@@ -1420,6 +1420,29 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-s3-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-s3-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-s3-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sftp-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-sftp-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-sftp-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-sftp-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-ftp-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-ftp-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-ftp-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-ftp-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-webdav-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-webdav-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-webdav-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-webdav-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-azure-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-azure-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-azure-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-azure-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-gcs-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-gcs-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-gcs-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-gcs-remote-order-recovery, backend: mssql, php: '8.4'}
           - {scenario: ecosystem-otp-cluster-redis-generic, backend: pgsql}
           - {scenario: ecosystem-otp-cluster-redis-hotp, backend: pgsql}
           - {scenario: ecosystem-otp-cluster-redis-totp, backend: pgsql}

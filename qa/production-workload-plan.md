@@ -896,3 +896,9 @@ I: 22 routine lanes: six signed/unsigned closure boundaries with independent SHA
 ## B209 — OTP clustered replay and RabbitMQ quorum member-loss
 
 I: 22 routine lanes. Twelve actual six-node Redis/Valkey cluster lanes separately exercise Generic OTP, HOTP, TOTP, MobileOTP and counter/challenge OCRA: identify a state-owning primary, prove replica offset before fencing, observe automatic promotion and use fresh Redis Cluster protocol clients for replay rejection, twelve-process race and ownership recovery. Ten actual three-node RabbitMQ quorum queue lanes exercise confirmed persistent publication, held unsettled delivery, leader or follower death, surviving majority observation, fresh publication and exact SQL receipt reconciliation across all five SQL backends. This qualifies one-member-loss, not loss of quorum or actual managed cloud. CORE-01, DATA, OPS, SEC, EXEC-03: source/wiring reviewed; hosted execution pending. 1672 routine rows.
+
+### B210 — Cross-library storage/broker disaster recovery
+
+- 23 new independently executable provider/database lanes (24 combinations including existing B98 S3/PostgreSQL); S3, SFTP, FTP, WebDAV, Azure-compatible and GCS-compatible services with PostgreSQL, MySQL, MariaDB and SQL Server.
+- Actual stopped storage and RabbitMQ, eight concurrent SQL writers, 40 durable orders/outbox/receipts, 41 confirmed deliveries with duplicate settlement, exact 40 effects, and foreign tenant isolation; fresh reconnect after restart. SQL Server uses existing PHP 8.4 driver lane.
+- I: committed; hosted execution and actual cloud/production qualification remain pending. Matrix: 1695 routine entries, 21 separate PHPProbe lanes.
