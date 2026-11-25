@@ -22,6 +22,7 @@ jobs:
           - {scenario: db-tls, backend: pgsql}
           - {scenario: db-mysql-family-tls, backend: mysql}
           - {scenario: db-mysql-family-tls, backend: mariadb}
+          - {scenario: db-sqlserver-tls, backend: mssql, php: '8.4'}
           - {scenario: db-migration-fault, backend: mysql}
           - {scenario: db-migration-fault, backend: pgsql}
           - {scenario: db-migration-fault, backend: sqlite}

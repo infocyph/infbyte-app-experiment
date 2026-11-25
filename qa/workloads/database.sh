@@ -3,6 +3,7 @@ set -euo pipefail
 probe="$GITHUB_WORKSPACE/qa/workloads/database.php"
 case "$SCENARIO" in
   db-query-cache-race) bash "$GITHUB_WORKSPACE/qa/workloads/database-cache-race.sh" ;;
+  db-sqlserver-tls) bash "$GITHUB_WORKSPACE/qa/workloads/database-sqlserver-tls.sh" ;;
   db-tls) bash "$GITHUB_WORKSPACE/qa/workloads/database-tls.sh" ;;
   db-mysql-family-tls) bash "$GITHUB_WORKSPACE/qa/workloads/database-mysql-family-tls.sh" ;;
   db-commit-uncertain) bash "$GITHUB_WORKSPACE/qa/workloads/database-uncertain.sh" ;;

@@ -195,6 +195,7 @@ jobs:
         if: startsWith(inputs.scenario, 'db-')
         env:
           POSTGRES_SERVICE: ${{ job.services.postgres.id }}
+          MSSQL_SERVICE: ${{ job.services.mssql.id }}
         shell: bash
         run: bash qa/workloads/database.sh
       - name: Exercise compiled production HTTP application and host replacement
