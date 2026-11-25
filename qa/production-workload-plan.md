@@ -195,3 +195,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B36 — native wire interoperability
 - [x] Five real concurrent TCP/Unix/UDP/WebSocket/TLS-HTTP2 lanes.
 - [ ] Hosted verification and remaining wire protocols/hosts.
+
+## B37 — database proxy pooling
+- [x] Actual PgBouncer session/transaction modes and concurrent DBLayer reconciliation.
+- [ ] Hosted verification and other proxy/listener variants.

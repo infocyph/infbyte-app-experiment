@@ -15,6 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-proxy-session, backend: pgsql}
+          - {scenario: db-proxy-transaction, backend: pgsql}
           - {scenario: ecosystem-wire-tcp, backend: pgsql}
           - {scenario: ecosystem-wire-unix, backend: pgsql}
           - {scenario: ecosystem-wire-udp, backend: pgsql}

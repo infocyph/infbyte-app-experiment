@@ -113,3 +113,5 @@ B34 adds actual Swoole PHP 8.5 and OpenSwoole PHP 8.6 browser runtime acceptance
 B35 adds real distributed invalidation logs, offline cursor/retention and transactional outbox scenarios; node caches are independent local SQLite stores.
 
 B36 adds native concurrent Runwire wire acceptance with independent clients; HTTP/3 and remaining client/deployment features remain open.
+
+B37 adds real PgBouncer session/transaction pooling, native prepared statements and exact concurrent transaction reconciliation.

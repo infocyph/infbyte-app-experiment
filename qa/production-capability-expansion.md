@@ -155,3 +155,7 @@ I: real MySQL/PostgreSQL and Redis Streams, independent local SQLite node stores
 ## B36 — native Runwire wire interoperability
 
 I: five independent hosted lanes: framed TCP and Unix sockets with fragmented/coalesced writes and oversize-frame rejection; UDP datagram echo and size ceiling; real RFC6455 WebSocket text/binary, ping and origin rejection; TLS ALPN HTTP/2 using independent Python h2 client, 16 concurrent streams per connection × five batches × eight clients, HTTP/1.1 ALPN fallback and untrusted certificate rejection. Independent clients are external protocol oracles, not mocks. HTTP/3/QUIC, mTLS, HTTP/1 request framing, Runwire outbound client variants and remaining deployment hosts are open. Hosted verification pending.
+
+## B37 — real database proxy pooling
+
+I: two separate PgBouncer session/transaction-pooling lanes, real PostgreSQL source and a three-backend pool, native prepared statement support explicitly configured, eight independent PHP workers × 50 commits with nested savepoint rollback, backend transaction affinity, post-commit effects and exact durable ledger reconciliation. Session mode additionally checks session affinity. No incompatible session features assumed in transaction mode. Statement pooling, Pgpool-II, ProxySQL/MaxScale and SQL Server listener HA remain open; hosted verification pending.
