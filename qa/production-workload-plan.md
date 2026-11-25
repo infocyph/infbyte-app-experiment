@@ -844,3 +844,7 @@ I: 48 independently executable compiled production HTTP lanes: host-local file-b
 ## B196 — Foundation outbound communication profiles
 
 I: 19 independently runnable live HTTPS contracts, including provider aliases/scoped client ownership, four authentication drivers, default/named selection, invalid profile rejection, native trust and response limits, cookie isolation, configured retry/idempotency, rate/circuit recovery, signed webhook delivery/retry and exact payload limits, double-retry rejection, and production peer/host verification guards. The loopback peer independently checks HMAC, delivery IDs, attempts and payload digests without logging credentials. Production TLS guards use the public configuration/profile entrypoint; other lanes use the actual worker provider. Hosted outcome deferred. 1354 routine rows.
+
+## B197 — Foundation configured durable messaging lifecycle
+
+I: 21 independent lanes across PostgreSQL/MySQL/MariaDB: named worker and pool-option validation, real bounded prefetch/recycle and independent application drain, configured scheduled factory dispatch/rejection, database-versus-memory failure-store persistence, invalid durable/dependency policy rejection, and coordinated partial-schema cutover refusal and explicit recovery. Real custom durable tables and SQL receipt effects, no provider or vendor patches. Pool options are verified; actual pooled supervision is not claimed by this batch. Hosted execution pending. 1375 routine rows.

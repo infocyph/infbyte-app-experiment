@@ -69,6 +69,7 @@ require __DIR__ . '/ecosystem-cache-locking.php';
 require __DIR__ . '/ecosystem-foundation-contracts.php';
 require __DIR__ . '/ecosystem-foundation-providers.php';
 require __DIR__ . '/ecosystem-foundation-communication.php';
+require __DIR__ . '/ecosystem-foundation-messaging.php';
 require __DIR__ . '/ecosystem-foundation-storage-cache.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
 require __DIR__ . '/ecosystem-storage-boundaries.php';
@@ -728,6 +729,13 @@ match ($argv[1] ?? '') {
     'foundation-communication-double-retry' => foundationCommunicationContracts('double-retry'),
     'foundation-communication-production-peer' => foundationCommunicationContracts('production-peer'),
     'foundation-communication-production-host' => foundationCommunicationContracts('production-host'),
+    'foundation-messaging-worker-options' => foundationMessagingContracts('worker-options'),
+    'foundation-messaging-worker-recycle' => foundationMessagingContracts('worker-recycle'),
+    'foundation-messaging-scheduled' => foundationMessagingContracts('scheduled'),
+    'foundation-messaging-database-failures' => foundationMessagingContracts('database-failures'),
+    'foundation-messaging-memory-failures' => foundationMessagingContracts('memory-failures'),
+    'foundation-messaging-invalid-durable' => foundationMessagingContracts('invalid-durable'),
+    'foundation-messaging-partial-schema' => foundationMessagingContracts('partial-schema'),
     'http-policy' => httpPolicyWorkload(),
     'redis-cluster' => redisClusterWorkload(),
     'mongodb' => mongoWorkload(),

@@ -1138,6 +1138,27 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-foundation-messaging-worker-options, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-worker-options, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-worker-options, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-worker-recycle, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-worker-recycle, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-worker-recycle, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-scheduled, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-scheduled, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-scheduled, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-database-failures, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-database-failures, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-database-failures, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-memory-failures, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-memory-failures, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-memory-failures, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-invalid-durable, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-invalid-durable, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-invalid-durable, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-partial-schema, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-partial-schema, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-partial-schema, backend: mariadb}
           - {scenario: ecosystem-foundation-communication-auth-header, backend: pgsql}
           - {scenario: ecosystem-foundation-communication-auth-query, backend: pgsql}
           - {scenario: ecosystem-foundation-communication-auth-basic, backend: pgsql}
