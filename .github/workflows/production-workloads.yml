@@ -43,6 +43,7 @@ jobs:
           - {scenario: db-lock-modes, backend: mysql}
           - {scenario: db-lock-modes, backend: mariadb}
           - {scenario: db-lock-modes, backend: pgsql}
+          - {scenario: db-sqlserver-lock-modes, backend: mssql, php: '8.4'}
           - {scenario: db-native-owner, backend: mysql}
           - {scenario: db-native-owner, backend: mssql, php: '8.4'}
           - {scenario: db-native-owner, backend: mariadb}
@@ -86,6 +87,10 @@ jobs:
           - {scenario: db-primary-promotion, backend: pgsql}
           - {scenario: db-active-backup, backend: pgsql}
           - {scenario: db-physical-backup, backend: pgsql}
+          - {scenario: db-portable-backup, backend: mysql}
+          - {scenario: db-portable-backup, backend: mariadb}
+          - {scenario: db-portable-backup, backend: sqlite}
+          - {scenario: db-portable-backup, backend: mssql, php: '8.4'}
           - {scenario: db-schema, backend: mysql}
           - {scenario: db-schema, backend: mssql, php: '8.4'}
           - {scenario: db-schema, backend: mariadb}

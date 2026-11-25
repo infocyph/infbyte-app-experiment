@@ -121,3 +121,55 @@ function callbackFailure(Connection $db): void
     check($effects === ['first', 'second', 'outside'], 'Outside-transaction callback was not immediate.');
     echo "Post-commit exception propagation, remaining callback and durable write passed\n";
 }
+
+function sqlServerLockModes(Connection $db): void
+{
+    setup($db);
+    $peer = new Connection(config());
+    $db->beginTransaction();
+    try {
+        $db->update('UPDATE lab_balances WITH (ROWLOCK) SET balance = 105 WHERE id = 1');
+        $rows = $peer->transaction(static fn(Connection $active): array => $active->select('SELECT id FROM lab_balances WITH (READPAST, UPDLOCK, ROWLOCK) ORDER BY id'));
+        check(array_map('intval', array_column($rows, 'id')) === [2], 'SQL Server READPAST did not exclude held row.');
+        $peer->getPdo()->exec('SET LOCK_TIMEOUT 0');
+        try {
+            $peer->transaction(static fn(Connection $active): array => $active->select('SELECT id FROM lab_balances WITH (UPDLOCK, ROWLOCK) WHERE id = 1'));
+            throw new LogicException('SQL Server NOWAIT acquired held row.');
+        } catch (\Infocyph\DBLayer\Exceptions\DBException $failure) {
+            $cause = $failure;
+            while ($cause !== null && !$cause instanceof PDOException) {
+                $cause = $cause->getPrevious();
+            }
+            check($cause instanceof PDOException && (int) ($cause->errorInfo[1] ?? 0) === 1222, 'Unexpected SQL Server lock rejection reason.');
+        } finally {
+            $peer->getPdo()->exec('SET LOCK_TIMEOUT -1');
+        }
+        check($peer->transactionLevel() === 0, 'Lock timeout retained transaction ownership.');
+    } finally {
+        $db->rollbackTransaction();
+    }
+    check(balance($peer, 1) === 100 && count($peer->transaction(static fn(Connection $active): array => $active->select('SELECT id FROM lab_balances WITH (UPDLOCK, ROWLOCK) ORDER BY id'))) === 2, 'Rollback failed to release row locks.');
+    $lock = "DECLARE @rc int; EXEC @rc = sp_getapplock @Resource='lab-application-lock', @LockMode='Exclusive', @LockOwner='Session', @LockTimeout=0; SELECT @rc AS result;";
+    $release = "DECLARE @rc int; EXEC @rc = sp_releaseapplock @Resource='lab-application-lock', @LockOwner='Session'; SELECT @rc AS result;";
+    $execute = static function (Connection $connection, string $sql): int {
+        $statement = $connection->getPdo()->query('SET NOCOUNT ON; ' . $sql);
+        try {
+            do {
+                if ($statement->columnCount() > 0) {
+                    return (int) $statement->fetchColumn();
+                }
+            } while ($statement->nextRowset());
+            throw new RuntimeException('Application lock returned no result.');
+        } finally {
+            $statement->closeCursor();
+        }
+    };
+    check($execute($db, $lock) >= 0, 'Session application lock failed.');
+    try {
+        check($execute($peer, $lock) === -1, 'Peer obtained exclusive application lock.');
+    } finally {
+        check($execute($db, $release) >= 0, 'Application lock release failed.');
+    }
+    check($execute($peer, $lock) >= 0 && $execute($peer, $release) >= 0, 'Released application lock not reusable.');
+    echo "SQL Server row locks, READPAST, exact lock timeout, transaction cleanup and application lock ownership passed\n";
+}

@@ -13,6 +13,7 @@ if [[ "$SCENARIO" != db-sqlserver-tls ]]; then
 fi
 case "$SCENARIO" in
   db-active-backup) bash "$GITHUB_WORKSPACE/qa/workloads/database-active-backup.sh" ;;
+  db-portable-backup) bash "$GITHUB_WORKSPACE/qa/workloads/database-portable-backup.sh" ;;
   db-physical-backup) bash "$GITHUB_WORKSPACE/qa/workloads/database-physical-backup.sh" ;;
   db-query-cache-overlap) bash "$GITHUB_WORKSPACE/qa/workloads/database-cache-overlap.sh" ;;
   db-query-cache-race) bash "$GITHUB_WORKSPACE/qa/workloads/database-cache-race.sh" ;;
@@ -28,6 +29,7 @@ case "$SCENARIO" in
   db-driver|db-relations-advanced)
     php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-relations) php "$probe" relations | tee "$EVIDENCE/database.log" ;;
+  db-sqlserver-lock-modes) php "$probe" sqlserver-lock-modes | tee "$EVIDENCE/database.log" ;;
   db-schema|db-query|db-repository|db-query-cache|db-stream|db-security|db-lock-wait|db-pool-lifecycle|db-budgets|db-isolation|db-wal|db-lock-modes|db-native-owner|db-callback-failure)
     php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-transactions) php "$probe" transactions | tee "$EVIDENCE/database.log" ;;
