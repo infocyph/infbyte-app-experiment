@@ -7,26 +7,38 @@ use Infocyph\CacheLayer\Cache\CacheOptions;
 use Infocyph\CacheLayer\Cluster\Transport\RedisStreamInvalidationTransport;
 use Infocyph\CacheLayer\Exceptions\CacheBackendException;
 
-function cacheOutageWorkload(): void
+function cacheOutageWorkload(string $backend = 'redis'): void
 {
     $root = (string) getenv('LAB_CACHE_FAULT_ROOT');
-    $dsn = 'redis://127.0.0.1:17389';
-    $closed = Cache::redis('outage', $dsn, options: new CacheOptions(failOpen: false));
-    $open = Cache::redis('outage', $dsn, options: new CacheOptions(failOpen: true));
+    $make = static fn(bool $failOpen): Cache => match ($backend) {
+        'redis' => Cache::redis('outage', 'redis://127.0.0.1:17389', options: new CacheOptions(failOpen: $failOpen)),
+        'valkey' => Cache::valkey('outage', 'valkey://127.0.0.1:17389', options: new CacheOptions(failOpen: $failOpen)),
+        'memcached' => Cache::memcached('outage', [['127.0.0.1', 17389, 0]], options: new CacheOptions(failOpen: $failOpen)),
+        default => throw new InvalidArgumentException('Unknown cache outage backend.'),
+    };
+    $closed = $make(false);
+    $open = $make(true);
     verify($closed->set('durable', ['value' => 42], 600), 'Seed failed.');
     verify($open->get('durable') === ['value' => 42], 'Initial cache state mismatch.');
+    $closedAtomic = $closed->atomic();
+    $openAtomic = $open->atomic();
+    verify($closedAtomic !== null && $openAtomic !== null && $closedAtomic->setIfAbsent('lease', 'owned', 600), 'Atomic outage seed failed.');
     verify(touch($root . '/seeded'), 'Could not publish readiness.');
     cacheWaitMarker($root . '/stopped');
     expectFailure(static fn() => $closed->get('durable'), CacheBackendException::class, 'Fail-closed read concealed outage.');
     expectFailure(static fn() => $closed->set('lost', 1, 600), CacheBackendException::class, 'Fail-closed write concealed outage.');
     verify($open->get('durable', 'fallback') === 'fallback', 'Fail-open read failed to return default.');
     verify(!$open->set('lost', 1, 600), 'Fail-open write reported success during outage.');
+    expectFailure(static fn() => $closedAtomic->compareAndSet('lease', 'owned', 'changed', 600), CacheBackendException::class, 'Fail-closed CAS concealed outage.');
+    verify(!$openAtomic->setIfAbsent('lost-atomic', 'new', 600) && $openAtomic->getAndDelete('lease', 'fallback') === 'fallback', 'Fail-open atomic result misrepresented outage.');
     verify(touch($root . '/observed'), 'Could not publish outage evidence.');
     cacheWaitMarker($root . '/restarted');
-    $replacement = Cache::redis('outage', $dsn, options: new CacheOptions(failOpen: false));
-    verify($replacement->get('durable') === ['value' => 42] && !$replacement->has('lost'), 'Restart lost durable value or published failed write.');
+    $replacement = $make(false);
+    $expected = $backend === 'memcached' ? null : ['value' => 42];
+    verify($replacement->get('durable') === $expected && !$replacement->has('lost') && !$replacement->has('lost-atomic'), 'Restart durability or rejected mutation contract failed.');
+    verify($replacement->get('lease') === ($backend === 'memcached' ? null : 'owned'), 'Outage modified a previously confirmed atomic value.');
     verify($replacement->set('recovered', 2, 600) && $replacement->get('recovered') === 2, 'Replacement write failed.');
-    echo "Actual Redis stop, fail-open/closed and durable restart reconciliation passed\n";
+    echo "Actual $backend stop, fail-open/closed, atomic failure and restart reconciliation passed\n";
 }
 
 function cacheWaitMarker(string $path): void

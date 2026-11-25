@@ -254,6 +254,17 @@ jobs:
           - {scenario: ecosystem-mailbox-tls, backend: pgsql}
           - {scenario: ecosystem-mailbox-idle, backend: pgsql}
           - {scenario: ecosystem-cache-outage, backend: pgsql}
+          - {scenario: ecosystem-cache-valkey-outage, backend: pgsql}
+          - {scenario: ecosystem-cache-memcached-outage, backend: pgsql}
+          - {scenario: ecosystem-cache-atomic-redis, backend: pgsql}
+          - {scenario: ecosystem-cache-atomic-valkey, backend: pgsql}
+          - {scenario: ecosystem-cache-atomic-memcached, backend: pgsql}
+          - {scenario: ecosystem-cache-atomic-file, backend: pgsql}
+          - {scenario: ecosystem-cache-atomic-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-cache-atomic-sqlite, backend: pgsql}
+          - {scenario: ecosystem-cache-atomic-pdo, backend: pgsql}
+          - {scenario: ecosystem-cache-atomic-pdo, backend: mysql}
+          - {scenario: ecosystem-cache-atomic-pdo, backend: mariadb}
           - {scenario: ecosystem-invalidation-processes, backend: pgsql}
           - {scenario: ecosystem-validation-rules, backend: pgsql}
           - {scenario: ecosystem-validation-options, backend: pgsql}

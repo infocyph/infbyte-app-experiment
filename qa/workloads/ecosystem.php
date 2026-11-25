@@ -56,6 +56,7 @@ require __DIR__ . '/ecosystem-cache-ha.php';
 require __DIR__ . '/ecosystem-otp-boundaries.php';
 require __DIR__ . '/ecosystem-validation-matrix.php';
 require __DIR__ . '/ecosystem-cache-faults.php';
+require __DIR__ . '/ecosystem-cache-atomic.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
 require __DIR__ . '/ecosystem-storage-boundaries.php';
 require __DIR__ . '/ecosystem-storage-outage.php';
@@ -159,6 +160,15 @@ match ($argv[1] ?? '') {
     'mailbox-untrusted' => mailboxUntrustedWorkload(),
     'mailbox-idle' => mailboxIdleWorkload(),
     'cache-outage' => cacheOutageWorkload(),
+    'cache-valkey-outage' => cacheOutageWorkload('valkey'),
+    'cache-memcached-outage' => cacheOutageWorkload('memcached'),
+    'cache-atomic-redis' => cacheAtomicWorkload('redis'),
+    'cache-atomic-valkey' => cacheAtomicWorkload('valkey'),
+    'cache-atomic-memcached' => cacheAtomicWorkload('memcached'),
+    'cache-atomic-file' => cacheAtomicWorkload('file'),
+    'cache-atomic-phpfiles' => cacheAtomicWorkload('phpfiles'),
+    'cache-atomic-sqlite' => cacheAtomicWorkload('sqlite'),
+    'cache-atomic-pdo' => cacheAtomicWorkload('pdo'),
     'invalidation-processes' => invalidationProcessesWorkload(),
     'validation-rules' => validationRulesWorkload(),
     'validation-options' => validationOptionsWorkload(),
