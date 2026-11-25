@@ -60,6 +60,7 @@ require __DIR__ . '/ecosystem-validation-matrix.php';
 require __DIR__ . '/ecosystem-cache-faults.php';
 require __DIR__ . '/ecosystem-cache-atomic.php';
 require __DIR__ . '/ecosystem-cache-contracts.php';
+require __DIR__ . '/ecosystem-cache-locking.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
 require __DIR__ . '/ecosystem-storage-boundaries.php';
 require __DIR__ . '/ecosystem-storage-outage.php';
@@ -202,6 +203,27 @@ match ($argv[1] ?? '') {
     'cache-remember-phpfiles' => cacheRememberWorkload('phpfiles'),
     'cache-remember-sqlite' => cacheRememberWorkload('sqlite'),
     'cache-remember-pdo' => cacheRememberWorkload('pdo'),
+    'cache-lock-ownership-redis' => cacheLockOwnershipWorkload('redis'),
+    'cache-lock-ownership-valkey' => cacheLockOwnershipWorkload('valkey'),
+    'cache-lock-ownership-memcached' => cacheLockOwnershipWorkload('memcached'),
+    'cache-lock-ownership-file' => cacheLockOwnershipWorkload('file'),
+    'cache-lock-ownership-phpfiles' => cacheLockOwnershipWorkload('phpfiles'),
+    'cache-lock-ownership-sqlite' => cacheLockOwnershipWorkload('sqlite'),
+    'cache-lock-ownership-pdo' => cacheLockOwnershipWorkload('pdo'),
+    'cache-stampede-redis' => cacheStampedeWorkload('redis'),
+    'cache-stampede-valkey' => cacheStampedeWorkload('valkey'),
+    'cache-stampede-memcached' => cacheStampedeWorkload('memcached'),
+    'cache-stampede-file' => cacheStampedeWorkload('file'),
+    'cache-stampede-phpfiles' => cacheStampedeWorkload('phpfiles'),
+    'cache-stampede-sqlite' => cacheStampedeWorkload('sqlite'),
+    'cache-stampede-pdo' => cacheStampedeWorkload('pdo'),
+    'cache-metrics-redis' => cacheMetricsWorkload('redis'),
+    'cache-metrics-valkey' => cacheMetricsWorkload('valkey'),
+    'cache-metrics-memcached' => cacheMetricsWorkload('memcached'),
+    'cache-metrics-file' => cacheMetricsWorkload('file'),
+    'cache-metrics-phpfiles' => cacheMetricsWorkload('phpfiles'),
+    'cache-metrics-sqlite' => cacheMetricsWorkload('sqlite'),
+    'cache-metrics-pdo' => cacheMetricsWorkload('pdo'),
     'invalidation-processes' => invalidationProcessesWorkload(),
     'validation-rules' => validationRulesWorkload(),
     'validation-options' => validationOptionsWorkload(),

@@ -330,6 +330,33 @@ jobs:
           - {scenario: ecosystem-cache-remember-pdo, backend: pgsql}
           - {scenario: ecosystem-cache-remember-pdo, backend: mysql}
           - {scenario: ecosystem-cache-remember-pdo, backend: mariadb}
+          - {scenario: ecosystem-cache-lock-ownership-redis, backend: pgsql}
+          - {scenario: ecosystem-cache-lock-ownership-valkey, backend: pgsql}
+          - {scenario: ecosystem-cache-lock-ownership-memcached, backend: pgsql}
+          - {scenario: ecosystem-cache-lock-ownership-file, backend: pgsql}
+          - {scenario: ecosystem-cache-lock-ownership-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-cache-lock-ownership-sqlite, backend: pgsql}
+          - {scenario: ecosystem-cache-lock-ownership-pdo, backend: pgsql}
+          - {scenario: ecosystem-cache-lock-ownership-pdo, backend: mysql}
+          - {scenario: ecosystem-cache-lock-ownership-pdo, backend: mariadb}
+          - {scenario: ecosystem-cache-stampede-redis, backend: pgsql}
+          - {scenario: ecosystem-cache-stampede-valkey, backend: pgsql}
+          - {scenario: ecosystem-cache-stampede-memcached, backend: pgsql}
+          - {scenario: ecosystem-cache-stampede-file, backend: pgsql}
+          - {scenario: ecosystem-cache-stampede-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-cache-stampede-sqlite, backend: pgsql}
+          - {scenario: ecosystem-cache-stampede-pdo, backend: pgsql}
+          - {scenario: ecosystem-cache-stampede-pdo, backend: mysql}
+          - {scenario: ecosystem-cache-stampede-pdo, backend: mariadb}
+          - {scenario: ecosystem-cache-metrics-redis, backend: pgsql}
+          - {scenario: ecosystem-cache-metrics-valkey, backend: pgsql}
+          - {scenario: ecosystem-cache-metrics-memcached, backend: pgsql}
+          - {scenario: ecosystem-cache-metrics-file, backend: pgsql}
+          - {scenario: ecosystem-cache-metrics-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-cache-metrics-sqlite, backend: pgsql}
+          - {scenario: ecosystem-cache-metrics-pdo, backend: pgsql}
+          - {scenario: ecosystem-cache-metrics-pdo, backend: mysql}
+          - {scenario: ecosystem-cache-metrics-pdo, backend: mariadb}
           - {scenario: ecosystem-invalidation-processes, backend: pgsql}
           - {scenario: ecosystem-validation-rules, backend: pgsql}
           - {scenario: ecosystem-validation-options, backend: pgsql}
