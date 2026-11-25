@@ -75,3 +75,5 @@ B15 adds five-driver mechanics and bounded relationship lanes. Remaining relatio
 B16 sets fused/sharded as the only acceptance matchers for both production HTTP workloads. Historical generated matcher execution remains evidence, not a required current lane.
 
 B17 adds five core/InterMix/ArrayKit/UID native capability jobs; PHPProbe belongs to engineering QA, not production runtime. Detailed tracker records implemented vs open.
+
+B18 adds nine cache, validation and security jobs. Distinguish native OTP recovery from Foundation's existing durable recovery failure; no defect bypass.

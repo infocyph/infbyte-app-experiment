@@ -36,9 +36,19 @@ function evidenceDirectory(): string
 }
 
 require __DIR__ . '/ecosystem-data.php';
+require __DIR__ . '/ecosystem-security.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'cache-tier' => cacheTierWorkload(),
+    'cache-local' => cacheLocalWorkload(),
+    'cache-integrity' => cacheIntegrityWorkload(),
+    'cache-race' => cacheRaceWorkload(),
+    'otp-race' => otpRaceWorkload(),
+    'otp-recovery' => otpRecoveryWorkload(),
+    'validation' => validationWorkload(),
+    'crypto-file' => cryptoFileWorkload(),
+    'crypto-envelope' => cryptoEnvelopeWorkload(),
     'intermix' => intermixWorkload(),
     'array-config' => arrayConfigWorkload(),
     'array-stream' => arrayStreamWorkload(),

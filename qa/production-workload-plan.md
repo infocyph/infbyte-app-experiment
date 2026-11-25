@@ -119,3 +119,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B17 — core and ecosystem data capabilities
 - [x] Add independent Foundation core, InterMix, ArrayKit config/stream and UID format lanes.
 - [ ] Hosted verification and remaining full native capability coverage; no upstream fixes.
+
+## B18 — cache/security native lanes
+- [x] Add nine independent CacheLayer, OTP, ReqShield and Epicrypt jobs.
+- [ ] Hosted evidence and remaining full capabilities. No vendor changes or suppressed upstream defects.

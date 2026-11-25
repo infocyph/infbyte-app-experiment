@@ -79,3 +79,7 @@ I: use fused and sharded exclusively, with both matchers on native and PHP-FPM b
 ## B17 — core and data ecosystem workloads
 
 I: five independent jobs: Foundation production core compiled readiness, live maintenance entry/exit and concurrent health after recovery; InterMix strict compiled/dynamic DI with 2,000 scoped jobs, nested and borrowed input, aliases, lifetime and invocation; ArrayKit immutable lazy config generations, partial/failed rebuild; renewable 300k-row lazy pipeline and hooked collection isolation; UID UUID1–8, six bases, binary/ULID roundtrip and 4k uniqueness. PHPProbe is an engineering tool, not runtime diagnostics (separate dev-only qualification required). All broader library rows remain open; hosted evidence pending.
+
+## B18 — cache, validation and security ecosystem
+
+I: nine isolated hosted lanes: CacheLayer tier promotion/bulk convergence, memory/weak/APCu/SHM/null, signed and unsigned integrity policy, invalid keys and serialization bounds, twelve-worker Redis atomic claims/counters; native OTP twelve-worker same-proof replay and attempt exhaustion plus recovery regeneration/consumption; ReqShield 2,000 compiled valid/invalid inputs, unknown-field projection after JSON decode, casts and schema export; Epicrypt 16 MiB authenticated file streaming/tamper and envelope AAD/key isolation. Shared durable recovery adapter, cluster, outbox, other security algorithms/protocols and all broader capability rows remain open. Hosted verification pending.
