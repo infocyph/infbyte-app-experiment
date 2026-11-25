@@ -279,6 +279,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-right-outer-join, backend: pgsql}
+          - {scenario: db-right-outer-join, backend: mysql}
+          - {scenario: db-right-outer-join, backend: mariadb}
+          - {scenario: db-right-outer-join, backend: sqlite}
+          - {scenario: db-right-outer-join, backend: mssql, php: '8.4'}
+          - {scenario: db-chained-cte, backend: pgsql}
+          - {scenario: db-chained-cte, backend: mysql}
+          - {scenario: db-chained-cte, backend: mariadb}
+          - {scenario: db-chained-cte, backend: sqlite}
+          - {scenario: db-chained-cte, backend: mssql, php: '8.4'}
+          - {scenario: db-bidirectional-cursor, backend: pgsql}
+          - {scenario: db-bidirectional-cursor, backend: mysql}
+          - {scenario: db-bidirectional-cursor, backend: mariadb}
+          - {scenario: db-bidirectional-cursor, backend: sqlite}
+          - {scenario: db-bidirectional-cursor, backend: mssql, php: '8.4'}
+          - {scenario: db-bounded-pruner, backend: pgsql}
+          - {scenario: db-bounded-pruner, backend: mysql}
+          - {scenario: db-bounded-pruner, backend: mariadb}
+          - {scenario: db-bounded-pruner, backend: sqlite}
+          - {scenario: db-bounded-pruner, backend: mssql, php: '8.4'}
           - {scenario: db-schema-evolution-column, backend: pgsql}
           - {scenario: db-schema-evolution-column, backend: mysql}
           - {scenario: db-schema-evolution-column, backend: mariadb}

@@ -176,3 +176,107 @@ function databaseCompositeForeignContracts(Connection $db): void
     check($peer->table('lab_comp_child')->count() === 1 && (int) $peer->table('lab_comp_child')->value('id') === 2, 'Composite delete cascade crossed tenant.');
     echo "Composite primary/foreign key enforcement, native cascades and destructive guard passed\n";
 }
+
+function databaseRightJoinContracts(Connection $db): void
+{
+    seedRows($db, 20);
+    $db->statement('CREATE TABLE lab_right_target (id INTEGER PRIMARY KEY, tenant_id INTEGER NOT NULL)');
+    $db->table('lab_right_target')->insert([['id' => 2, 'tenant_id' => 1], ['id' => 4, 'tenant_id' => 1],
+        ['id' => 24, 'tenant_id' => 1], ['id' => 3, 'tenant_id' => 2]]);
+    $project = static fn(array $rows): array => array_map(static fn(array $row): array => [
+        (int) $row['target_id'], $row['record_id'] === null ? null : (int) $row['record_id'],
+    ], $rows);
+    $base = $db->table('lab_records')->as('r')->select('t.id AS target_id')->addSelectAs('r.id', 'record_id');
+    $direct = $base->cloneBuilder()->rightJoinAs('lab_right_target', 't', 'r.id', '=', 't.id')
+        ->where('t.tenant_id', '=', 1)->orderBy('t.id');
+    $targets = $db->table('lab_right_target')->select('id')->where('tenant_id', '=', 1);
+    $derived = $base->cloneBuilder()->rightJoinSub($targets, 't', 'r.id', '=', 't.id')->orderBy('t.id');
+    $expected = [[2, 2], [4, 4], [24, null]];
+    check($project($direct->get()) === $expected && $project($derived->get()) === $expected,
+        'Right outer join lost unmatched row or crossed tenant boundary.');
+    check($targets->getBindings() === [1] && $base->getBindings() === [], 'Join mutated reusable operands.');
+    $peer = new Connection(config());
+    check($peer->table('lab_right_target')->count() === 4 && $peer->table('lab_records')->count() === 20, 'Read mutated durable records.');
+    echo "Native aliased and derived right outer join, NULL preservation and binding ownership passed\n";
+}
+
+function databaseChainedCteContracts(Connection $db): void
+{
+    seedRows($db, 20);
+    $first = $db->table('lab_records')->select('id', 'amount')->where('tenant_id', '=', 1);
+    $second = $db->query()->from('tenant_records')->select('id', 'amount')->where('amount', '>=', 4);
+    $query = $db->query()->with('tenant_records', $first)->with('eligible_records', $second)
+        ->from('eligible_records')->select('id', 'amount')->where('amount', '<=', 6)->orderBy('id');
+    $project = static fn(array $rows): array => array_map(static fn(array $row): array => [(int) $row['id'], (int) $row['amount']], $rows);
+    check($project($query->get()) === [[4, 4], [6, 6], [14, 4], [16, 6]], 'Chained CTE produced incorrect bound rows.');
+    check($query->getBindings() === [1, 4, 6] && $first->getBindings() === [1] && $second->getBindings() === [4],
+        'Chained CTE binding order or ownership changed.');
+    $branch = $query->cloneBuilder()->where('id', '>', 10);
+    check($project($branch->get()) === [[14, 4], [16, 6]] && $query->getBindings() === [1, 4, 6], 'CTE clone contaminated original.');
+    check($query->get() !== [] && (new Connection(config()))->table('lab_records')->count() === 20, 'CTE reuse or persisted state failed.');
+    echo "Multiple named CTE dependencies, binding order and clone ownership passed\n";
+}
+
+function databaseBidirectionalCursorContracts(Connection $db): void
+{
+    seedRows($db, 30);
+    $signed = new Connection(config(['security' => ['cursor_signing_key' => random_bytes(32)]]));
+    $query = $signed->table('lab_records')->where('tenant_id', '=', 1)->orderByDesc('amount')->orderBy('id');
+    $expected = range(2, 30, 2);
+    usort($expected, static fn(int $a, int $b): int => ($b % 10 <=> $a % 10) ?: ($a <=> $b));
+    $ids = static fn($page): array => array_map('intval', array_column($page->items(), 'id'));
+    $pages = [];
+    $cursor = null;
+    for ($index = 0; $index < 4; ++$index) {
+        $page = $query->cursorPaginate(4, $cursor);
+        check($ids($page) === array_slice($expected, $index * 4, 4), 'Forward mixed-direction keyset traversal mismatch.');
+        check($page->hasPreviousPage() === ($index > 0) && $page->hasMorePages() === ($index < 3), 'Cursor navigation metadata mismatch.');
+        $pages[] = $page;
+        $cursor = $page->nextCursor();
+    }
+    check($cursor === null, 'Cursor persisted after final page.');
+    for ($index = 3; $index > 0; --$index) {
+        $previous = $pages[$index]->previousCursor();
+        check(is_string($previous), 'Missing previous cursor.');
+        $page = $query->cursorPaginate(4, $previous);
+        check($ids($page) === $ids($pages[$index - 1]), 'Reverse keyset traversal changed tied row order.');
+    }
+    $next = $pages[0]->nextCursor();
+    check(is_string($next), 'Missing signed cursor.');
+    rejected(static fn() => $signed->table('lab_records')->where('tenant_id', '=', 2)->orderByDesc('amount')->orderBy('id')->cursorPaginate(4, $next), 'Cursor accepted foreign tenant.');
+    rejected(static fn() => $signed->table('lab_records')->where('tenant_id', '=', 1)->orderBy('amount')->orderBy('id')->cursorPaginate(4, $next), 'Cursor accepted changed ordering.');
+    check($ids($query->cursorPaginate(4)) === $ids($pages[0]) && $query->getBindings() === [1], 'Cursor traversal mutated original query.');
+    echo "Signed mixed-direction forward/reverse pagination, ties and query-bound replay rejection passed\n";
+}
+
+final class LabPruneRepository extends \Infocyph\DBLayer\Repository\TableRepository
+{
+    protected static string $table = 'lab_records';
+
+    protected static function globalScopes(): array
+    {
+        return ['tenant' => static fn(\Infocyph\DBLayer\Query\QueryBuilder $query) => $query->where('tenant_id', '=', 1)];
+    }
+}
+
+function databaseBoundedPrunerContracts(Connection $db): void
+{
+    seedRows($db, 40);
+    \Infocyph\DBLayer\DB::addConnection(config(), 'lab-pruner');
+    $pruner = LabPruneRepository::pruner('lab-pruner');
+    $scope = static fn(\Infocyph\DBLayer\Repository\RepositoryQuery $query) => $query->where('amount', '<', 6);
+    check($pruner->count($scope) === 12, 'Prune scope count crossed tenant or threshold.');
+    try {
+        $pruner->prune($scope, chunkSize: 0, force: true);
+        throw new RuntimeException('Zero-size prune accepted.');
+    } catch (InvalidArgumentException) {
+        check($db->table('lab_records')->count() === 40, 'Invalid prune changed durable rows.');
+    }
+    check($pruner->prune($scope, chunkSize: 3, force: true) === 12, 'Bounded pruning count mismatch.');
+    $peer = new Connection(config());
+    $remaining = array_map('intval', $peer->table('lab_records')->orderBy('id')->pluck('id'));
+    $expected = array_values(array_filter(range(1, 40), static fn(int $id): bool => $id % 2 !== 0 || $id % 10 >= 6));
+    check($remaining === $expected && $pruner->count($scope) === 0, 'Pruning removed unrelated rows or skipped candidates.');
+    check($pruner->prune($scope, chunkSize: 3, force: true) === 0 && $peer->table('lab_records')->count() === 28, 'Empty retry changed durable rows.');
+    echo "Repository-scoped bounded force pruning, invalid size and idempotent retry passed\n";
+}
