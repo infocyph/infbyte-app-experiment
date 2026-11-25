@@ -673,3 +673,7 @@ I: 25 new lanes: nine contract families each for actual Redis Cluster and MongoD
 ## B165 — Compiled route policy integration
 
 I: ten matcher-specific lanes for five independent contracts: per-route media/charset negotiation and rejection, credentialed CORS and foreign-origin isolation, explicit OPTIONS preflight and rejected method/header, grouped middleware ordering and unrelated-route isolation, method/domain/typed constraint and HEAD fallback. Actual coordinated InterMix/Webrick compilation and compiled kernel dispatch; synthetic requests, not a new network-host qualification. CORE-01, EXEC-03, SEC: source/matrix wiring reviewed; hosted outcomes deferred. 887 routine rows; no upstream changes.
+
+## B166 — MobileOTP application-owned rotation policy
+
+I: sixteen shared-state lanes, eight each for immediate and overlapping generation selection. Actual MobileOTP verification, old-generation fencing at exact cutover, unknown/wrong generation rejection, account replay isolation, twelve-process one-winner race and subsequent timestep recovery. No native MobileOTP rotation planner exists; generation policy is application-owned. Valkey service provisioned explicitly. CORE-01, DATA, SEC: source/matrix wiring reviewed; hosted outcomes deferred. 903 routine rows; no upstream changes.

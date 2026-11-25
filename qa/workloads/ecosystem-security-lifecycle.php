@@ -288,3 +288,49 @@ function otpElectionContracts(bool $seed): void
     }
     echo "$backend OTP election phase " . ($seed ? 'seed' : 'verify') . " passed\n";
 }
+
+function mobileRotationContracts(string $backend, bool $overlap): void
+{
+    $root = evidenceDirectory() . '/mobile-rotation';
+    verify(mkdir($root, 0700), 'Mobile rotation fixture unavailable.');
+    $options = new CacheOptions(integrityKey: random_bytes(32), failOpen: false);
+    $factory = static fn() => sharedAtomicCache($backend, 'mobile-rotation', $root, $options);
+    // MobileOTP has no native rotation planner; generation selection belongs to the application.
+    $factors = [
+        'old' => new \Infocyph\OTP\MobileOTP('0123456789abcdef', '1234'),
+        'new' => new \Infocyph\OTP\MobileOTP('fedcba9876543210', '5678'),
+    ];
+    $start = 1_800_000_000;
+    $cutover = $start + ($overlap ? 60 : 0);
+    $admit = static function (string $generation, string $proof, int $at, string $account = 'account') use ($factors, $factory, $cutover, $start): bool {
+        if (!isset($factors[$generation]) || $at < $start || ($generation === 'old' && $at >= $cutover)) {
+            return false;
+        }
+        return $factors[$generation]->verifyWithWindow(
+            $proof,
+            $at,
+            new VerificationWindow(0, 0),
+            cache: $factory(),
+            factorId: $account . '-' . $generation,
+        )->matched;
+    };
+    $oldProof = $factors['old']->generate($start);
+    $newProof = $factors['new']->generate($start);
+    verify($oldProof !== $newProof, 'Fixture generations collide.');
+    verify(!$admit('unknown', $newProof, $start), 'Unknown generation accepted.');
+    verify(!$admit('new', $oldProof, $start), 'Old proof admitted by replacement generation.');
+    verify($admit('old', $oldProof, $start) === $overlap, 'Old generation admission policy changed.');
+    verify($admit('new', $newProof, $start) && !$admit('new', $newProof, $start), 'Replacement generation replay boundary failed.');
+    verify($admit('new', $newProof, $start, 'foreign') && !$admit('new', $newProof, $start, 'foreign'), 'Account replay isolation failed.');
+    if ($overlap) {
+        verify(!$admit('old', $oldProof, $start), 'Old generation replay admitted.');
+        verify($admit('old', $factors['old']->generate($cutover - 1), $cutover - 1), 'Overlap closed prematurely.');
+    }
+    verify(!$admit('old', $factors['old']->generate($cutover), $cutover), 'Old generation admitted at cutover.');
+    $at = $cutover + 10;
+    $proof = $factors['new']->generate($at);
+    $results = parallelRace(static fn(): int => (int) $admit('new', $proof, $at), 'mobile-cutover', 12);
+    verify(array_sum($results) === 1 && !$admit('new', $proof, $at), 'MobileOTP cutover replay race differed.');
+    verify($admit('new', $factors['new']->generate($at + 10), $at + 10), 'Next timestep unavailable after cutover.');
+    echo "MobileOTP $backend application rotation policy and generation/account replay isolation completed\n";
+}

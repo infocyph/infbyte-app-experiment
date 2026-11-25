@@ -742,6 +742,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-file, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-mobile-rotation-immediate-pdo, backend: mariadb}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-file, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-mobile-rotation-overlap-pdo, backend: mariadb}
           - {scenario: ecosystem-compiled-policy-negotiation, backend: pgsql, matcher: fused}
           - {scenario: ecosystem-compiled-policy-negotiation, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-compiled-policy-cors, backend: pgsql, matcher: fused}
