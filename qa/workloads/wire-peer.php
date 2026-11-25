@@ -114,6 +114,34 @@ if (in_array($mode, ['http2-flow', 'http3-flow'], true)) {
         $pump($writer);
     };
 }
+if (in_array($mode, ['http2-admission', 'http3-admission'], true)) {
+    $ordinary = $http;
+    $http = static function (HttpRequest $request, ResponseWriterInterface $writer) use ($ordinary, $root): void {
+        $target = $request->target;
+        file_put_contents($root . '/admitted', $target . PHP_EOL, FILE_APPEND | LOCK_EX);
+        if (!str_starts_with($target, '/hold/')) {
+            $ordinary($request, $writer);
+            return;
+        }
+        $request->context->cancellation->onCancel(static function () use ($root, $target): void {
+            file_put_contents($root . '/cancelled', $target . PHP_EOL, FILE_APPEND | LOCK_EX);
+        });
+        $body = $request->body;
+        $body->onData(static function ($body): void {
+            while ($body->bufferedBytes() > 0) {
+                $body->read(8192);
+            }
+        });
+        $finish = static function () use ($ordinary, $request, $writer): void {
+            $ordinary($request, $writer);
+        };
+        if ($body->eof()) {
+            $finish();
+        } else {
+            $body->onEnd($finish);
+        }
+    };
+}
 $server = match ($mode) {
     'tcp' => StreamServer::tcp('127.0.0.1:18785', $codec, $echo),
     'unix' => StreamServer::unix($root . '/peer.sock', $codec, $echo),
@@ -124,8 +152,16 @@ $server = match ($mode) {
     'http3' => (new Server('quic', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')))->withHttp3(),
     'http3-flow' => (new Server('quic-flow', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')))->withHttp3(new Http3Options(limits: new Http3Limits(maxPendingResponseBytesPerStream: 32768, responseLowWatermarkBytes: 8192, responseHighWatermarkBytes: 16384, maxPendingResponseBytesPerConnection: 65536, maxQpackEncoderQueueBytes: 16384, maxResponseFramePayloadBytes: 4096))),
     'mtls' => new Server('mutual-tls', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem', extraContext: ['cafile' => $root . '/ca.pem'], requireClientCertificate: true)),
+    'http2-admission' => new Server('h2-admission', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')),
+    'http3-admission' => (new Server('h3-admission', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')))->withHttp3(),
     'http2' => new Server('tls', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')),
     'http2-flow' => new Server('tls-flow', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem'), http2: new Http2Limits(maxPendingResponseBytesPerStream: 32768, responseLowWatermarkBytes: 8192, responseHighWatermarkBytes: 16384, maxPendingResponseBytesPerConnection: 65536, streamIdleTimeoutSeconds: 15.0)),
     default => throw new InvalidArgumentException('Unknown wire workload.'),
 };
-Runtime::create()->listen($server)->run();
+$runtime = in_array($mode, ['http2-admission', 'http3-admission'], true)
+    ? Runtime::create(new \Infocyph\Runwire\RuntimeOptions(
+        driver: \Infocyph\Runwire\Runtime\Enum\RuntimeDriver::NATIVE,
+        admission: new \Infocyph\Runwire\Runtime\AdmissionPolicy(maxActiveRequests: 32, maxStreamsPerWorker: 2, retryAfterSeconds: 3),
+    ))
+    : Runtime::create();
+$runtime->listen($server)->run();

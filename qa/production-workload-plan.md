@@ -553,3 +553,7 @@ I: the published no-dev consumer's actual Composer root constraints, installed p
 ## B125 — Live conditional specialist CLI transitions
 
 I: three independent no-dev consumer lanes alter actual source configuration, assert required prerequisite planning, blocked enable without prerequisite, enable in dependency order, blocked disable/removal with unchanged Composer and activation files, then restore original configuration, all-feature topology and compile a trusted release. Each lane isolates one conditional dependency; combined live service execution remains separate. 390 routine rows; hosted qualification pending (CONFIG, SEC, EXEC-03).
+
+## B126 — Multiplexed stream admission and recovery
+
+I: two independent native TLS/QUIC lanes use real H2 and H3 clients, hold two streams, assert overload status 503 and Retry-After without application entry, complete a held request, admit a sibling, reset the second stream, and admit another sibling on the same connection. Eight repeated waves reconcile handler and cancellation evidence. H3 requires ext-quic. Aggregate queued-byte and host-specific quotas remain open. 392 routine rows; hosted qualification pending (MEM, REQUEST, OPS, EXEC-03).

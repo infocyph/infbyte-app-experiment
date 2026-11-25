@@ -258,6 +258,7 @@ jobs:
           - {scenario: ecosystem-http-connection-quotas, backend: pgsql}
           - {scenario: ecosystem-wire-http3, backend: pgsql}
           - {scenario: ecosystem-wire-http3-flow, backend: pgsql}
+          - {scenario: ecosystem-wire-http3-admission, backend: pgsql}
           - {scenario: ecosystem-wire-mtls, backend: pgsql}
           - {scenario: ecosystem-scylla, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-redis-failover, backend: pgsql}
@@ -275,6 +276,7 @@ jobs:
           - {scenario: ecosystem-wire-websocket, backend: pgsql}
           - {scenario: ecosystem-wire-http2, backend: pgsql}
           - {scenario: ecosystem-wire-http2-flow, backend: pgsql}
+          - {scenario: ecosystem-wire-http2-admission, backend: pgsql}
           - {scenario: ecosystem-invalidation-sql, backend: mysql}
           - {scenario: ecosystem-invalidation-sql, backend: pgsql}
           - {scenario: ecosystem-invalidation-stream, backend: pgsql}

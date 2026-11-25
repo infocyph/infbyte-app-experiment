@@ -114,4 +114,5 @@ async def run():
                       "same_connection_recovered": True}))
 
 
-asyncio.run(asyncio.wait_for(run(), 90))
+if __name__ == "__main__":
+    asyncio.run(asyncio.wait_for(run(), 90))
