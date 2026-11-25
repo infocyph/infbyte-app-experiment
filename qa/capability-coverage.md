@@ -255,3 +255,7 @@ I: three additional independent lanes exercise real Valkey TLS trust/name reject
 ## B84 — active application writes across dependency outage
 
 I: two additional compiled native host lanes (fused/sharded). Eight independent checkout workers commit pre-outage orders, remain live while PostgreSQL, Redis and SMTP stop, attempt new writes with all ports confirmed unavailable, and replay after restart without replacing the host. Sixteen extra unique orders, rejection of offline success, exact response/ledger identity, stock, transactional outbox, killed reservation, encrypted receipt/cache digests, SMTP count, and distinct SQL backup restoration. Existing 160-order flow retained. Does not yet certify external storage or external broker restore. 293 routine rows; hosted evidence pending.
+
+## B85 — value types and cryptographic interoperability
+
+I: two independent lanes cover UID value metadata, custom epochs/formats, six Sonyflake/TBSL bases, opaque integer and byte roundtrips, mixed ordering, invalid boundaries; Epicrypt RFC 8032 Ed25519 known vector, independent libsodium signature/MAC roundtrips, binary/large messages, malformed proofs/keys, opaque issuance/digest length and mutation rejection. No generated token or key material in evidence. Remaining Randflake variants and key lifecycle stay open. 295 routine rows; hosted verification pending.

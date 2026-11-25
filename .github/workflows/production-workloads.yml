@@ -130,6 +130,8 @@ jobs:
           - {scenario: ecosystem-remote-jwks, backend: pgsql}
           - {scenario: ecosystem-uid-provider-boundaries, backend: pgsql}
           - {scenario: ecosystem-uid-filesystem, backend: pgsql}
+          - {scenario: ecosystem-uid-values, backend: pgsql}
+          - {scenario: ecosystem-detached-crypto, backend: pgsql}
           - {scenario: ecosystem-config-reference, backend: pgsql}
           - {scenario: ecosystem-fence-remix, backend: pgsql}
           - {scenario: ecosystem-di-contextual, backend: pgsql}

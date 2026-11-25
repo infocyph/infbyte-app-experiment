@@ -60,6 +60,7 @@ require __DIR__ . '/ecosystem-http-semantics.php';
 require __DIR__ . '/ecosystem-file-lifecycle.php';
 require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-utility-lifecycle.php';
+require __DIR__ . '/ecosystem-value-crypto.php';
 require __DIR__ . '/ecosystem-di-factories.php';
 require __DIR__ . '/ecosystem-grpc-inbound.php';
 require __DIR__ . '/ecosystem-validation-casts.php';
@@ -92,6 +93,8 @@ match ($argv[1] ?? '') {
     'remote-jwks' => remoteJwksWorkload(),
     'uid-provider-boundaries' => uidProviderBoundariesWorkload(),
     'uid-filesystem' => uidFilesystemWorkload(),
+    'uid-values' => uidValuesWorkload(),
+    'detached-crypto' => detachedCryptoWorkload(),
     'config-reference' => configReferenceWorkload(),
     'fence-remix' => fenceRemixWorkload(),
     'di-contextual' => diContextualWorkload(),
