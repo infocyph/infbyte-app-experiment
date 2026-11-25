@@ -12,7 +12,7 @@ case "$SCENARIO" in
   ecosystem-tenants) bash "$GITHUB_WORKSPACE/qa/workloads/tenants.sh" ;;
   ecosystem-mailbox-tls|ecosystem-mailbox-idle) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox-tls.sh" ;;
   ecosystem-cache-tls|ecosystem-valkey-tls|ecosystem-counter-restart|ecosystem-valkey-counter-restart) bash "$GITHUB_WORKSPACE/qa/workloads/cache-tls.sh" ;;
-  ecosystem-cache-outage) bash "$GITHUB_WORKSPACE/qa/workloads/cache-outage.sh" ;;
+  ecosystem-cache-outage|ecosystem-di-cache-outage) bash "$GITHUB_WORKSPACE/qa/workloads/cache-outage.sh" ;;
   ecosystem-otp-durable) bash "$GITHUB_WORKSPACE/qa/workloads/otp-durable.sh" ;;
   ecosystem-supervisor|ecosystem-http-framing|ecosystem-http-backpressure) bash "$GITHUB_WORKSPACE/qa/workloads/runtime-boundaries.sh" ;;
   ecosystem-scylla|ecosystem-redis-failover) bash "$GITHUB_WORKSPACE/qa/workloads/cache-ha.sh" ;;

@@ -107,6 +107,7 @@ match ($argv[1] ?? '') {
     'di-contextual' => diContextualWorkload(),
     'di-factories' => diFactoriesWorkload(),
     'di-cache' => diCacheWorkload(),
+    'di-cache-outage' => diCacheOutageWorkload(),
     'di-attributes' => diAttributesWorkload(),
     'file-index-retention' => fileIndexRetentionWorkload(),
     'archive-security' => archiveSecurityWorkload(),

@@ -129,3 +129,49 @@ function diAttributesWorkload(): void
     verify(!$quiet->tracer()->isEnabled() && $quiet->tracer()->getEntries() === [], 'Tracing enabled by default.');
     echo "Dynamic/compiled custom property attributes, explicit invocation, dependency graph and trace lifecycle passed\n";
 }
+
+function diCacheOutageWorkload(): void
+{
+    $root = (string) getenv('LAB_CACHE_FAULT_ROOT');
+    $dsn = 'redis://127.0.0.1:17389';
+    $pool = static fn(): Cache => Cache::redis('di-outage', $dsn, options: new CacheOptions(failOpen: false));
+    $builder = static function (Cache $cache, string $generation, bool $failOpen, string $value, int &$calls): ContainerBuilder {
+        return ContainerBuilder::create('outage-' . bin2hex(random_bytes(4)))
+            ->definitionCache($cache, 'di-outage', $generation, $failOpen)
+            ->factory('settings', static function () use ($value, &$calls): array {
+                ++$calls;
+                return ['value' => $value];
+            })->cacheDefinition('settings');
+    };
+    $seedCalls = 0;
+    $cache = $pool();
+    verify($cache->set('unrelated', 42, 600), 'Cache sentinel unavailable.');
+    $seed = $builder($cache, 'stable', false, 'durable', $seedCalls)->build();
+    verify($seed->get('settings') === ['value' => 'durable'] && $seedCalls === 1, 'Initial definition not persisted.');
+    $closedCalls = 0;
+    $openCalls = 0;
+    $newCalls = 0;
+    $closed = $builder($pool(), 'stable', false, 'must-not-run', $closedCalls)->build();
+    $open = $builder($pool(), 'stable', true, 'local-fallback', $openCalls)->build();
+    $new = $builder($pool(), 'offline-generation', true, 'offline-only', $newCalls)->build();
+    verify(touch($root . '/seeded'), 'Definition cache readiness marker failed.');
+    cacheWaitMarker($root . '/stopped');
+    expectFailure(static fn() => $closed->get('settings'), ContainerException::class, 'Strict definition resolution concealed cache outage.');
+    verify($closedCalls === 0, 'Strict resolution executed factory after cache read failure.');
+    verify($open->get('settings') === ['value' => 'local-fallback'] && $open->get('settings') === ['value' => 'local-fallback'] && $openCalls === 1, 'Fail-open singleton fallback or ownership failed.');
+    verify($new->get('settings') === ['value' => 'offline-only'] && $newCalls === 1, 'New generation could not resolve during outage.');
+    verify(touch($root . '/observed'), 'Definition cache outage marker failed.');
+    cacheWaitMarker($root . '/restarted');
+    $freshCalls = 0;
+    $recoveredPool = $pool();
+    $fresh = $builder($recoveredPool, 'stable', false, 'unexpected', $freshCalls)->build();
+    verify($fresh->get('settings') === ['value' => 'durable'] && $freshCalls === 0, 'Outage fallback overwrote durable definition.');
+    verify($open->get('settings') === ['value' => 'local-fallback'] && $openCalls === 1, 'Existing singleton changed after recovery.');
+    $recoveryCalls = 0;
+    $replacement = $builder($recoveredPool, 'offline-generation', false, 'recovered', $recoveryCalls)->build();
+    verify($replacement->get('settings') === ['value' => 'recovered'] && $recoveryCalls === 1, 'Failed outage write leaked into new generation.');
+    $lastCalls = 0;
+    verify($builder($pool(), 'offline-generation', false, 'unused', $lastCalls)->build()->get('settings') === ['value' => 'recovered'] && $lastCalls === 0, 'Recovered definition was not persisted.');
+    verify($recoveredPool->get('unrelated') === 42, 'Definition recovery changed unrelated key.');
+    echo "Real Redis outage, strict/fail-open definition policy, singleton ownership and durable generation recovery passed\n";
+}

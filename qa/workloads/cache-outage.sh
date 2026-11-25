@@ -22,7 +22,7 @@ marker() {
   return 1
 }
 ready
-php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" cache-outage > "$EVIDENCE/cache-outage.log" 2>&1 &
+php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" > "$EVIDENCE/cache-outage.log" 2>&1 &
 worker=$!
 marker seeded
 docker stop lab-cache-fault >/dev/null

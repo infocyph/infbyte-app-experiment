@@ -177,6 +177,7 @@ jobs:
           - {scenario: ecosystem-di-factories, backend: pgsql}
           - {scenario: ecosystem-di-preload, backend: pgsql}
           - {scenario: ecosystem-di-cache, backend: pgsql}
+          - {scenario: ecosystem-di-cache-outage, backend: pgsql}
           - {scenario: ecosystem-di-attributes, backend: pgsql}
           - {scenario: ecosystem-file-index-retention, backend: pgsql}
           - {scenario: ecosystem-archive-security, backend: pgsql}

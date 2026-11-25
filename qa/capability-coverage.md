@@ -287,3 +287,7 @@ I: 20 additional MariaDB workload rows and 12 additional SQL Server rows reuse e
 ## B92 — Foundation browser OAuth consent over compiled HTTP hosts
 
 I: extend four existing native/FPM fused/sharded OAuth HTTP lanes using a real persisted auth session created by AuthActions, Foundation-owned authorization routes, separate browser cookies, CSRF/origin/cross-session rejection, no-store and frame/referrer policies, explicit deny and approve redirects with state and issuer, rejection of unregistered redirect, and durable public-client PKCE redemption and replay rejection after host replacement. Loopback transport carries fixture cookies explicitly; this is not browser TLS certification. 343 routine rows unchanged; hosted qualification pending.
+
+## B93 — InterMix real definition cache outage
+
+I: reuse disposable Redis AOF stop/restart fixture for a dedicated definition-cache lane. Pre-outage separate builders demonstrate strict rejection without factory execution, fail-open local singleton fallback, new generation computation during outage, exact original durable value after restart, non-publication of failed writes, replacement singleton persistence and unrelated key preservation. 344 routine rows; hosted qualification pending.
