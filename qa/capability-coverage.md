@@ -327,3 +327,7 @@ I: independent aioquic client uses verified TLS, constrained initial transport c
 ## B102 — Webrick telemetry, risk/error composition and actual OpenTelemetry SDK
 
 I: one minimal W3C lane verifies all four risk decisions in enforcement/shadow, isolated spans, request/trace propagation, NEL, safe access logging, negotiated production error and custom-denial no-store. Another lane installs the real optional OpenTelemetry SDK and asserts parent IDs, active scope cleanup, exported span status, epoch timestamps and exception events. Source review found a likely upstream SDK contract mismatch: Webrick's status helper expects integers while current OpenTelemetry API StatusCode values are strings; start timestamp also uses monotonic hrtime rather than epoch nanos. No upstream fix or weakened assertion; runtime evidence pending. 356 routine rows (OBS, REQUEST, SEC).
+
+## B103 — SMTP settlement ambiguity and verified authentication transport
+
+I: two independent loopback SMTP lanes exercise full DATA acceptance with lost final reply versus explicit 451 rejection and confirmed delivery, stable prepared message identity and no automatic replay; actual STARTTLS/implicit TLS, PLAIN/LOGIN, untrusted CA, downgrade refusal and credential-redacted transcript. Disposable peer records bounded fixture payload digests only; no external email or exactly-once claim. 358 routine rows; hosted verification pending (DATA-01, SEC, OPS, EXEC-03).

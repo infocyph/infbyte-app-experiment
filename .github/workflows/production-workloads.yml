@@ -304,6 +304,8 @@ jobs:
           - {scenario: ecosystem-pathwise-upload, backend: pgsql}
           - {scenario: ecosystem-pathwise-download, backend: pgsql}
           - {scenario: ecosystem-mail-mime, backend: pgsql}
+          - {scenario: ecosystem-smtp-uncertain, backend: pgsql}
+          - {scenario: ecosystem-smtp-tls-auth, backend: pgsql}
           - {scenario: ecosystem-omnibus-workflow, backend: pgsql}
           - {scenario: ecosystem-omnibus-workflow, backend: mysql}
           - {scenario: ecosystem-omnibus-redis, backend: pgsql}

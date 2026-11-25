@@ -39,6 +39,7 @@ require __DIR__ . '/ecosystem-data.php';
 require __DIR__ . '/ecosystem-security.php';
 require __DIR__ . '/ecosystem-runtime.php';
 require __DIR__ . '/ecosystem-messaging.php';
+require __DIR__ . '/ecosystem-smtp-faults.php';
 require __DIR__ . '/ecosystem-remote-order-recovery.php';
 require __DIR__ . '/ecosystem-remote.php';
 require __DIR__ . '/ecosystem-http.php';
@@ -197,6 +198,8 @@ match ($argv[1] ?? '') {
     'pathwise-upload' => pathwiseUploadWorkload(),
     'pathwise-download' => pathwiseDownloadWorkload(),
     'mail-mime' => mailMimeWorkload(),
+    'smtp-uncertain' => smtpUncertainWorkload(),
+    'smtp-tls-auth' => smtpTlsAuthWorkload(),
     'omnibus-workflow' => omnibusWorkflowWorkload(),
     'remote-order-seed' => remoteOrderRecovery('seed'),
     'remote-order-offline' => remoteOrderRecovery('offline', (int) ($argv[2] ?? -1)),

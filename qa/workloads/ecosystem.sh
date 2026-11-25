@@ -10,6 +10,7 @@ case "$SCENARIO" in
   ecosystem-api-inventory) php "$GITHUB_WORKSPACE/qa/workloads/coverage-audit.php" | tee "$EVIDENCE/inventory.log" ;;
   ecosystem-release-cutover) bash "$GITHUB_WORKSPACE/qa/workloads/release-cutover.sh" ;;
   ecosystem-tenants) bash "$GITHUB_WORKSPACE/qa/workloads/tenants.sh" ;;
+  ecosystem-smtp-uncertain|ecosystem-smtp-tls-auth) bash "$GITHUB_WORKSPACE/qa/workloads/smtp-faults.sh" ;;
   ecosystem-mailbox-tls|ecosystem-mailbox-idle) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox-tls.sh" ;;
   ecosystem-cache-tls|ecosystem-valkey-tls|ecosystem-counter-restart|ecosystem-valkey-counter-restart) bash "$GITHUB_WORKSPACE/qa/workloads/cache-tls.sh" ;;
   ecosystem-counter-election|ecosystem-valkey-counter-election) bash "$GITHUB_WORKSPACE/qa/workloads/counter-election.sh" ;;
