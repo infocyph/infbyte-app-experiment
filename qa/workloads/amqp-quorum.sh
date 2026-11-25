@@ -39,9 +39,43 @@ for attempt in {1..600}; do
 done
 test -f "$LAB_QUORUM_ROOT/seeded"
 docker exec lab-q1 rabbitmqctl -q list_queues name leader members online --formatter json > "$EVIDENCE/quorum-before.json"
-leader="$(php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);foreach($a as $q){if($q["name"]==="quorum-contract"&&count($q["members"])===3&&count($q["online"])===3){echo $q["leader"];exit;}}exit(1);' "$EVIDENCE/quorum-before.json")"
+fault_queue=quorum-contract
+if [[ "$SCENARIO" == ecosystem-amqp-quorum-minority-*-publish ]]; then fault_queue=quorum-publication; fi
+leader="$(php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);foreach($a as $q){if($q["name"]===$argv[2]&&count($q["members"])===3&&count($q["online"])===3){echo $q["leader"];exit;}}exit(1);' "$EVIDENCE/quorum-before.json" "$fault_queue")"
 case "$leader" in rabbit@lab-q1|rabbit@lab-q2|rabbit@lab-q3) ;; *) exit 1 ;; esac
 target="${leader#rabbit@}"
+case "$SCENARIO" in
+  ecosystem-amqp-quorum-minority-leader-*|ecosystem-amqp-quorum-minority-follower-*)
+    survivor="$target"
+    if [[ "$SCENARIO" == ecosystem-amqp-quorum-minority-follower-* ]]; then
+      for n in 1 2 3; do if [[ "lab-q$n" != "$target" ]]; then survivor="lab-q$n"; break; fi; done
+    fi
+    stopped=()
+    for n in 1 2 3; do
+      if [[ "lab-q$n" == "$survivor" ]]; then export LAB_QUORUM_PORT="$((15671+n))"; else stopped+=("lab-q$n"); docker kill "lab-q$n" >/dev/null; fi
+    done
+    touch "$LAB_QUORUM_ROOT/member-stopped"
+    wait "$worker"
+    worker=""
+    for node in "${stopped[@]}"; do test "$(docker inspect -f '{{.State.Running}}' "$node")" = false; done
+    docker exec "$survivor" rabbitmq-diagnostics -q check_running
+    docker exec "$survivor" rabbitmq-diagnostics -q check_port_connectivity
+    timeout 45s php "$probe" amqp-quorum-minority "${SCENARIO##*-}" | tee "$EVIDENCE/quorum-minority.log"
+    docker start "${stopped[0]}" >/dev/null
+    ready=0
+    for attempt in {1..90}; do
+      if docker exec "$survivor" rabbitmqctl -q list_queues name leader members online --formatter json > "$EVIDENCE/quorum-restored.json" 2>/dev/null \
+        && php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); $wanted=array_unique(["quorum-contract",$argv[2]]);foreach($a as $q){if(count($q["members"])===3&&count($q["online"])===2&&is_string($q["leader"])&&$q["leader"]!==""&&in_array($q["leader"],$q["online"],true)){$wanted=array_diff($wanted,[$q["name"]]);}}exit($wanted===[]?0:1);' "$EVIDENCE/quorum-restored.json" "$fault_queue"; then ready=1; break; fi
+      sleep 1
+    done
+    test "$ready" = 1
+    test "$(docker inspect -f '{{.State.Running}}' "${stopped[1]}")" = false
+    timeout 90s php "$probe" amqp-quorum-verify | tee "$EVIDENCE/quorum-recovery.log"
+    if [[ "$SCENARIO" == *-publish ]]; then
+      timeout 90s php "$probe" amqp-quorum-minority-retry | tee "$EVIDENCE/quorum-publication-recovery.log"
+    fi
+    exit 0 ;;
+esac
 if [[ "$SCENARIO" == ecosystem-amqp-quorum-follower ]]; then
   for n in 1 2 3; do if [[ "lab-q$n" != "$target" ]]; then target="lab-q$n"; break; fi; done
 fi

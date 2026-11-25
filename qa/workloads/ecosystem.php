@@ -160,6 +160,8 @@ match ($argv[1] ?? '') {
     'cache-mongodb-tls-recover' => mongoTlsContracts('recover'),
     'amqp-quorum-seed' => amqpQuorumPhase(true),
     'amqp-quorum-verify' => amqpQuorumPhase(false),
+    'amqp-quorum-minority' => amqpQuorumMinority((string) ($argv[2] ?? '')),
+    'amqp-quorum-minority-retry' => amqpQuorumMinorityRetry(),
     'otp-cluster-promotion-seed' => otpClusterPromotionWorkload(true, (string) ($argv[2] ?? '')),
     'otp-cluster-promotion-verify' => otpClusterPromotionWorkload(false, (string) ($argv[2] ?? '')),
     'amqp-crash-seed' => amqpCrashContracts(true),

@@ -1465,6 +1465,26 @@ jobs:
           - {scenario: ecosystem-amqp-quorum-follower, backend: mariadb}
           - {scenario: ecosystem-amqp-quorum-follower, backend: sqlite}
           - {scenario: ecosystem-amqp-quorum-follower, backend: mssql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-publish, backend: mssql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-minority-leader-receive, backend: mssql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-publish, backend: mssql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-minority-follower-receive, backend: mssql}
           - {scenario: ecosystem-closure-boundary-exact-bound, backend: pgsql}
           - {scenario: ecosystem-closure-boundary-prefix, backend: pgsql}
           - {scenario: ecosystem-closure-boundary-encoding, backend: pgsql}

@@ -97,6 +97,20 @@ function amqpQuorumPhase(bool $seed): void
         $channel->set_ack_handler(static function () use (&$confirmed): void { ++$confirmed; });
         $channel->set_nack_handler(static function (): never { throw new RuntimeException('Quorum negatively acknowledged publication.'); });
         if ($seed) {
+            if (str_ends_with((string) getenv('SCENARIO'), '-publish')) {
+                $channel->queue_declare('quorum-publication', false, true, false, false, false, new AMQPTable([
+                    'x-queue-type' => 'quorum', 'x-quorum-initial-group-size' => 3,
+                ]));
+                $transport->send(new Envelope(new LabJob('quorum-publication-control', 0)), 'quorum-publication');
+                $channel->wait_for_pending_acks_returns(15.0);
+                verify($confirmed === 1, 'Publication control was not confirmed before fault.');
+                $control = iterator_to_array($transport->receive('quorum-publication', 1));
+                verify(count($control) === 1 && $control[0]->envelope()->message->id === 'quorum-publication-control',
+                    'Publication queue control unavailable before fault.');
+                $transport->acknowledge($control[0]);
+                verify($transport->size('quorum-publication') === 0, 'Publication control did not settle.');
+                $confirmed = 0;
+            }
             foreach (range(1, 12) as $id) {
                 $transport->send(new Envelope(new LabJob('quorum-' . $id, $id)), $queue);
             }
@@ -143,5 +157,86 @@ function amqpQuorumPhase(bool $seed): void
                 throw $failure;
             }
         }
+    }
+}
+
+function amqpQuorumMinority(string $operation): void
+{
+    verify(in_array($operation, ['publish', 'receive'], true), 'Unknown minority operation.');
+    [$db, $serializer] = messagingSetup(false);
+    verify($db->table('lab_job_effects')->count() === 1, 'Seed effect unavailable before minority operation.');
+    $connection = new AMQPStreamConnection('127.0.0.1', (int) getenv('LAB_QUORUM_PORT'), 'experiment', 'fixture-only-password',
+        connection_timeout: 5.0, read_write_timeout: 8.0);
+    $channel = $connection->channel();
+    $transport = new AmqpTransport(new LabAmqpBackend($channel), $serializer);
+    $confirmed = 0;
+    $rejected = 0;
+    $received = 0;
+    $failureType = null;
+    if ($operation === 'publish') {
+        $channel->confirm_select();
+        $channel->set_ack_handler(static function () use (&$confirmed): void { ++$confirmed; });
+        $channel->set_nack_handler(static function () use (&$rejected): void { ++$rejected; });
+    }
+    try {
+        try {
+            if ($operation === 'publish') {
+                $transport->send(new Envelope(new LabJob('quorum-14', 14)), 'quorum-publication');
+                $channel->wait_for_pending_acks_returns(5.0);
+            } else {
+                $received = count(iterator_to_array($transport->receive('quorum-contract', 1)));
+            }
+        } catch (\PhpAmqpLib\Exception\AMQPExceptionInterface $failure) {
+            $failureType = $failure::class;
+        }
+        verify($confirmed === 0 && $received === 0, 'A minority broker confirmed publication or delivered work.');
+        if ($operation === 'publish') {
+            verify($rejected > 0 || $failureType !== null, 'Unconfirmed publication did not report a bounded failure.');
+        }
+        verify($db->table('lab_job_effects')->count() === 1, 'Minority operation changed the durable ledger.');
+        echo json_encode(['operation' => $operation, 'confirmed' => $confirmed, 'nacks' => $rejected,
+            'received' => $received, 'failure' => $failureType], JSON_THROW_ON_ERROR), PHP_EOL;
+    } finally {
+        try {
+            $connection->close();
+        } catch (\PhpAmqpLib\Exception\AMQPExceptionInterface) {
+            // Closing the minority connection cannot establish settlement.
+        }
+    }
+}
+
+function amqpQuorumMinorityRetry(): void
+{
+    [$db, $serializer] = messagingSetup(false);
+    verify($db->table('lab_job_effects')->count() === 13, 'Original quorum recovery incomplete.');
+    $connection = new AMQPStreamConnection('127.0.0.1', (int) getenv('LAB_QUORUM_PORT'), 'experiment', 'fixture-only-password',
+        connection_timeout: 5.0, read_write_timeout: 15.0);
+    try {
+        $channel = $connection->channel();
+        $queue = 'quorum-publication';
+        $transport = new AmqpTransport(new LabAmqpBackend($channel), $serializer);
+        $channel->confirm_select();
+        $confirmed = 0;
+        $channel->set_ack_handler(static function () use (&$confirmed): void { ++$confirmed; });
+        $channel->set_nack_handler(static function (): never { throw new RuntimeException('Restored quorum rejected retry.'); });
+        $transport->send(new Envelope(new LabJob('quorum-14', 14)), $queue);
+        $channel->wait_for_pending_acks_returns(15.0);
+        verify($confirmed === 1, 'Restored majority did not confirm retry.');
+        $seen = 0;
+        foreach ($transport->receive($queue, 3) as $delivery) {
+            $job = $delivery->envelope()->message;
+            verify($job->id === 'quorum-14' && $job->step === 14, 'Unexpected publication after quorum recovery.');
+            brokerRecordEffect($db, $job);
+            $transport->acknowledge($delivery);
+            ++$seen;
+        }
+        $channel->queue_declare($queue, true);
+        verify($seen >= 1 && $seen <= 2 && $transport->size($queue) === 0, 'Ambiguous publication could not be reconciled.');
+        verify($db->table('lab_job_effects')->count() === 14
+            && (int) $db->table('lab_job_effects')->find('quorum-14')['step'] === 14, 'Retry duplicated or lost the durable effect.');
+        echo json_encode(['confirmed_retry' => $confirmed, 'observed_deliveries' => $seen, 'durable_effects' => 14],
+            JSON_THROW_ON_ERROR), PHP_EOL;
+    } finally {
+        $connection->close();
     }
 }
