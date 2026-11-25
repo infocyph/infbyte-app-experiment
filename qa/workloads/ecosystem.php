@@ -89,6 +89,7 @@ require __DIR__ . '/ecosystem-broker-boundaries.php';
 require __DIR__ . '/ecosystem-broker-recovery.php';
 require __DIR__ . '/ecosystem-http-transfer.php';
 require __DIR__ . '/ecosystem-cache-tls.php';
+require __DIR__ . '/ecosystem-cache-cluster-tls.php';
 require __DIR__ . '/ecosystem-route-boundaries.php';
 require __DIR__ . '/ecosystem-counter-otp-contracts.php';
 
@@ -98,6 +99,12 @@ $start = hrtime(true);
 match ($argv[1] ?? '') {
     'worker-budget' => workerBudgetWorkload(),
     'conditional-modules' => conditionalModulesWorkload(),
+    'cache-redis-cluster-tls-trust' => clusterTlsContracts('trust'),
+    'cache-redis-cluster-tls-bulk' => clusterTlsContracts('bulk'),
+    'cache-redis-cluster-tls-atomic' => clusterTlsContracts('atomic'),
+    'cache-redis-cluster-tls-seed' => clusterTlsContracts('seed'),
+    'cache-redis-cluster-tls-offline' => clusterTlsContracts('offline'),
+    'cache-redis-cluster-tls-recover' => clusterTlsContracts('recover'),
     'cache-tls' => cacheTlsWorkload(),
     'counter-tls-seed' => counterTlsWorkload('seed'),
     'counter-tls-offline' => counterTlsWorkload('offline'),

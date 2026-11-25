@@ -792,3 +792,7 @@ I: eight lanes, three native MongoDB driver contracts (TLS trust, strict CAS/con
 ## B183 — ArrayKit hook, facade and typed configuration boundaries
 
 I: seven independent lanes: ordered deduplicated get/set hooks and null presence, hook rejection and recovery, copy registry/data isolation, facade reference-preserving mutations and named target, facade invalid dispatch and collision non-mutation, strict typed config fallback with cache enabled/disabled, and lazy default evaluation across cached hits/misses, mutations and exceptions. New ecosystem-expansion shard preserves the 256-row cap and inventory validation. CORE-01, TYPE, DATA, FLOW-02, EXEC-03: source and dispatch reviewed; hosted execution pending. No upstream changes or weakened checks. 1124 routine rows.
+
+## B184 — Native Redis Cluster TLS
+
+I: four real three-master TLS-only lanes: certificate trust/peer identity/plaintext rejection and discovered node reachability, bulk binary data across all masters and namespace isolation, twelve-process strict CAS/consume race, and AOF-backed whole-cluster restart with offline rejection and fresh-client recovery. Native phpredis client injection; TLS also on cluster bus; ephemeral fixture keys removed. CORE-01, SEC, DATA, OPS, EXEC-03: source and matrix reviewed; hosted acceptance pending. No vendor changes. 1128 routine rows.
