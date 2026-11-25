@@ -3,6 +3,7 @@ set -euo pipefail
 case "$SCENARIO" in
   ecosystem-auth-lifecycle|ecosystem-jwt-replay) bash "$GITHUB_WORKSPACE/qa/workloads/auth-lifecycle.sh" ;;
   ecosystem-remote-jwks) bash "$GITHUB_WORKSPACE/qa/workloads/jwks.sh" ;;
+  ecosystem-jwks-dns-*) bash "$GITHUB_WORKSPACE/qa/workloads/jwks-dns.sh" ;;
   ecosystem-di-preload)
     probe="$GITHUB_WORKSPACE/qa/workloads/di-preload.php"
     php "$probe" generate

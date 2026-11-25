@@ -195,6 +195,11 @@ jobs:
           - {scenario: ecosystem-sqs-fifo, backend: pgsql}
           - {scenario: ecosystem-sqs-redrive, backend: pgsql}
           - {scenario: ecosystem-remote-jwks, backend: pgsql}
+          - {scenario: ecosystem-jwks-dns-public, backend: pgsql}
+          - {scenario: ecosystem-jwks-dns-private, backend: pgsql}
+          - {scenario: ecosystem-jwks-dns-mixed, backend: pgsql}
+          - {scenario: ecosystem-jwks-dns-empty, backend: pgsql}
+          - {scenario: ecosystem-jwks-dns-rebind, backend: pgsql}
           - {scenario: ecosystem-uid-provider-boundaries, backend: pgsql}
           - {scenario: ecosystem-uid-filesystem, backend: pgsql}
           - {scenario: ecosystem-uid-values, backend: pgsql}
