@@ -1138,6 +1138,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-foundation-pool-recycle, backend: pgsql}
+          - {scenario: ecosystem-foundation-pool-recycle, backend: mysql}
+          - {scenario: ecosystem-foundation-pool-recycle, backend: mariadb}
+          - {scenario: ecosystem-foundation-pool-crash, backend: pgsql}
+          - {scenario: ecosystem-foundation-pool-crash, backend: mysql}
+          - {scenario: ecosystem-foundation-pool-crash, backend: mariadb}
+          - {scenario: ecosystem-foundation-pool-parent-guard, backend: pgsql}
+          - {scenario: ecosystem-foundation-pool-parent-guard, backend: mysql}
+          - {scenario: ecosystem-foundation-pool-parent-guard, backend: mariadb}
           - {scenario: ecosystem-foundation-messaging-worker-options, backend: pgsql}
           - {scenario: ecosystem-foundation-messaging-worker-options, backend: mysql}
           - {scenario: ecosystem-foundation-messaging-worker-options, backend: mariadb}
