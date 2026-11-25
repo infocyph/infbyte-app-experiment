@@ -268,10 +268,15 @@ require __DIR__ . '/database-proxy.php';
 require __DIR__ . '/database-faults.php';
 require __DIR__ . '/database-uncertain.php';
 require __DIR__ . '/database-tls.php';
+require __DIR__ . '/database-cache-race.php';
 
 $db = new Connection(config());
 match ($argv[1] ?? '') {
     'tls' => databaseTlsWorkload(),
+    'cache-race-seed' => setup($db),
+    'cache-race-read' => databaseCacheRaceRead($db, (int) ($argv[2] ?? -1), (int) ($argv[3] ?? -1)),
+    'cache-race-verify' => databaseCacheRaceVerify((int) ($argv[2] ?? -1)),
+    'cache-race-advance' => databaseCacheRaceAdvance($db),
     'commit-uncertain' => uncertainCommitWorkload($db),
     'migration-fault' => migrationFault($db),
     'connection-loss' => connectionLoss($db),

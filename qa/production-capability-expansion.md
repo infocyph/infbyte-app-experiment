@@ -277,3 +277,7 @@ I: isolated MySQL 8.4 and MariaDB 11.4 services with disposable CA-signed server
 ## B66 — superseding CI and partitioned production workers
 
 I: all 252 existing routine scenario rows retained, partitioned by scenario family (database 66, ecosystem 130, application 56); common reusable worker preserves the prior provisioning, assertions and artifact upload. Both independent native gRPC jobs retained. Workflow/ref concurrency cancels superseded production, consumer and engineering runs; endurance replaces earlier runs in its existing ref group. No shared concurrency group inside the reusable worker, so matrix siblings cannot cancel each other. Inventory checks global duplicates, complete shard assignment and per-matrix ceiling. Pre-existing runs that never entered a concurrency group cannot be canceled retroactively by YAML. Hosted qualification pending; capability gaps remain open.
+
+## B67 — distributed DBLayer query-cache generation race
+
+I: three independent MySQL/PostgreSQL/SQLite jobs with real shared Redis CacheLayer result cache. Twelve independently started PHP processes race each of two cold generations, each making cold and warm reads; require exactly one SQL execution per generation using DBLayer public statistics. Separate writer demonstrates transaction-local read bypass, rollback retaining the prior cached generation, committed balance conservation and cross-process invalidation. No library edits. Total routine rows 255 across shards; hosted verification pending. In-flight invalidation and further driver-specific cases remain open.

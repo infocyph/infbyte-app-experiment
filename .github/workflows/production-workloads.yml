@@ -69,6 +69,9 @@ jobs:
           - {scenario: db-query-cache, backend: mysql}
           - {scenario: db-query-cache, backend: pgsql}
           - {scenario: db-query-cache, backend: sqlite}
+          - {scenario: db-query-cache-race, backend: mysql}
+          - {scenario: db-query-cache-race, backend: pgsql}
+          - {scenario: db-query-cache-race, backend: sqlite}
           - {scenario: db-stream, backend: mysql}
           - {scenario: db-stream, backend: pgsql}
           - {scenario: db-stream, backend: sqlite}
