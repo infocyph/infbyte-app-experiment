@@ -204,3 +204,97 @@ function cancellationOwnershipContracts(): void
     }
     echo "Structured cancellation, observer isolation, child disposal and exact deadlines passed\n";
 }
+
+function responseCacheIdentityContracts(string $backend): void
+{
+    [$store, $peer, $foreign] = cacheContractPeers($backend, 'response-identity');
+    $a = new ResponseCacheMiddleware(store: $store, defaultVary: ['X-Representation']);
+    $b = new ResponseCacheMiddleware(store: $peer, defaultVary: ['X-Representation']);
+    $other = new ResponseCacheMiddleware(store: $foreign, defaultVary: ['X-Representation']);
+    $calls = 0;
+    $origin = static function (Request $r) use (&$calls): Response {
+        return new Response(200, 'representation-' . ++$calls, ['Vary' => 'X-Representation', 'Cache-Control' => 'public, max-age=60']);
+    };
+    $base = Request::fake(uri: 'https://lab.example/report?view=1', headers: ['X-Representation' => 'compact'])
+        ->withAttribute('negotiated.type', 'application/json')->withAttribute('negotiated.charset', 'utf-8')->withAttribute('locale', 'en');
+    $variants = [
+        $base,
+        $base->withAttribute('negotiated.type', 'text/plain'),
+        $base->withAttribute('negotiated.charset', 'iso-8859-1'),
+        $base->withAttribute('locale', 'bn'),
+        $base->withHeader('X-Representation', 'full'),
+        $base->withUri(\Infocyph\Webrick\Request\Core\Uri::from('http://lab.example/report?view=1')),
+        $base->withUri(\Infocyph\Webrick\Request\Core\Uri::from('https://lab.example:8443/report?view=1')),
+        $base->withUri(\Infocyph\Webrick\Request\Core\Uri::from('https://lab.example/report?view=2')),
+    ];
+    foreach ($variants as $index => $request) {
+        $expected = 'representation-' . ($index + 1);
+        verify($a($request, $origin)->getStringBody() === $expected && $b($request, $origin)->getStringBody() === $expected,
+            'Representation cache identity was merged or unavailable to peer.');
+    }
+    verify($calls === count($variants) && $other($base, $origin)->getStringBody() === 'representation-9'
+        && $a($base, $origin)->getStringBody() === 'representation-1', 'Foreign cache namespace or original representation changed.');
+    echo "Response cache $backend negotiated representation, explicit Vary, scheme, port and query identity passed\n";
+}
+
+function responseCachePublicationContracts(string $backend): void
+{
+    [$store, $peer] = cacheContractPeers($backend, 'response-publication');
+    $a = new ResponseCacheMiddleware(store: $store, maxBodyBytes: 16);
+    $b = new ResponseCacheMiddleware(store: $peer, maxBodyBytes: 16);
+    foreach ([200 => true, 203 => true, 301 => true, 404 => true, 410 => true, 501 => true, 201 => false, 206 => false, 403 => false, 500 => false, 503 => false] as $status => $cacheable) {
+        $calls = 0;
+        $next = static function (Request $r) use ($status, &$calls): Response {
+            ++$calls;
+            return new Response($status, str_repeat('a', 15) . $calls, ['Cache-Control' => 'public, max-age=60', 'X-Lab-Field' => ['a', 'b']]);
+        };
+        $request = Request::fake(uri: 'https://lab.example/status/' . $status);
+        $first = $a($request, $next);
+        $second = $b($request, $next);
+        verify($first->getStatusCode() === $status && $second->getStatusCode() === $status
+            && $second->getStringBody() === str_repeat('a', 15) . ($cacheable ? '1' : '2')
+            && $second->getHeader('X-Lab-Field') === ['a', 'b'] && $calls === ($cacheable ? 1 : 2), 'Status or exact body-size policy mismatch.');
+    }
+    $calls = 0;
+    $large = static function (Request $r) use (&$calls): Response {
+        return new Response(200, str_repeat('a', 16) . ++$calls, ['Cache-Control' => 'public, max-age=60']);
+    };
+    $request = Request::fake(uri: 'https://lab.example/one-over');
+    verify($a($request, $large)->getStringBody() !== $b($request, $large)->getStringBody() && $calls === 2,
+        'One-over response body was shared.');
+    echo "Response cache $backend status eligibility, exact body bound and repeated header reconstruction passed\n";
+}
+
+function responseCacheDirectiveContracts(string $backend): void
+{
+    [$store, $peer] = cacheContractPeers($backend, 'response-directives');
+    $a = new ResponseCacheMiddleware(store: $store, ttlSeconds: 60);
+    $b = new ResponseCacheMiddleware(store: $peer, ttlSeconds: 60);
+    $now = time();
+    $date = static fn(int $at): string => gmdate('D, d M Y H:i:s', $at) . ' GMT';
+    $cases = [
+        [['Date' => $date($now), 'Expires' => $date($now + 45)], true],
+        [['Date' => $date($now), 'Expires' => $date($now - 1)], false],
+        [['Date' => $date($now - 30), 'Cache-Control' => 'public, max-age=20'], false],
+        [['Date' => $date($now - 2), 'Age' => '4', 'Cache-Control' => 'public, max-age=45'], true],
+        [['Cache-Control' => 'public, s-maxage=0, max-age=45'], false],
+        [['Cache-Control' => 'public, max-age=invalid'], false],
+        [['Cache-Control' => 'public, max-age=60, private="X-Private"'], false],
+        [['Cache-Control' => 'public, max-age="unterminated'], false],
+    ];
+    foreach ($cases as $index => [$headers, $cacheable]) {
+        $calls = 0;
+        $next = static function (Request $r) use ($headers, &$calls): Response {
+            return new Response(200, 'value-' . ++$calls, $headers);
+        };
+        $request = Request::fake(uri: 'https://lab.example/directive/' . $index);
+        verify($a($request, $next)->getStringBody() === 'value-1', 'Directive origin dispatch failed.');
+        $result = $b($request, $next);
+        verify($result->getStringBody() === ($cacheable ? 'value-1' : 'value-2') && $calls === ($cacheable ? 1 : 2),
+            'HTTP freshness or malformed directive policy mismatch.');
+        if ($cacheable) {
+            verify((int) $result->getHeaderLine('Age') >= (int) ($headers['Age'] ?? 0), 'Cached Age regressed.');
+        }
+    }
+    echo "Response cache $backend Expires, Date, Age, shared max-age and malformed directive boundaries passed\n";
+}

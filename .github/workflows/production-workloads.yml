@@ -1734,6 +1734,33 @@ jobs:
           - {scenario: ecosystem-webdav-remote-order-recovery, backend: sqlite}
           - {scenario: ecosystem-azure-remote-order-recovery, backend: sqlite}
           - {scenario: ecosystem-gcs-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-response-cache-identity-redis, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-valkey, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-memcached, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-file, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-sqlite, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-pdo, backend: pgsql}
+          - {scenario: ecosystem-response-cache-identity-pdo, backend: mysql}
+          - {scenario: ecosystem-response-cache-identity-pdo, backend: mariadb}
+          - {scenario: ecosystem-response-cache-publication-redis, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-valkey, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-memcached, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-file, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-sqlite, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-pdo, backend: pgsql}
+          - {scenario: ecosystem-response-cache-publication-pdo, backend: mysql}
+          - {scenario: ecosystem-response-cache-publication-pdo, backend: mariadb}
+          - {scenario: ecosystem-response-cache-directives-redis, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-valkey, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-memcached, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-file, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-sqlite, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-pdo, backend: pgsql}
+          - {scenario: ecosystem-response-cache-directives-pdo, backend: mysql}
+          - {scenario: ecosystem-response-cache-directives-pdo, backend: mariadb}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}
