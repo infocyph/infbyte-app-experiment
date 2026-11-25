@@ -71,4 +71,7 @@ for ($wave = 0; $wave < 4; ++$wave) {
     ensure(file_get_contents($base . '/api/health') === '{"status":"ok"}', 'Host did not recover after stream cancellation.');
     echo json_encode(['wave' => $wave, 'complete' => $normal, 'aborted' => $interrupted], JSON_THROW_ON_ERROR), PHP_EOL;
 }
-ensure(glob($root . '*') === [], 'Stream cleanup left staging files.');
+// Parallel clients own distinct leases; the parent reconciles the shared directory after all exit.
+if (($argv[1] ?? '') !== 'parallel') {
+    ensure(glob($root . '*') === [], 'Stream cleanup left staging files.');
+}

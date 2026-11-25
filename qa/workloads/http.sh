@@ -137,10 +137,20 @@ if [[ "$SCENARIO" == oauth-http ]]; then
   exit 0
 fi
 if [[ "$SCENARIO" == transfer-cleanup ]]; then
-  php "$GITHUB_WORKSPACE/qa/workloads/transfer-cleanup-client.php" | tee "$EVIDENCE/stream-cleanup.log"
+  client="$GITHUB_WORKSPACE/qa/workloads/transfer-cleanup-client.php"
+  php "$client" | tee "$EVIDENCE/stream-cleanup.log"
+  pids=()
+  for worker in {1..4}; do
+    php "$client" parallel > "$EVIDENCE/stream-cleanup-parallel-$worker.jsonl" 2> "$EVIDENCE/stream-cleanup-parallel-$worker.log" &
+    pids+=("$!")
+  done
+  failed=0
+  for pid in "${pids[@]}"; do if ! wait "$pid"; then failed=1; fi; done
+  if (( failed )); then cat "$EVIDENCE"/stream-cleanup-parallel-*.log >&2; exit 1; fi
+  test -z "$(find "$PROJECT/storage/lab-transfers" -mindepth 1 -print -quit)"
   stop_host
   start_host
-  php "$GITHUB_WORKSPACE/qa/workloads/transfer-cleanup-client.php" | tee "$EVIDENCE/stream-cleanup-replacement.log"
+  php "$client" | tee "$EVIDENCE/stream-cleanup-replacement.log"
   exit 0
 fi
 if [[ "$SCENARIO" == transfer ]]; then
