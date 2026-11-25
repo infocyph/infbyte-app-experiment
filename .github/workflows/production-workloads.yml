@@ -1089,6 +1089,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-cache-scylla-tls-trust, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-tls-identity, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-tls-payload, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-tls-restart, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-cache-redis-cluster-tls-trust, backend: pgsql}
           - {scenario: ecosystem-cache-redis-cluster-tls-bulk, backend: pgsql}
           - {scenario: ecosystem-cache-redis-cluster-tls-atomic, backend: pgsql}

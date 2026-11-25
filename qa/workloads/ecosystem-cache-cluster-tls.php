@@ -61,7 +61,7 @@ function clusterTlsContracts(string $phase): void
             $atomic = labClusterTlsCache('lab-cluster-atomic')->atomic();
             verify($atomic !== null, 'Worker atomic capability absent.');
             return (int) $atomic->setIfAbsent('claim', $worker, 300);
-        }, 12);
+        }, 'cluster-tls-claim', 12);
         verify(array_sum($results) === 1, 'TLS cluster claim admitted multiple owners.');
         $owner = $cache->get('claim');
         verify(is_int($owner) && !$atomic->compareAndSet('claim', (string) $owner, 'invalid', 300), 'TLS strict CAS accepted wrong type.');

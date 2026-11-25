@@ -90,6 +90,7 @@ require __DIR__ . '/ecosystem-broker-recovery.php';
 require __DIR__ . '/ecosystem-http-transfer.php';
 require __DIR__ . '/ecosystem-cache-tls.php';
 require __DIR__ . '/ecosystem-cache-cluster-tls.php';
+require __DIR__ . '/ecosystem-cache-scylla-tls.php';
 require __DIR__ . '/ecosystem-route-boundaries.php';
 require __DIR__ . '/ecosystem-counter-otp-contracts.php';
 
@@ -105,6 +106,13 @@ match ($argv[1] ?? '') {
     'cache-redis-cluster-tls-seed' => clusterTlsContracts('seed'),
     'cache-redis-cluster-tls-offline' => clusterTlsContracts('offline'),
     'cache-redis-cluster-tls-recover' => clusterTlsContracts('recover'),
+    'cache-scylla-tls-prepare' => scyllaTlsContracts('prepare'),
+    'cache-scylla-tls-trust' => scyllaTlsContracts('trust'),
+    'cache-scylla-tls-identity' => scyllaTlsContracts('identity'),
+    'cache-scylla-tls-payload' => scyllaTlsContracts('payload'),
+    'cache-scylla-tls-seed' => scyllaTlsContracts('seed'),
+    'cache-scylla-tls-offline' => scyllaTlsContracts('offline'),
+    'cache-scylla-tls-recover' => scyllaTlsContracts('recover'),
     'cache-tls' => cacheTlsWorkload(),
     'counter-tls-seed' => counterTlsWorkload('seed'),
     'counter-tls-offline' => counterTlsWorkload('offline'),

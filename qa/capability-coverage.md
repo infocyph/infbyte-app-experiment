@@ -662,3 +662,7 @@ I: seven independent lanes: ordered deduplicated get/set hooks and null presence
 ## B184 — Native Redis Cluster TLS
 
 I: four real three-master TLS-only lanes: certificate trust/peer identity/plaintext rejection and discovered node reachability, bulk binary data across all masters and namespace isolation, twelve-process strict CAS/consume race, and AOF-backed whole-cluster restart with offline rejection and fresh-client recovery. Native phpredis client injection; TLS also on cluster bus; ephemeral fixture keys removed. CORE-01, SEC, DATA, OPS, EXEC-03: source and matrix reviewed; hosted acceptance pending. No vendor changes. 1128 routine rows.
+
+## B185 — Native ScyllaDB CQL TLS
+
+I: four native ext-cassandra PHP 8.4 lanes: verified CQL TLS, wrong CA and plaintext rejection; trusted wrong-identity certificate with independent read-only positive control and strict peer rejection; binary bulk payload, namespace isolation and unsupported atomic boundary; and actual stop/restart with durable publication recovery. TLS session injected into published CacheLayer. B184 fixture follow-up: bypass container entrypoint privilege drop for private runner certificate access in the isolated Redis nodes, and supply the existing race helper's required label. CORE-01, SEC, DATA, OPS, EXEC-03: source and dispatch reviewed, hosted execution pending. No vendor changes. 1132 routine rows.

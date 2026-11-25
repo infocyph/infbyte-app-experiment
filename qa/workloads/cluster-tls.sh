@@ -38,8 +38,8 @@ cluster_ready() {
   return 1
 }
 for port in "${ports[@]}"; do
-  docker run -d --name "lab-cluster-tls-$port" --network host --user root \
-    -v "$root:/fixture:ro" redis:8 redis-server --port 0 --tls-port "$port" \
+  docker run -d --name "lab-cluster-tls-$port" --network host --user root --entrypoint redis-server \
+    -v "$root:/fixture:ro" redis:8 --port 0 --tls-port "$port" \
     --bind 127.0.0.1 --tls-cert-file /fixture/cert.pem --tls-key-file /fixture/key.pem \
     --tls-ca-cert-file /fixture/cert.pem --tls-auth-clients no --tls-cluster yes \
     --tls-replication yes --cluster-enabled yes --cluster-config-file nodes.conf \
