@@ -59,6 +59,7 @@ require __DIR__ . '/ecosystem-otp-boundaries.php';
 require __DIR__ . '/ecosystem-validation-matrix.php';
 require __DIR__ . '/ecosystem-cache-faults.php';
 require __DIR__ . '/ecosystem-cache-atomic.php';
+require __DIR__ . '/ecosystem-cache-contracts.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
 require __DIR__ . '/ecosystem-storage-boundaries.php';
 require __DIR__ . '/ecosystem-storage-outage.php';
@@ -180,6 +181,27 @@ match ($argv[1] ?? '') {
     'cache-atomic-phpfiles' => cacheAtomicWorkload('phpfiles'),
     'cache-atomic-sqlite' => cacheAtomicWorkload('sqlite'),
     'cache-atomic-pdo' => cacheAtomicWorkload('pdo'),
+    'cache-bulk-redis' => cacheBulkWorkload('redis'),
+    'cache-bulk-valkey' => cacheBulkWorkload('valkey'),
+    'cache-bulk-memcached' => cacheBulkWorkload('memcached'),
+    'cache-bulk-file' => cacheBulkWorkload('file'),
+    'cache-bulk-phpfiles' => cacheBulkWorkload('phpfiles'),
+    'cache-bulk-sqlite' => cacheBulkWorkload('sqlite'),
+    'cache-bulk-pdo' => cacheBulkWorkload('pdo'),
+    'cache-tags-redis' => cacheTagsWorkload('redis'),
+    'cache-tags-valkey' => cacheTagsWorkload('valkey'),
+    'cache-tags-memcached' => cacheTagsWorkload('memcached'),
+    'cache-tags-file' => cacheTagsWorkload('file'),
+    'cache-tags-phpfiles' => cacheTagsWorkload('phpfiles'),
+    'cache-tags-sqlite' => cacheTagsWorkload('sqlite'),
+    'cache-tags-pdo' => cacheTagsWorkload('pdo'),
+    'cache-remember-redis' => cacheRememberWorkload('redis'),
+    'cache-remember-valkey' => cacheRememberWorkload('valkey'),
+    'cache-remember-memcached' => cacheRememberWorkload('memcached'),
+    'cache-remember-file' => cacheRememberWorkload('file'),
+    'cache-remember-phpfiles' => cacheRememberWorkload('phpfiles'),
+    'cache-remember-sqlite' => cacheRememberWorkload('sqlite'),
+    'cache-remember-pdo' => cacheRememberWorkload('pdo'),
     'invalidation-processes' => invalidationProcessesWorkload(),
     'validation-rules' => validationRulesWorkload(),
     'validation-options' => validationOptionsWorkload(),

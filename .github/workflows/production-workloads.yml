@@ -303,6 +303,33 @@ jobs:
           - {scenario: ecosystem-cache-atomic-pdo, backend: pgsql}
           - {scenario: ecosystem-cache-atomic-pdo, backend: mysql}
           - {scenario: ecosystem-cache-atomic-pdo, backend: mariadb}
+          - {scenario: ecosystem-cache-bulk-redis, backend: pgsql}
+          - {scenario: ecosystem-cache-bulk-valkey, backend: pgsql}
+          - {scenario: ecosystem-cache-bulk-memcached, backend: pgsql}
+          - {scenario: ecosystem-cache-bulk-file, backend: pgsql}
+          - {scenario: ecosystem-cache-bulk-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-cache-bulk-sqlite, backend: pgsql}
+          - {scenario: ecosystem-cache-bulk-pdo, backend: pgsql}
+          - {scenario: ecosystem-cache-bulk-pdo, backend: mysql}
+          - {scenario: ecosystem-cache-bulk-pdo, backend: mariadb}
+          - {scenario: ecosystem-cache-tags-redis, backend: pgsql}
+          - {scenario: ecosystem-cache-tags-valkey, backend: pgsql}
+          - {scenario: ecosystem-cache-tags-memcached, backend: pgsql}
+          - {scenario: ecosystem-cache-tags-file, backend: pgsql}
+          - {scenario: ecosystem-cache-tags-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-cache-tags-sqlite, backend: pgsql}
+          - {scenario: ecosystem-cache-tags-pdo, backend: pgsql}
+          - {scenario: ecosystem-cache-tags-pdo, backend: mysql}
+          - {scenario: ecosystem-cache-tags-pdo, backend: mariadb}
+          - {scenario: ecosystem-cache-remember-redis, backend: pgsql}
+          - {scenario: ecosystem-cache-remember-valkey, backend: pgsql}
+          - {scenario: ecosystem-cache-remember-memcached, backend: pgsql}
+          - {scenario: ecosystem-cache-remember-file, backend: pgsql}
+          - {scenario: ecosystem-cache-remember-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-cache-remember-sqlite, backend: pgsql}
+          - {scenario: ecosystem-cache-remember-pdo, backend: pgsql}
+          - {scenario: ecosystem-cache-remember-pdo, backend: mysql}
+          - {scenario: ecosystem-cache-remember-pdo, backend: mariadb}
           - {scenario: ecosystem-invalidation-processes, backend: pgsql}
           - {scenario: ecosystem-validation-rules, backend: pgsql}
           - {scenario: ecosystem-validation-options, backend: pgsql}
