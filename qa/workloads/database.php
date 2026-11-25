@@ -278,6 +278,10 @@ require __DIR__ . '/database-contracts.php';
 
 $db = new Connection(config(($argv[1] ?? '') === 'mysql-physical-verify' ? ['port' => 3308] : []));
 match ($argv[1] ?? '') {
+    'complex-join' => complexJoinContracts($db),
+    'grouped-query' => groupedQueryContracts($db),
+    'union-multiplicity' => unionMultiplicityContracts($db),
+    'repository-scope' => repositoryScopeContracts($db),
     'derived-query' => derivedQueryContracts($db),
     'result-projections' => resultProjectionContracts($db),
     'repository-hooks' => repositoryHookContracts($db),

@@ -583,3 +583,7 @@ I: ten matcher-specific lanes for five independent contracts: per-route media/ch
 ## B166 — MobileOTP application-owned rotation policy
 
 I: sixteen shared-state lanes, eight each for immediate and overlapping generation selection. Actual MobileOTP verification, old-generation fencing at exact cutover, unknown/wrong generation rejection, account replay isolation, twelve-process one-winner race and subsequent timestep recovery. No native MobileOTP rotation planner exists; generation policy is application-owned. Valkey service provisioned explicitly. CORE-01, DATA, SEC: source/matrix wiring reviewed; hosted outcomes deferred. 903 routine rows; no upstream changes.
+
+## B167 — Five-driver query composition and validation boundaries
+
+I: 24 lanes: four DBLayer contracts across PostgreSQL, MySQL, MariaDB, SQLite and SQL Server (complex ON predicates and outer join NULL reconciliation, grouped/HAVING binding order, UNION duplicate multiplicity, repository scope composition/reset), plus four ReqShield direct/compiled workloads (nested related scalar/date dependencies, conditional wildcard projection/reuse, upload metadata options, cross-platform path and filename boundaries). Independent expected rows and durable checks; no upstream changes or suppressed failures. CORE-01, DATA, TYPE, SEC, EXEC-03: source/matrix wiring inspected; hosted execution pending by request. 927 routine rows.

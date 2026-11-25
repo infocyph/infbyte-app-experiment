@@ -290,3 +290,90 @@ function executionPlanContracts(Connection $db): void
     check((int) (new Connection(config()))->table('lab_records')->where('id', '=', 4)->value('amount') === 44, 'Independent write reconciliation failed.');
     echo "Native explain, mutation rejection, session recovery and query statistics passed\n";
 }
+
+function complexJoinContracts(Connection $db): void
+{
+    seedRows($db, 20);
+    $db->statement('CREATE TABLE lab_join_flags (record_id INTEGER PRIMARY KEY, weight INTEGER NOT NULL, note VARCHAR(20) NULL)');
+    $db->table('lab_join_flags')->insert([
+        ['record_id' => 2, 'weight' => 5, 'note' => 'active'],
+        ['record_id' => 4, 'weight' => 1, 'note' => 'active'],
+        ['record_id' => 6, 'weight' => 8, 'note' => null],
+        ['record_id' => 8, 'weight' => 8, 'note' => 'active'],
+        ['record_id' => 7, 'weight' => 5, 'note' => 'active'],
+    ]);
+    $query = $db->table('lab_records')->as('r')->select('r.id', 'f.weight')
+        ->joinComplexAs('lab_join_flags', 'f', static fn($join) => $join
+            ->on('r.id', '=', 'f.record_id')->whereIn('f.weight', [5, 8])->whereNotNull('f.note'), 'left')
+        ->where('r.tenant_id', '=', 1)->orderBy('r.id');
+    check($query->getBindings() === [5, 8, 1], 'Complex ON and WHERE bindings reordered.');
+    $actual = [];
+    foreach ($query->get() as $row) {
+        $actual[(int) $row['id']] = $row['weight'] === null ? null : (int) $row['weight'];
+    }
+    $expected = array_fill_keys(range(2, 20, 2), null);
+    $expected[2] = 5;
+    $expected[8] = 8;
+    check($actual === $expected, 'Complex left join failed to retain unmatched tenant rows.');
+    $peer = new Connection(config());
+    check($peer->table('lab_join_flags')->count() === 5 && $peer->table('lab_records')->count() === 20, 'Join mutated source data.');
+    echo "Complex ON predicates, positional bindings and nullable left join reconciliation passed\n";
+}
+
+function groupedQueryContracts(Connection $db): void
+{
+    seedRows($db, 40);
+    $query = $db->table('lab_records')->select('tenant_id', 'amount')
+        ->selectRaw('COUNT(*) AS row_count')->where('id', '<=', 30)
+        ->groupBy('tenant_id', 'amount')->having('amount', '>=', 6)
+        ->orderBy('tenant_id')->orderBy('amount');
+    check($query->getBindings() === [30, 6], 'WHERE/HAVING binding order changed.');
+    $actual = array_map(static fn(array $row): array => [(int) $row['tenant_id'], (int) $row['amount'], (int) $row['row_count']], $query->get());
+    check($actual === [[1, 6, 3], [1, 8, 3], [2, 7, 3], [2, 9, 3]], 'Grouped and filtered aggregate reconciliation failed.');
+    $branch = $query->cloneBuilder()->having('amount', '<=', 7);
+    check(count($branch->get()) === 2 && count($query->get()) === 4, 'HAVING branch mutated original.');
+    check($db->table('lab_records')->count() === 40, 'Grouped read changed records.');
+    echo "Multi-column grouping, HAVING parameters and independent clone passed\n";
+}
+
+function unionMultiplicityContracts(Connection $db): void
+{
+    seedRows($db, 20);
+    $first = static fn() => $db->table('lab_records')->select('id')->whereBetween('id', [2, 5]);
+    $second = static fn() => $db->table('lab_records')->select('id')->whereBetween('id', [4, 7]);
+    $distinct = $first()->union($second());
+    $all = $first()->unionAll($second());
+    foreach ([[$distinct, [2, 3, 4, 5, 6, 7]], [$all, [2, 3, 4, 4, 5, 5, 6, 7]]] as [$query, $expected]) {
+        check($query->getBindings() === [2, 5, 4, 7], 'Set operand bindings changed.');
+        $ids = array_map('intval', array_column($query->get(), 'id'));
+        sort($ids);
+        check($ids === $expected, 'Set operation multiplicity differs.');
+    }
+    check($first()->count() === 4 && $second()->count() === 4 && $db->table('lab_records')->count() === 20, 'Set query affected independent operands.');
+    echo "UNION deduplication, UNION ALL multiplicity and bound operand isolation passed\n";
+}
+
+function repositoryScopeContracts(Connection $db): void
+{
+    seedRows($db, 20);
+    $db->table('lab_records')->whereIn('id', [6, 7])->update(['deleted_at' => '2026-01-01']);
+    $repo = new class($db) extends \Infocyph\DBLayer\Query\ConnectionRepository {
+        protected function table(): string
+        {
+            return 'lab_records';
+        }
+    };
+    $repo->forTenant(1)->enableSoftDeletes()->setCasts(['id' => 'int', 'amount' => 'int', 'tenant_id' => 'int'])
+        ->addGlobalScope(static fn($q) => $q->where('amount', '>=', 4))
+        ->setDefaultOrder('amount', 'desc')->addDefaultOrder('id', 'asc');
+    $ids = static fn(): array => array_column($repo->all()->all(), 'id');
+    check($ids() === [8, 18, 16, 4, 14], 'Tenant, soft-delete, global and ordering scopes did not compose.');
+    check($repo->withTrashed()->find(6)['id'] === 6 && $repo->find(7) === null, 'With-trashed crossed tenant.');
+    check($repo->onlyTrashed()->count() === 1 && $repo->find(6)['id'] === 6, 'Only-trashed scope mismatch.');
+    $repo->withoutTrashed()->clearGlobalScopes()->clearDefaultOrders()->setDefaultOrder('id');
+    check($ids() === [2, 4, 8, 10, 12, 14, 16, 18, 20], 'Global scope reset lost tenant or soft-delete filter.');
+    $repo->withoutTenant();
+    check($repo->count() === 18 && $repo->find(7) === null && $repo->find(1)['tenant_id'] === 2, 'Explicit tenant reset changed other scopes.');
+    check((new Connection(config()))->table('lab_records')->count() === 20, 'Repository scope operations mutated stored records.');
+    echo "Repository scope composition, explicit reset and independent durable reconciliation passed\n";
+}

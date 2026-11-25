@@ -321,3 +321,101 @@ function validationLocaleWorkload(): void
     }
     echo "Base and regional locale fallback, wildcard aliases and custom message interpolation passed\n";
 }
+
+function validationRelatedWildcardContracts(): void
+{
+    $schema = [
+        'policy.minimum' => 'required|integer',
+        'policy.open' => 'required|date_format:Y-m-d',
+        'items.*.quantity' => 'required|integer|gte:policy.minimum',
+        'items.*.date' => 'required|date_format:Y-m-d|after_or_equal:policy.open',
+        'items.*.sku' => 'required|string|distinct',
+    ];
+    $valid = ['policy' => ['minimum' => 3, 'open' => '2026-01-01'], 'items' => [
+        ['quantity' => 3, 'date' => '2026-01-01', 'sku' => 'A'],
+        ['quantity' => 4, 'date' => '2026-01-02', 'sku' => 'B'],
+    ]];
+    $invalid = $valid;
+    $invalid['items'][1]['quantity'] = 2;
+    $invalid['items'][1]['date'] = '2025-12-31';
+    $invalid['items'][1]['sku'] = 'A';
+    foreach (['targeted', 'all'] as $mode) {
+        $builder = Validator::make($schema)->setNestedFlattenMode($mode)->setFailFast(false);
+        foreach ([$builder, new CompiledValidator($builder)] as $validator) {
+            verify($validator->validate($valid)->passes(), 'Nested dependency rejected valid batch.');
+            $result = $validator->validate($invalid);
+            foreach (['items.1.quantity', 'items.1.date', 'items.1.sku'] as $field) {
+                verify($result->hasError($field), 'Nested dependency lost concrete field: ' . $field);
+            }
+            verify(!$result->hasError('items.0.quantity') && !$result->hasError('items.0.date'), 'Dependency error escaped affected row.');
+            verify($validator->validate($valid)->passes(), 'Dependency failure survived reused validator.');
+        }
+    }
+    echo "Nested wildcard scalar/date dependencies and independent concrete field errors passed\n";
+}
+
+function validationConditionalWildcardContracts(): void
+{
+    $schema = [
+        'mode' => 'required|in:delivery,collection',
+        'orders.*.address' => 'required_if:mode,delivery|string',
+        'orders.*.pickup' => 'exclude_if:mode,delivery|string',
+    ];
+    $builder = Validator::make($schema)->setFailFast(false);
+    foreach ([$builder, new CompiledValidator($builder)] as $validator) {
+        $delivery = ['mode' => 'delivery', 'orders' => [['address' => 'one', 'pickup' => ['ignored']], ['address' => 'two', 'pickup' => ['ignored']]]];
+        $result = $validator->validate($delivery);
+        verify($result->passes(), 'Delivery conditional wildcard rejected valid orders.');
+        $safe = $result->safe();
+        verify(!isset($safe['orders.0.pickup'], $safe['orders.1.pickup']) && !isset($safe['orders'][0]['pickup'], $safe['orders'][1]['pickup']), 'Excluded wildcard payload leaked.');
+        unset($delivery['orders'][1]['address']);
+        $result = $validator->validate($delivery);
+        verify($result->fails() && $result->hasError('orders.1.address') && !$result->hasError('orders.0.address'), 'Missing wildcard address was not isolated.');
+        $collection = ['mode' => 'collection', 'orders' => [['pickup' => 'desk'], ['pickup' => 'locker']]];
+        verify($validator->validate($collection)->passes(), 'Non-triggered wildcard requirement retained prior state.');
+        $collection['orders'][0]['pickup'] = ['invalid'];
+        verify($validator->validate($collection)->hasError('orders.0.pickup'), 'Visible wildcard failed to validate.');
+    }
+    echo "Conditional wildcard requirement, exclusion and mode replacement passed\n";
+}
+
+function validationUploadMetadataContracts(): void
+{
+    $root = evidenceDirectory() . '/metadata-options';
+    verify(mkdir($root, 0700), 'Metadata fixture unavailable.');
+    $path = $root . '/file.txt';
+    verify(file_put_contents($path, 'receipt') === 7, 'Metadata fixture write failed.');
+    $valid = ['name' => 'file.txt', 'type' => 'text/plain', 'tmp_name' => $path, 'error' => UPLOAD_ERR_OK, 'size' => 7];
+    $partial = array_replace($valid, ['error' => UPLOAD_ERR_PARTIAL]);
+    validationPair('metadata shape permits partial', 'upload_meta', ['v' => $partial], ['v' => array_replace($partial, ['error' => 999])]);
+    foreach (['success', 'strict'] as $mode) {
+        foreach ([
+            $partial,
+            array_replace($valid, ['tmp_name' => '']),
+            array_replace($valid, ['size' => -1]),
+            array_replace($valid, ['type' => ['text/plain']]),
+            array_replace($valid, ['name' => '../file']),
+            array_replace($valid, ['name' => 'nine9.txt']),
+        ] as $bad) {
+            validationPair('metadata ' . $mode, 'upload_meta:' . $mode . ',8', ['v' => $valid], ['v' => $bad]);
+        }
+    }
+    validationPair('secure filename width', 'secure_file:success,8', ['v' => $valid], ['v' => array_replace($valid, ['name' => 'nine9.txt'])]);
+    echo "Upload shape/success/strict modes, metadata types and filename bounds passed\n";
+}
+
+function validationPathOptionsContracts(): void
+{
+    foreach ([
+        ['path:absolute', 'C:\\reports\\file.txt', 'C:relative.txt'],
+        ['path:absolute', '\\\\server\\share\\file.txt', 'reports/file.txt'],
+        ['path:relative', 'reports/file.txt', '/reports/file.txt'],
+        ['path:relative', 'C:relative.txt', 'C:\\reports\\file.txt'],
+        ['safe_filename', 'report.txt', 'nested/report.txt'],
+        ['safe_filename', 'report.txt', "bad\0name.txt"],
+        ['upload_id:8', 'abc_1234', 'abc_12345'],
+    ] as [$rule, $positive, $negative]) {
+        validationPair($rule, $rule, ['v' => $positive], ['v' => $negative]);
+    }
+    echo "Portable absolute/relative path classification and filename/input boundaries passed\n";
+}

@@ -16,6 +16,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-complex-join, backend: pgsql}
+          - {scenario: db-complex-join, backend: mysql}
+          - {scenario: db-complex-join, backend: mariadb}
+          - {scenario: db-complex-join, backend: sqlite}
+          - {scenario: db-complex-join, backend: mssql}
+          - {scenario: db-grouped-query, backend: pgsql}
+          - {scenario: db-grouped-query, backend: mysql}
+          - {scenario: db-grouped-query, backend: mariadb}
+          - {scenario: db-grouped-query, backend: sqlite}
+          - {scenario: db-grouped-query, backend: mssql}
+          - {scenario: db-union-multiplicity, backend: pgsql}
+          - {scenario: db-union-multiplicity, backend: mysql}
+          - {scenario: db-union-multiplicity, backend: mariadb}
+          - {scenario: db-union-multiplicity, backend: sqlite}
+          - {scenario: db-union-multiplicity, backend: mssql}
+          - {scenario: db-repository-scope, backend: pgsql}
+          - {scenario: db-repository-scope, backend: mysql}
+          - {scenario: db-repository-scope, backend: mariadb}
+          - {scenario: db-repository-scope, backend: sqlite}
+          - {scenario: db-repository-scope, backend: mssql}
           - {scenario: db-mysql-group-election, backend: mysql}
           - {scenario: db-mysql-group-quorum, backend: mysql}
           - {scenario: db-mariadb-galera-rejoin, backend: mariadb}
@@ -742,6 +762,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-validation-related-wildcard, backend: pgsql}
+          - {scenario: ecosystem-validation-conditional-wildcard, backend: pgsql}
+          - {scenario: ecosystem-validation-upload-metadata, backend: pgsql}
+          - {scenario: ecosystem-validation-path-options, backend: pgsql}
           - {scenario: ecosystem-otp-mobile-rotation-immediate-redis, backend: pgsql}
           - {scenario: ecosystem-otp-mobile-rotation-immediate-valkey, backend: pgsql}
           - {scenario: ecosystem-otp-mobile-rotation-immediate-file, backend: pgsql}
