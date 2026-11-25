@@ -62,6 +62,7 @@ require __DIR__ . '/ecosystem-otp-boundaries.php';
 require __DIR__ . '/ecosystem-security-lifecycle.php';
 require __DIR__ . '/ecosystem-otp-tls.php';
 require __DIR__ . '/ecosystem-validation-matrix.php';
+require __DIR__ . '/ecosystem-validation-database-boundaries.php';
 require __DIR__ . '/ecosystem-cache-faults.php';
 require __DIR__ . '/ecosystem-cache-atomic.php';
 require __DIR__ . '/ecosystem-cache-contracts.php';
@@ -551,6 +552,12 @@ match ($argv[1] ?? '') {
     'validation-options' => validationOptionsWorkload(),
     'validation-nested-errors' => validationNestedErrorsWorkload(),
     'validation-locale' => validationLocaleWorkload(),
+    'validation-db-correlation' => validationDatabaseBoundaryContracts('correlation'),
+    'validation-db-restricted-policy' => validationDatabaseBoundaryContracts('restricted-policy'),
+    'validation-db-ignore-policy' => validationDatabaseBoundaryContracts('ignore-policy'),
+    'validation-db-null-values' => validationDatabaseBoundaryContracts('null-values'),
+    'validation-db-identifier-guards' => validationDatabaseBoundaryContracts('identifier-guards'),
+    'validation-db-failure-recovery' => validationDatabaseBoundaryContracts('failure-recovery'),
     'validation-database' => validationDatabaseWorkload(),
     'otp-backends' => otpBackendsWorkload(),
     'otp-drift' => otpDriftWorkload(),

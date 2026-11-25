@@ -726,3 +726,7 @@ I: 30 independently executable workloads: column addition/rename/drop with null 
 ## B200 — Real-host Webrick policy composition
 
 I: 24 independent entries: credentialed route CORS, allowed/denied preflight, negotiation and foreign-origin isolation; CORS plus compression, exact binary representation, composed Vary, conditional 304/HEAD, non-transformed partial files, range rejection recovery and streamed bytes. Both fused/sharded compiled matchers on six actual hosts (native, FPM, RoadRunner, FrankenPHP, Swoole, OpenSwoole); four parallel clients and repeated assertions after host replacement. Existing browser host fixture and provisioning reused; no upstream edits. CORE-01, REQUEST, SEC, OPS, EXEC-03: source and matrix dispatch reviewed, hosted execution pending. 1438 routine rows.
+
+## B201 — Five-engine ReqShield database validation boundaries
+
+I: 30 independently executable workloads (six contracts across PostgreSQL, MySQL, MariaDB, SQLite, SQL Server): multi-column repeated-candidate correlation across chunk boundaries, native structured fallback under deny-raw policy, immutable ignore/custom-ID and custom soft-delete groups, low-level nullable/repeated candidate correlation and fresh-state mutation, table/column/identity/soft-delete identifier rejection, and missing-table failure versus ordinary invalid data followed by recovery. Direct and compiled validation where applicable, independent persisted row count, no vendor changes. CORE-01, TYPE, SEC, DATA, EXEC-03: source/dispatch reviewed; hosted execution pending. 1468 routine rows.

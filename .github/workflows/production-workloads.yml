@@ -1168,6 +1168,36 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-validation-db-correlation, backend: pgsql}
+          - {scenario: ecosystem-validation-db-correlation, backend: mysql}
+          - {scenario: ecosystem-validation-db-correlation, backend: mariadb}
+          - {scenario: ecosystem-validation-db-correlation, backend: sqlite}
+          - {scenario: ecosystem-validation-db-correlation, backend: mssql}
+          - {scenario: ecosystem-validation-db-restricted-policy, backend: pgsql}
+          - {scenario: ecosystem-validation-db-restricted-policy, backend: mysql}
+          - {scenario: ecosystem-validation-db-restricted-policy, backend: mariadb}
+          - {scenario: ecosystem-validation-db-restricted-policy, backend: sqlite}
+          - {scenario: ecosystem-validation-db-restricted-policy, backend: mssql}
+          - {scenario: ecosystem-validation-db-ignore-policy, backend: pgsql}
+          - {scenario: ecosystem-validation-db-ignore-policy, backend: mysql}
+          - {scenario: ecosystem-validation-db-ignore-policy, backend: mariadb}
+          - {scenario: ecosystem-validation-db-ignore-policy, backend: sqlite}
+          - {scenario: ecosystem-validation-db-ignore-policy, backend: mssql}
+          - {scenario: ecosystem-validation-db-null-values, backend: pgsql}
+          - {scenario: ecosystem-validation-db-null-values, backend: mysql}
+          - {scenario: ecosystem-validation-db-null-values, backend: mariadb}
+          - {scenario: ecosystem-validation-db-null-values, backend: sqlite}
+          - {scenario: ecosystem-validation-db-null-values, backend: mssql}
+          - {scenario: ecosystem-validation-db-identifier-guards, backend: pgsql}
+          - {scenario: ecosystem-validation-db-identifier-guards, backend: mysql}
+          - {scenario: ecosystem-validation-db-identifier-guards, backend: mariadb}
+          - {scenario: ecosystem-validation-db-identifier-guards, backend: sqlite}
+          - {scenario: ecosystem-validation-db-identifier-guards, backend: mssql}
+          - {scenario: ecosystem-validation-db-failure-recovery, backend: pgsql}
+          - {scenario: ecosystem-validation-db-failure-recovery, backend: mysql}
+          - {scenario: ecosystem-validation-db-failure-recovery, backend: mariadb}
+          - {scenario: ecosystem-validation-db-failure-recovery, backend: sqlite}
+          - {scenario: ecosystem-validation-db-failure-recovery, backend: mssql}
           - {scenario: ecosystem-foundation-pool-recycle, backend: pgsql}
           - {scenario: ecosystem-foundation-pool-recycle, backend: mysql}
           - {scenario: ecosystem-foundation-pool-recycle, backend: mariadb}
