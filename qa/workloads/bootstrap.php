@@ -125,7 +125,7 @@ function configuration(): array
         $config['app']['capabilities'] = ['cache', 'database', 'filesystem', 'validation', 'runwire'];
     }
 
-    if (getenv('SCENARIO') === 'oauth') {
+    if (in_array(getenv('SCENARIO'), ['oauth', 'refresh', 'oidc', 'dpop'], true)) {
         $keyRoot = $root . '/storage/lab-oauth-keys';
         $config['auth']['oauth'] = [
             'enabled' => true, 'issuer' => 'https://identity.example.test',
@@ -135,6 +135,35 @@ function configuration(): array
                 'algorithm' => 'ES256', 'active_key_id' => 'lab-key',
                 'private_key' => $keyRoot . '/private.pem',
                 'public_keys' => [['id' => 'lab-key', 'path' => $keyRoot . '/public.pem', 'status' => 'active']],
+            ],
+        ];
+    }
+
+    if (getenv('SCENARIO') === 'oidc') {
+        $keyRoot = $root . '/storage/lab-oidc-keys';
+        $config['auth']['oauth']['resource_audiences'][] = 'https://identity.example.test/oidc/userinfo';
+        $config['auth']['oauth']['oidc'] = [
+            'enabled' => true, 'id_token_lifetime_seconds' => 300,
+            'userinfo_route' => '/oidc/userinfo', 'userinfo_audience' => 'https://identity.example.test/oidc/userinfo',
+            'scopes_supported' => ['openid', 'profile', 'email'], 'claims_supported' => ['sub', 'email', 'auth_time', 'acr', 'amr'],
+            'subject_types' => ['public'],
+            'signing' => [
+                'algorithm' => 'ES256', 'active_key_id' => 'oidc-key',
+                'private_key' => $keyRoot . '/private.pem',
+                'public_keys' => [['id' => 'oidc-key', 'path' => $keyRoot . '/public.pem', 'status' => 'active']],
+            ],
+        ];
+    }
+    if (getenv('SCENARIO') === 'pat') {
+        $keyRoot = $root . '/storage/lab-pat-keys';
+        $config['auth']['personal_access_tokens'] = [
+            'enabled' => true, 'issuer' => 'https://identity.example.test', 'audience' => 'https://api.example.test',
+            'default_lifetime_seconds' => 3600, 'maximum_lifetime_seconds' => 86400,
+            'wildcard_policy' => 'disabled', 'last_used_write_interval_seconds' => 60,
+            'signing' => [
+                'algorithm' => 'ES256', 'active_key_id' => 'pat-key',
+                'private_key' => $keyRoot . '/private.pem',
+                'public_keys' => [['id' => 'pat-key', 'path' => $keyRoot . '/public.pem', 'status' => 'active']],
             ],
         ];
     }

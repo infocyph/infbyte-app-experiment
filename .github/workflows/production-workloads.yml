@@ -15,6 +15,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: refresh, backend: mysql}
+          - {scenario: refresh, backend: pgsql}
+          - {scenario: oidc, backend: mysql}
+          - {scenario: oidc, backend: pgsql}
+          - {scenario: dpop, backend: mysql}
+          - {scenario: dpop, backend: pgsql}
+          - {scenario: pat, backend: mysql}
+          - {scenario: pat, backend: pgsql}
           - {scenario: risk, backend: mysql}
           - {scenario: risk, backend: pgsql}
           - {scenario: browser, backend: pgsql, host: native, matcher: fused}

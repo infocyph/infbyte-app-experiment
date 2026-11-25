@@ -33,12 +33,12 @@ final readonly class DataImport
 
     public function __construct(private Application $app)
     {
-        $this->validator = Validator::make([
+        $this->validator = new CompiledValidator(Validator::make([
             'email' => ['rules' => 'required|email', 'sanitize' => ['trim', 'lowercase']],
             'items' => 'required|array',
             'items.*.sku' => 'required|string',
             'items.*.quantity' => 'required|integer|min:1|max:20',
-        ])->setCasts(['items.*.quantity' => 'integer'])->stripUnknown()->compile();
+        ])->setCasts(['items.*.quantity' => 'integer'])->stripUnknown());
         $algorithm = ProtectionAlgorithm::XCHACHA20_POLY1305;
         $this->protector = StringProtector::create($algorithm);
         $old = hex2bin((string) getenv('LAB_IMPORT_OLD_KEY'));

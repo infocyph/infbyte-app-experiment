@@ -28,17 +28,21 @@ if [[ "$SCENARIO" == protocols ]]; then
   done
   curl --silent --fail --max-time 2 http://127.0.0.1:18888/health >/dev/null
 fi
-if [[ "$SCENARIO" == oauth ]]; then
-  umask 077
-  mkdir -p "$PROJECT/storage/lab-oauth-keys"
-  openssl ecparam -name prime256v1 -genkey -noout -out "$PROJECT/storage/lab-oauth-keys/private.pem"
-  openssl ec -in "$PROJECT/storage/lab-oauth-keys/private.pem" -pubout -out "$PROJECT/storage/lab-oauth-keys/public.pem"
-fi
+case "$SCENARIO" in
+  oauth|refresh|oidc|dpop|pat)
+    umask 077
+    for purpose in oauth oidc pat; do
+      mkdir -p "$PROJECT/storage/lab-$purpose-keys"
+      openssl ecparam -name prime256v1 -genkey -noout -out "$PROJECT/storage/lab-$purpose-keys/private.pem"
+      openssl ec -in "$PROJECT/storage/lab-$purpose-keys/private.pem" -pubout -out "$PROJECT/storage/lab-$purpose-keys/public.pem"
+    done
+    ;;
+esac
 php "$probe" setup
 total=0
 for concurrency in 1 4 8; do
   iterations=40
-  if [[ "$SCENARIO" == accounts || "$SCENARIO" == security || "$SCENARIO" == passkey || "$SCENARIO" == authorization || "$SCENARIO" == oauth || "$SCENARIO" == risk ]]; then iterations=8; fi
+  if [[ "$SCENARIO" == accounts || "$SCENARIO" == security || "$SCENARIO" == passkey || "$SCENARIO" == authorization || "$SCENARIO" == oauth || "$SCENARIO" == refresh || "$SCENARIO" == oidc || "$SCENARIO" == dpop || "$SCENARIO" == pat || "$SCENARIO" == risk ]]; then iterations=8; fi
   if [[ "$SCENARIO" == queue ]]; then iterations=20; fi
   start="$(php -r 'echo intdiv(hrtime(true), 1000000);')"
   pids=()
