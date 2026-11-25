@@ -8,6 +8,7 @@ require __DIR__ . '/bootstrap.php';
 
 $app = application();
 $scenario = match (getenv('SCENARIO')) {
+    'cache-file', 'cache-phpfiles', 'cache-sqlite', 'cache-mysql', 'cache-pgsql', 'cache-valkey', 'cache-memcached' => new CacheBackends((string) getenv('SCENARIO')),
     'orders' => new Orders($app),
     'import' => new DataImport($app),
     'native-otp' => new NativeOtp($app),

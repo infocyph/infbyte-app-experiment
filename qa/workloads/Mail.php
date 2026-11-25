@@ -27,8 +27,23 @@ final readonly class Mail
     /** @throws \Throwable */
     public function verify(int $expected): void
     {
+        $actual = 0;
+        $deadline = hrtime(true) + 15_000_000_000;
+        do {
+            $actual = $this->receiptCount($expected);
+            if ($actual === $expected) {
+                return;
+            }
+            ensure($actual < $expected, 'Unexpected excess SMTP receipts: ' . $actual);
+            usleep(250_000);
+        } while (hrtime(true) < $deadline);
+        ensure(false, 'SMTP receipt count mismatch: expected ' . $expected . ', observed ' . $actual);
+    }
+
+    private function receiptCount(int $expected): int
+    {
         $subjects = [];
-        for ($start = 0; $start < $expected; $start += 50) {
+        for ($start = 0; $start <= $expected; $start += 50) {
             $body = file_get_contents('http://127.0.0.1:8025/api/v1/messages?start=' . $start . '&limit=50');
             ensure(is_string($body), 'Mailpit inspection failed.');
             $page = json_decode($body, true, flags: JSON_THROW_ON_ERROR);
@@ -40,6 +55,6 @@ final readonly class Mail
                 $subjects[$subject] = true;
             }
         }
-        ensure(count($subjects) === $expected, 'SMTP receipt count mismatch.');
+        return count($subjects);
     }
 }
