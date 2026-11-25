@@ -123,6 +123,7 @@ match ($argv[1] ?? '') {
     'array-dto-guard' => arrayDtoGuardWorkload(),
     'di-environment' => diEnvironmentWorkload(),
     'sftp-trust' => sftpTrustWorkload(),
+    's3-publication-fault' => s3PublicationFaultWorkload(),
     'storage-outage-seed' => storageOutageWorkload('seed'),
     'storage-outage-denied' => storageOutageWorkload('denied'),
     'storage-outage-recover' => storageOutageWorkload('recover'),

@@ -41,7 +41,7 @@ case "$SCENARIO" in
     composer require mongodb/mongodb --no-interaction --prefer-dist --no-progress
     if [[ "$SCENARIO" == ecosystem-gridfs ]]; then composer require league/flysystem-gridfs --no-interaction --prefer-dist --no-progress; fi
     ;;
-  ecosystem-s3|ecosystem-async-s3|ecosystem-s3-outage)
+  ecosystem-s3|ecosystem-async-s3|ecosystem-s3-outage|ecosystem-s3-publication-fault)
     containers+=(lab-s3)
     export LAB_S3_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
     docker run -d --name lab-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" minio/minio:latest server /data
@@ -105,7 +105,18 @@ case "$SCENARIO" in
 esac
 composer check-platform-reqs --no-dev
 composer show --format=json > "$EVIDENCE/packages.json"
-if [[ "$SCENARIO" == ecosystem-s3-outage || "$SCENARIO" == ecosystem-sftp-outage ]]; then
+if [[ "$SCENARIO" == ecosystem-s3-publication-fault ]]; then
+  python3 "$GITHUB_WORKSPACE/qa/workloads/s3-publication-peer.py" "$EVIDENCE" > "$EVIDENCE/s3-peer.log" 2>&1 &
+  storage_peer=$!
+  trap 'kill "$storage_peer" 2>/dev/null || :; wait "$storage_peer" 2>/dev/null || :; cleanup' EXIT
+  for attempt in {1..100}; do
+    [[ -f "$EVIDENCE/s3-peer-ready" ]] && break
+    kill -0 "$storage_peer"
+    sleep 0.1
+  done
+  test -f "$EVIDENCE/s3-peer-ready"
+  timeout 90s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" s3-publication-fault | tee "$EVIDENCE/ecosystem.log"
+elif [[ "$SCENARIO" == ecosystem-s3-outage || "$SCENARIO" == ecosystem-sftp-outage ]]; then
   probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
   if [[ "$SCENARIO" == ecosystem-s3-outage ]]; then
     export LAB_STORAGE_BACKEND=s3

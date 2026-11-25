@@ -429,3 +429,7 @@ I: reuse disposable Redis AOF stop/restart fixture for a dedicated definition-ca
 ## B94 — Broker acknowledgement uncertainty and durable effects
 
 I: two additional actual RabbitMQ/SQS-compatible lanes inject a failure immediately before or after native acknowledgement at the application-owned adapter boundary. The Omnibus consumer must propagate uncertainty, preserve committed SQL effects, permit redelivery only when unsettled, and avoid classifying settlement failures as handler failures. Replacement consumes with an idempotent application effect and independent execution counts. This is deliberate boundary fault injection, not an actual packet-loss test or provider exactly-once guarantee. 346 routine rows; hosted qualification pending. CORE-01/DATA/OPS: preserve existing adapter behavior when fault callback absent, use disposable broker and bounded recovery; verification pending.
+
+## B95 — S3 interrupted transfer and uncertain publication
+
+I: isolated MinIO lane routes two specific signed fixture PUTs through a bounded loopback peer. One forwards only 64 KiB then closes the upstream; the other forwards the entire body and observes a successful upstream response before withholding it. Pathwise must surface both failures; independent direct reads reconcile previous versus committed exact bytes, retry only the proven incomplete operation, and preserve another tenant. No external service or production credentials used. 347 routine rows; hosted verification pending (CORE-01, DATA, OPS).
