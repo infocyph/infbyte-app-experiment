@@ -1823,6 +1823,30 @@ jobs:
           - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: pgsql}
           - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: mysql}
           - {scenario: ecosystem-foundation-cache-outage-response-memcached, backend: mariadb}
+          - {scenario: ecosystem-otp-cluster-redis-minority-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-minority-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-minority-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-minority-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-minority-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-minority-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-shard-loss-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-minority-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-shard-loss-ocra-challenge, backend: pgsql}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

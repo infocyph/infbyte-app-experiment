@@ -164,6 +164,7 @@ match ($argv[1] ?? '') {
     'amqp-quorum-minority-retry' => amqpQuorumMinorityRetry(),
     'otp-cluster-promotion-seed' => otpClusterPromotionWorkload(true, (string) ($argv[2] ?? '')),
     'otp-cluster-promotion-verify' => otpClusterPromotionWorkload(false, (string) ($argv[2] ?? '')),
+    'otp-cluster-offline' => otpClusterPromotionWorkload(false, (string) ($argv[2] ?? ''), true),
     'amqp-crash-seed' => amqpCrashContracts(true),
     'amqp-crash-recover' => amqpCrashContracts(false),
     'sqs-fifo-groups' => sqsOwnershipContracts('fifo-groups'),

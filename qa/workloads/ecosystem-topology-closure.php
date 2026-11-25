@@ -15,7 +15,18 @@ use Infocyph\OTP\ValueObjects\VerificationWindow;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Wire\AMQPTable;
 
-function otpClusterPromotionWorkload(bool $seed, string $factor): void
+function otpClusterRejectOffline(callable $operation): void
+{
+    $admitted = false;
+    try {
+        $admitted = $operation();
+    } catch (\Infocyph\CacheLayer\Exceptions\CacheBackendException | \RedisException | \RedisClusterException) {
+        // Only the expected native/cache failure is a fail-closed outcome.
+    }
+    verify(!$admitted, 'Cluster without quorum or full coverage admitted a valid authentication proof.');
+}
+
+function otpClusterPromotionWorkload(bool $seed, string $factor, bool $offline = false): void
 {
     $path = (string) getenv('LAB_OTP_ELECTION_STATE');
     $options = new CacheOptions(integrityKey: str_repeat('i', 32), failOpen: false);
@@ -27,6 +38,14 @@ function otpClusterPromotionWorkload(bool $seed, string $factor): void
         : json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
     $window = new VerificationWindow(0, 0);
     $at = 1_800_000_000;
+    if ($factor === 'generic' && $offline) {
+        otpClusterRejectOffline(static fn(): bool => (new GenericOtp($factory(), hex2bin($state['key']), ttlSeconds: 600, maxAttempts: 3))
+            ->verify('pending', $state['pending']));
+        otpClusterRejectOffline(static fn(): bool => (new GenericOtp($factory(), hex2bin($state['key']), ttlSeconds: 600, maxAttempts: 3))
+            ->verify('consumed', $state['consumed']));
+        echo "Cluster rejected valid pending and spent challenges during outage\n";
+        return;
+    }
     if ($factor === 'generic') {
         $generic = new GenericOtp($factory(), hex2bin($state['key']), ttlSeconds: 600, maxAttempts: 3);
         if ($seed) {
@@ -64,6 +83,12 @@ function otpClusterPromotionWorkload(bool $seed, string $factor): void
                 default => throw new InvalidArgumentException('Unknown factor.'),
             };
         };
+        if ($offline) {
+            otpClusterRejectOffline(static fn(): bool => $admit(true));
+            otpClusterRejectOffline(static fn(): bool => $admit(false));
+            echo "$factor valid next and spent proofs rejected during cluster outage\n";
+            return;
+        }
         if ($seed) {
             verify($admit(false) && !$admit(false), 'Initial cluster replay cursor failed.');
         } else {
