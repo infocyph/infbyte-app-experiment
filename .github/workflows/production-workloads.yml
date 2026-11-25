@@ -1420,6 +1420,30 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-jwe-interop-dir-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-dir-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-dir-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-dir-flattened-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256kw-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256kw-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256kw-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256kw-flattened-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256gcmkw-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256gcmkw-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256gcmkw-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-a256gcmkw-flattened-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-rsa-oaep-256-flattened-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-flattened-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-compact-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-compact-native-to-library, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-flattened-library-to-native, backend: pgsql}
+          - {scenario: ecosystem-jwe-interop-ecdh-es-a256kw-flattened-native-to-library, backend: pgsql}
           - {scenario: ecosystem-s3-archive-outage-source, backend: pgsql}
           - {scenario: ecosystem-s3-archive-outage-save, backend: pgsql}
           - {scenario: ecosystem-s3-archive-outage-extract, backend: pgsql}

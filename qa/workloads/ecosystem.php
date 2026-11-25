@@ -51,6 +51,7 @@ require __DIR__ . '/ecosystem-contracts.php';
 require __DIR__ . '/ecosystem-webrick.php';
 require __DIR__ . '/ecosystem-telemetry.php';
 require __DIR__ . '/ecosystem-jose.php';
+require __DIR__ . '/ecosystem-jwe-interop.php';
 require __DIR__ . '/ecosystem-crypto-rotation.php';
 require __DIR__ . '/ecosystem-mailbox.php';
 require __DIR__ . '/ecosystem-brokers.php';
@@ -706,6 +707,30 @@ match ($argv[1] ?? '') {
     'imap' => imapWorkload(),
     'pop3' => pop3Workload(),
     'jwt-jws' => jwtJwsWorkload(),
+    'jwe-interop-dir-compact-library-to-native' => jweInteropWorkload('dir', 'compact', 'library-to-native'),
+    'jwe-interop-dir-compact-native-to-library' => jweInteropWorkload('dir', 'compact', 'native-to-library'),
+    'jwe-interop-dir-flattened-library-to-native' => jweInteropWorkload('dir', 'flattened', 'library-to-native'),
+    'jwe-interop-dir-flattened-native-to-library' => jweInteropWorkload('dir', 'flattened', 'native-to-library'),
+    'jwe-interop-a256kw-compact-library-to-native' => jweInteropWorkload('A256KW', 'compact', 'library-to-native'),
+    'jwe-interop-a256kw-compact-native-to-library' => jweInteropWorkload('A256KW', 'compact', 'native-to-library'),
+    'jwe-interop-a256kw-flattened-library-to-native' => jweInteropWorkload('A256KW', 'flattened', 'library-to-native'),
+    'jwe-interop-a256kw-flattened-native-to-library' => jweInteropWorkload('A256KW', 'flattened', 'native-to-library'),
+    'jwe-interop-a256gcmkw-compact-library-to-native' => jweInteropWorkload('A256GCMKW', 'compact', 'library-to-native'),
+    'jwe-interop-a256gcmkw-compact-native-to-library' => jweInteropWorkload('A256GCMKW', 'compact', 'native-to-library'),
+    'jwe-interop-a256gcmkw-flattened-library-to-native' => jweInteropWorkload('A256GCMKW', 'flattened', 'library-to-native'),
+    'jwe-interop-a256gcmkw-flattened-native-to-library' => jweInteropWorkload('A256GCMKW', 'flattened', 'native-to-library'),
+    'jwe-interop-rsa-oaep-256-compact-library-to-native' => jweInteropWorkload('RSA-OAEP-256', 'compact', 'library-to-native'),
+    'jwe-interop-rsa-oaep-256-compact-native-to-library' => jweInteropWorkload('RSA-OAEP-256', 'compact', 'native-to-library'),
+    'jwe-interop-rsa-oaep-256-flattened-library-to-native' => jweInteropWorkload('RSA-OAEP-256', 'flattened', 'library-to-native'),
+    'jwe-interop-rsa-oaep-256-flattened-native-to-library' => jweInteropWorkload('RSA-OAEP-256', 'flattened', 'native-to-library'),
+    'jwe-interop-ecdh-es-compact-library-to-native' => jweInteropWorkload('ECDH-ES', 'compact', 'library-to-native'),
+    'jwe-interop-ecdh-es-compact-native-to-library' => jweInteropWorkload('ECDH-ES', 'compact', 'native-to-library'),
+    'jwe-interop-ecdh-es-flattened-library-to-native' => jweInteropWorkload('ECDH-ES', 'flattened', 'library-to-native'),
+    'jwe-interop-ecdh-es-flattened-native-to-library' => jweInteropWorkload('ECDH-ES', 'flattened', 'native-to-library'),
+    'jwe-interop-ecdh-es-a256kw-compact-library-to-native' => jweInteropWorkload('ECDH-ES+A256KW', 'compact', 'library-to-native'),
+    'jwe-interop-ecdh-es-a256kw-compact-native-to-library' => jweInteropWorkload('ECDH-ES+A256KW', 'compact', 'native-to-library'),
+    'jwe-interop-ecdh-es-a256kw-flattened-library-to-native' => jweInteropWorkload('ECDH-ES+A256KW', 'flattened', 'library-to-native'),
+    'jwe-interop-ecdh-es-a256kw-flattened-native-to-library' => jweInteropWorkload('ECDH-ES+A256KW', 'flattened', 'native-to-library'),
     'jwe' => jweWorkload(),
     'gateway' => gatewayWorkload(),
     'middleware-policies' => middlewarePolicyWorkload(),

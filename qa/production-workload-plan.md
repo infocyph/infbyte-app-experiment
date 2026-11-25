@@ -884,3 +884,7 @@ I: 36 independently runnable TLS wire lanes: seven default retry and six termina
 ## B206 — Remote archive actual outage and recovery
 
 I: 27 independently runnable lanes across the nine existing remote services (S3, both SFTP drivers, FTP, WebDAV, GridFS, AsyncAWS S3, Azure-compatible, GCS-compatible). Establish live source and archive controls; hold a local source-add, prepared remote archive save or localized remote archive extraction across actual service stop; observe typed rejection and destroy the object before restart. Fresh process independently verifies prior archive, source, existing target and foreign tenant, then publishes a fresh ZIP and verifies native ZIP contents and extracted digest manifest. Provider fixtures are not actual cloud services. CORE-01, DATA, SEC, EXEC-03: source/wiring reviewed; hosted runtime pending. 1604 routine rows.
+
+## B207 — Independent JOSE content and key-management interoperability
+
+I: 24 independently runnable JWE lanes: all six implemented key-management algorithms, compact and flattened formats, both library-to-native and native-to-library directions. Native OpenSSL AES-GCM, test-only RFC 3394 AES block oracle, native OpenSSL CLI OAEP SHA-256/MGF1 SHA-256, sodium X25519 and independent Concat-KDF with party info; verify protected identity, wrapped-key shape, IV/ciphertext/tag modification rejection and recovery. Disposable private keys removed; no new dependency. CORE-01, SEC, EXEC-03: source/wiring reviewed, hosted execution pending. 1628 routine rows.
