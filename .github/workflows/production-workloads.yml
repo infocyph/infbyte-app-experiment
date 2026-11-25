@@ -48,8 +48,6 @@ jobs:
     env:
       SCENARIO: ${{ matrix.scenario }}
       DB_BACKEND: ${{ matrix.backend }}
-      PROJECT: ${{ runner.temp }}/production-app
-      EVIDENCE: ${{ runner.temp }}/workload-evidence
       COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
     steps:
       - uses: actions/checkout@v7
@@ -61,6 +59,10 @@ jobs:
           extensions: pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, curl, mbstring, intl, sodium, zip, fileinfo
           tools: composer:v2
           coverage: none
+      - name: Set up isolated runner paths
+        shell: bash
+        run: |
+          printf 'PROJECT=%s/production-app\nEVIDENCE=%s/workload-evidence\n' "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Install real published production application
         shell: bash
         run: |

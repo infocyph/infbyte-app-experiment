@@ -31,3 +31,5 @@ Goal: independently qualify real published Infbyte/Foundation applications, not 
 
 ## Limits
 The B1 workers use application composition and native services, not a compiled HTTP host. Disposable backend credentials, loopback only. No production secrets or real email recipients. Schema/records reset by fresh hosted service containers. No production-equivalent throughput claim or arbitrary latency gate. CI cannot establish every library capability by mere package installation; every untested capability remains open in the tracker.
+
+B1a: initial workflow run 45544003087 was rejected before workers registered. Move runner.temp-based path initialization out of job-level env and into a step using RUNNER_TEMP/GITHUB_ENV. Runtime evidence still pending; do not count the rejected run as workload execution.
