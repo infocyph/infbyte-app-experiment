@@ -89,3 +89,5 @@ B22 adds real Redis Cluster, MongoDB, S3-compatible and SFTP v3 scenarios; see d
 B23 adds native TLS streaming acceptance, preserving the independent unary lane. Full duplex and inbound framework dispatch are not certified.
 
 B24 adds real HTTPS trust, retries, redirect credential boundaries, cookie path and timeout recovery acceptance.
+
+B25 adds sustained workload profiles, controlled host crash/replay and exact durable/cache reconciliation, with weekly soak and manual endurance. Hosted evidence pending.

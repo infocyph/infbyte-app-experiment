@@ -31,6 +31,7 @@ $original = file_get_contents($route);
 $addition = file_get_contents(__DIR__ . match (getenv('SCENARIO')) {
     'browser' => '/browser-routes.php',
     'ecosystem-connected' => '/connected-routes.php',
+    'ecosystem-endurance' => '/endurance-routes.php',
     default => '/http-routes.php',
 });
 ensure(is_string($original) && is_string($addition), 'Missing route source.');

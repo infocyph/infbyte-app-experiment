@@ -89,7 +89,7 @@ function configuration(): array
             ]],
         ]],
     ];
-    if (in_array(getenv('SCENARIO'), ['http', 'browser', 'ecosystem-connected'], true)) {
+    if (in_array(getenv('SCENARIO'), ['http', 'browser', 'ecosystem-connected', 'ecosystem-endurance'], true)) {
         $matcher = getenv('LAB_MATCHER') ?: 'fused';
         ensure(in_array($matcher, ['fused', 'sharded'], true), 'Unsupported laboratory matcher.');
         $config['router'] = ['matcher' => $matcher];
@@ -129,6 +129,13 @@ function configuration(): array
         $config['app']['debug'] = false;
         $config['app']['capabilities'] = ['cache', 'database', 'filesystem', 'validation', 'security', 'notifications', 'communication', 'messaging', 'runwire'];
         $config['messaging']['handlers'] = [Receipt::class => ConnectedReceipt::class];
+        $config['cache']['serialization'] = ['allow_object_payloads' => false, 'allow_closure_payloads' => false];
+    }
+
+    if (getenv('SCENARIO') === 'ecosystem-endurance') {
+        $config['app']['env'] = 'production';
+        $config['app']['debug'] = false;
+        $config['app']['capabilities'] = ['cache', 'database', 'validation', 'runwire'];
         $config['cache']['serialization'] = ['allow_object_payloads' => false, 'allow_closure_payloads' => false];
     }
 

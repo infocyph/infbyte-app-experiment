@@ -147,3 +147,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B24 — HTTPS security and retry workload
 - [x] Independent real TLS two-origin TalkingBytes HTTP policy lane.
 - [ ] Hosted verification and remaining transport features.
+
+## B25 — sustained production load and crash recovery
+- [x] Two mandatory smoke lanes plus four separate scheduled/manual workload combinations; 64-client spike, exact ledger, cache and tenant reconciliation and uncertain-response crash.
+- [ ] Hosted results and production-equivalent resource/SLO qualification; remaining capabilities open.

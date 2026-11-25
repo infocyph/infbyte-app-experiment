@@ -1,0 +1,111 @@
+name: Production sustained workload and chaos
+on:
+  schedule:
+    - cron: '23 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Sustained load profile
+        type: choice
+        options: [stress, soak, endurance]
+        default: soak
+permissions:
+  contents: read
+concurrency:
+  group: production-endurance-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  endurance:
+    name: "${{ matrix.backend }} / ${{ matrix.matcher }} / ${{ inputs.profile || 'soak' }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [mysql, pgsql]
+        matcher: [fused, sharded]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: experiment
+          POSTGRES_USER: experiment
+          POSTGRES_PASSWORD: experiment
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U experiment -d experiment" --health-interval 5s --health-timeout 5s --health-retries 15
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: experiment
+          MYSQL_USER: experiment
+          MYSQL_PASSWORD: experiment
+          MYSQL_ROOT_PASSWORD: experiment-root
+        ports: ['3306:3306']
+        options: --health-cmd "mysqladmin ping -h localhost --silent" --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:8
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 15
+    env:
+      SCENARIO: ecosystem-endurance
+      DB_BACKEND: ${{ matrix.backend }}
+      LAB_MATCHER: ${{ matrix.matcher }}
+      LAB_PROFILE: ${{ inputs.profile || 'soak' }}
+      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.6'
+          extensions: pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, curl, mbstring, intl, sodium, zip, fileinfo
+          tools: composer:v2
+          coverage: none
+      - name: Set up isolated runner paths
+        shell: bash
+        run: |
+          printf 'PROJECT=%s/production-app\nEVIDENCE=%s/workload-evidence\n' "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Install real published production application
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset COMPOSER_NO_DEV
+          mkdir -p "$EVIDENCE"
+          composer create-project --no-dev --prefer-dist --no-interaction --no-progress infocyph/infbyte "$PROJECT" '^4.0'
+          cd "$PROJECT"
+          for feature in data.database security.validation; do
+            php infbyte module:install "$feature" --json=1 > "$EVIDENCE/install-$feature.json"
+            php -r '$r=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); if (($r["status"]??null)!=="complete") exit(1);' "$EVIDENCE/install-$feature.json"
+            php infbyte module:enable "$feature" --json=1
+          done
+          test ! -d vendor/infocyph/phpforge
+          test ! -e vendor/bin/pest
+          mkdir -p lab
+          cp "$GITHUB_WORKSPACE"/qa/workloads/*.php lab/
+          php -r '
+            $path="composer.json";
+            $config=json_decode(file_get_contents($path),true,flags:JSON_THROW_ON_ERROR);
+            $config["autoload"]["psr-4"]["Experiment\\"]="lab/";
+            $config["autoload"]["files"][]="lab/helpers.php";
+            file_put_contents($path,json_encode($config,JSON_THROW_ON_ERROR|JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES).PHP_EOL);
+          '
+          composer dump-autoload --no-dev --optimize --no-interaction
+          composer check-platform-reqs --no-dev
+          composer show --format=json > "$EVIDENCE/packages.json"
+          php -v > "$EVIDENCE/php.txt"
+          php -m > "$EVIDENCE/extensions.txt"
+          php --ini=diff > "$EVIDENCE/ini.txt"
+          lscpu > "$EVIDENCE/cpu.txt"
+          free -m > "$EVIDENCE/memory.txt"
+          for source in "$GITHUB_WORKSPACE"/qa/workloads/*.php; do php -l "$source"; done
+      - name: Execute real sustained workload and crash recovery
+        shell: bash
+        run: bash qa/workloads/endurance.sh
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: endurance-${{ matrix.backend }}-${{ matrix.matcher }}-${{ inputs.profile || 'soak' }}
+          path: ${{ runner.temp }}/workload-evidence/
+          if-no-files-found: error
+          retention-days: 14

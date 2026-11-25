@@ -15,6 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-endurance, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-endurance, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-http-policy, backend: pgsql}
           - {scenario: ecosystem-redis-cluster, backend: pgsql}
           - {scenario: ecosystem-mongodb, backend: pgsql, php: '8.4'}
