@@ -76,7 +76,8 @@ jobs:
           - {scenario: risk, backend: mysql}
           - {scenario: risk, backend: pgsql}
           - {scenario: browser, backend: pgsql, host: native, matcher: fused}
-          - {scenario: browser, backend: pgsql, host: native, matcher: generated}
+          - {scenario: browser, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser, backend: pgsql, host: fpm, php: '8.4', matcher: fused}
           - {scenario: browser, backend: pgsql, host: fpm, php: '8.4', matcher: sharded}
           - {scenario: import, backend: mysql}
           - {scenario: import, backend: pgsql}
@@ -94,9 +95,12 @@ jobs:
           - {scenario: queue, backend: mysql}
           - {scenario: passkey, backend: pgsql}
           - {scenario: passkey, backend: mysql}
-          - {scenario: http, backend: pgsql, host: native}
-          - {scenario: http, backend: mysql, host: native}
-          - {scenario: http, backend: pgsql, host: fpm, php: '8.4'}
+          - {scenario: http, backend: pgsql, host: native, matcher: fused}
+          - {scenario: http, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: http, backend: mysql, host: native, matcher: fused}
+          - {scenario: http, backend: mysql, host: native, matcher: sharded}
+          - {scenario: http, backend: pgsql, host: fpm, php: '8.4', matcher: fused}
+          - {scenario: http, backend: pgsql, host: fpm, php: '8.4', matcher: sharded}
           - {scenario: protocols, backend: pgsql}
           - {scenario: operations, backend: pgsql}
           - {scenario: storage, backend: pgsql}

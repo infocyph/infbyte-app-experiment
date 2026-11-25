@@ -71,3 +71,7 @@ I: independent lanes for shared row locking, bounded real lock waits and release
 ## B15 — relations and built-in driver matrix
 
 I: DB-11 bounded one/many/many-to-many (duplicate parents, empty results and query-count ceilings), declared repository nested eager loading, one-of-many and counts on MySQL/PostgreSQL/SQLite. I: DB-08/10 driver capability, window rank, upsert, unsupported conflict policy, returning and savepoint on all five built-in drivers (real MariaDB and SQL Server services added; SQL Server PHP 8.4 extension lane). DB-10 PostgreSQL insert-ignore is explicitly documented unsupported; assert rejection instead of requiring unsupported behavior. Remaining: through/polymorphic relation variants, all driver operations per dialect, actual MariaDB/MySQL replication, proxy, extensions/TLS and other rows. Hosted results pending.
+
+## B16 — route matcher acceptance policy
+
+I: use fused and sharded exclusively, with both matchers on native and PHP-FPM browser lanes and on every existing authenticated HTTP host/database combination. Apply explicit matcher configuration to both scenarios, reject other laboratory matcher values. Historical generated-lane findings remain in previous run records; typed-route and authenticated-readiness reproductions remain mandatory. Hosted verification pending.

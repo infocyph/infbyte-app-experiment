@@ -111,3 +111,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B15 — database relations and five-driver capability lanes
 - [x] Add eight independent hosted jobs: three bounded relation/declared eager-loading lanes and five real driver capability/query/transaction lanes (MariaDB and SQL Server added).
 - [ ] Hosted evidence, full relation/dialect expansion and remaining ecosystem work. No library modifications.
+
+## B16 — fused/sharded production routing matrix
+- [x] Replace generated-only browser lane with fused/sharded parity across native/FPM; add both matchers to all authenticated HTTP deployment combinations. Explicit matcher configuration applies to both workloads.
+- [ ] Hosted qualification. Preserve historical failures, defer upstream fixes.

@@ -11,7 +11,7 @@ Status: **V** = verified by latest applicable hosted execution; **I** = implemen
 | F03 | Foundation authorization and risk | V: MySQL RBAC/delegation/revocation, B: PostgreSQL DISTINCT JSON; V: native shared risk authority/edge claim classification, challenge/clearance/replay, shadow and capacity bulkhead (B9 jobs 138980801092, 138980801152) | O: route-specific deployment, trusted vs untrusted edge headers, independent tenant resource policies, failure and outage |
 | F04 | Foundation OTP/passkey/OAuth/PAT | V: MySQL/PostgreSQL signed assertion, client credentials/PKCE/revocation; B: recovery factor ID width | O: full registration, all factor activation and step-up, OIDC ID token/UserInfo, refresh family, DPoP, PAT, key rotation and real OAuth HTTP endpoints |
 | F05 | Foundation scheduling, queues, resources, telemetry | V: scheduler contention, crash recovery, SQL restore, Redis recovery | O: process cancellation/timeouts/history, command failures, resource exhaustion and correlated logs, multi-service recovery |
-| W01 | Webrick routing, compiled dispatch, route cache | I: business API, 4-worker native and FPM blocked by readiness; V: consumer basic host | I: 404/405/OPTIONS/HEAD, named static/typed routes, fused/generated/sharded browser parity; O: groups/domain/resources/attributes and signed URL expiry/tampering |
+| W01 | Webrick routing, compiled dispatch, route cache | I: business API, 4-worker native and FPM blocked by readiness; V: consumer basic host | I: 404/405/OPTIONS/HEAD, named static/typed routes, fused/sharded browser and authenticated HTTP parity; O: groups/domain/resources/attributes and signed URL expiry/tampering |
 | W02 | Webrick HTTP policies | I: negotiation, compression/Vary, ETag, cookie flags and browser CSRF | O: CORS/credentials, request limits, encrypted cookies, rate/throttle, maintenance, error/linter/telemetry, response caching and invalidation |
 | W03 | Webrick file/stream/host boundaries | O | multipart safe upload, range/conditional attachment, HEAD, SSE/chunked/disconnect; FPM, native, Swoole, OpenSwoole, RoadRunner, Workerman, FrankenPHP where supported |
 | R01 | Runwire process lifecycle | V: gRPC independent processes and worker fixture scopes; I: host restart/soak | O: portable vs prefork, crash/recycle/reload/control socket, drain, signal/deadline/timeout, worker limits/CPU quotas, child cleanup |
@@ -71,3 +71,5 @@ B13 adds 18 independent DBLayer data-plane jobs across MySQL/PostgreSQL/SQLite. 
 B14 adds database operational scenarios; see the detailed expansion register. Status I until hosted evidence.
 
 B15 adds five-driver mechanics and bounded relationship lanes. Remaining relation variants and per-driver coverage are explicitly open in the detailed expansion register.
+
+B16 sets fused/sharded as the only acceptance matchers for both production HTTP workloads. Historical generated matcher execution remains evidence, not a required current lane.

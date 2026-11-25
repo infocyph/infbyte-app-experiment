@@ -89,6 +89,12 @@ function configuration(): array
             ]],
         ]],
     ];
+    if (in_array(getenv('SCENARIO'), ['http', 'browser'], true)) {
+        $matcher = getenv('LAB_MATCHER') ?: 'fused';
+        ensure(in_array($matcher, ['fused', 'sharded'], true), 'Unsupported laboratory matcher.');
+        $config['router'] = ['matcher' => $matcher];
+    }
+
     if (getenv('SCENARIO') === 'http') {
         $config['app']['env'] = 'production';
         $config['app']['debug'] = false;
@@ -109,7 +115,6 @@ function configuration(): array
         $config['app']['debug'] = false;
         $config['app']['capabilities'] = ['cache', 'session', 'filesystem', 'runwire'];
         $config['cache']['serialization'] = ['allow_object_payloads' => false, 'allow_closure_payloads' => false];
-        $config['router'] = ['matcher' => getenv('LAB_MATCHER') ?: 'fused'];
         $config['session'] = [
             'driver' => 'cache',
             'stores' => ['cache' => ['store' => 'shared']],
