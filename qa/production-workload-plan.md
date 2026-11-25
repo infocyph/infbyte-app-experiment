@@ -107,3 +107,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B14 — database operational mechanics
 - [x] Add ten independent hosted lanes for locking/isolation, pool lifecycle, query budgets, SQLite WAL and physical standby replay/outage/restart.
 - [ ] Hosted evidence and remaining detailed cases. Library remediation deferred.
+
+## B15 — database relations and five-driver capability lanes
+- [x] Add eight independent hosted jobs: three bounded relation/declared eager-loading lanes and five real driver capability/query/transaction lanes (MariaDB and SQL Server added).
+- [ ] Hosted evidence, full relation/dialect expansion and remaining ecosystem work. No library modifications.

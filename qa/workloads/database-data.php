@@ -120,7 +120,14 @@ function queryWorkload(Connection $db): void
         ['id' => 201, 'tenant_id' => 1, 'amount' => 11, 'label' => 'inserted'],
     ], ['id'], ['amount', 'label']);
     check($db->table('lab_records')->count() === 201 && (int) $db->table('lab_records')->where('id', '=', 1)->value('amount') === 22, 'Upsert mismatch.');
-    $db->table('lab_records')->insertIgnore(['id' => 1, 'tenant_id' => 1, 'amount' => 99, 'label' => 'ignore']);
+    $ignore = static fn() => $db->table('lab_records')->insertIgnore(['id' => 1, 'tenant_id' => 1, 'amount' => 99, 'label' => 'ignore']);
+    if ($db->getDriverName() === 'pgsql') {
+        check(!$db->supportsInsertIgnore(), 'Unexpected documented PostgreSQL insert-ignore capability.');
+        rejected($ignore, 'Unsupported insert-ignore unexpectedly accepted.');
+    } else {
+        check($db->supportsInsertIgnore(), 'Expected insert-ignore capability missing.');
+        $ignore();
+    }
     check((int) $db->table('lab_records')->where('id', '=', 1)->value('amount') === 22, 'Insert-ignore mutated existing row.');
     check($db->table('lab_records')->where('id', '=', 1)->getBindings() === [1], 'Bindings mismatch.');
     echo "Builder composition, aggregates, CTE, union, upsert and conflict handling passed\n";

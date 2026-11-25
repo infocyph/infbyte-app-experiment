@@ -69,3 +69,5 @@ See [production-capability-expansion.md](production-capability-expansion.md) for
 B13 adds 18 independent DBLayer data-plane jobs across MySQL/PostgreSQL/SQLite. See detailed expansion register for scenario-level I/O boundaries; no upstream remediation.
 
 B14 adds database operational scenarios; see the detailed expansion register. Status I until hosted evidence.
+
+B15 adds five-driver mechanics and bounded relationship lanes. Remaining relation variants and per-driver coverage are explicitly open in the detailed expansion register.

@@ -29,10 +29,18 @@ function config(array $overrides = []): ConnectionConfig
         ], $overrides));
     }
 
+    if ($driver === 'mssql') {
+        return ConnectionConfig::fromArray(array_replace([
+            'driver' => 'mssql', 'host' => '127.0.0.1', 'port' => 1433,
+            'database' => 'experiment', 'username' => 'sa', 'password' => 'Experiment-Only-42!',
+            'encrypt' => true, 'trust_server_certificate' => true,
+        ], $overrides));
+    }
+
     return ConnectionConfig::fromArray(array_replace([
         'driver' => $driver,
         'host' => '127.0.0.1',
-        'port' => $driver === 'pgsql' ? 5432 : 3306,
+        'port' => match ($driver) { 'pgsql' => 5432, 'mariadb' => 3307, default => 3306 },
         'database' => 'experiment',
         'username' => 'experiment',
         'password' => 'experiment',
@@ -253,9 +261,12 @@ function replicas(Connection $primary): void
 
 require __DIR__ . '/database-data.php';
 require __DIR__ . '/database-operations.php';
+require __DIR__ . '/database-relations.php';
 
 $db = new Connection(config());
 match ($argv[1] ?? '') {
+    'driver' => driverWorkload($db),
+    'relations' => relationsWorkload($db),
     'lock-wait' => lockWait($db),
     'pool-lifecycle' => poolLifecycle($db),
     'budgets' => budgets($db),

@@ -2,6 +2,17 @@
 set -euo pipefail
 probe="$GITHUB_WORKSPACE/qa/workloads/database.php"
 case "$SCENARIO" in
+  db-driver)
+    if [[ "$DB_BACKEND" == mssql ]]; then
+      ready=0
+      for attempt in $(seq 1 60); do
+        if php -r 'try {$pdo=new PDO("sqlsrv:Server=127.0.0.1,1433;Database=master;Encrypt=yes;TrustServerCertificate=yes;LoginTimeout=2","sa","Experiment-Only-42!"); $pdo->exec("CREATE DATABASE experiment");} catch (PDOException $e) {fwrite(STDERR,$e->getMessage().PHP_EOL);exit(1);}'; then ready=1; break; fi
+        sleep 2
+      done
+      test "$ready" = 1
+    fi
+    php "$probe" driver | tee "$EVIDENCE/database.log" ;;
+  db-relations) php "$probe" relations | tee "$EVIDENCE/database.log" ;;
   db-schema|db-query|db-repository|db-query-cache|db-stream|db-security|db-lock-wait|db-pool-lifecycle|db-budgets|db-isolation|db-wal)
     php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-transactions) php "$probe" transactions | tee "$EVIDENCE/database.log" ;;

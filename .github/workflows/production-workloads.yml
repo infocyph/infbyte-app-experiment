@@ -15,6 +15,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-driver, backend: mysql}
+          - {scenario: db-driver, backend: pgsql}
+          - {scenario: db-driver, backend: sqlite}
+          - {scenario: db-driver, backend: mariadb}
+          - {scenario: db-driver, backend: mssql, php: '8.4'}
+          - {scenario: db-relations, backend: mysql}
+          - {scenario: db-relations, backend: pgsql}
+          - {scenario: db-relations, backend: sqlite}
           - {scenario: db-lock-wait, backend: mysql}
           - {scenario: db-lock-wait, backend: pgsql}
           - {scenario: db-pool-lifecycle, backend: mysql}
@@ -112,6 +120,22 @@ jobs:
           MYSQL_ROOT_PASSWORD: experiment-root
         ports: ['3306:3306']
         options: --health-cmd "mysqladmin ping -h localhost --silent" --health-interval 5s --health-timeout 5s --health-retries 20
+      mariadb:
+        image: ${{ matrix.backend == 'mariadb' && 'mariadb:11.4' || '' }}
+        env:
+          MARIADB_DATABASE: experiment
+          MARIADB_USER: experiment
+          MARIADB_PASSWORD: experiment
+          MARIADB_ROOT_PASSWORD: experiment-root
+        ports: ['3307:3306']
+        options: --health-cmd "healthcheck.sh --connect --innodb_initialized" --health-interval 5s --health-timeout 5s --health-retries 20
+      mssql:
+        image: ${{ matrix.backend == 'mssql' && 'mcr.microsoft.com/mssql/server:2022-latest' || '' }}
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_PID: Developer
+          MSSQL_SA_PASSWORD: 'Experiment-Only-42!'
+        ports: ['1433:1433']
       redis:
         image: redis:8
         ports: ['6379:6379']
@@ -141,7 +165,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php || '8.6' }}
-          extensions: pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, curl, mbstring, intl, sodium, zip, fileinfo${{ matrix.scenario == 'cache-memcached' && ', memcached' || '' }}
+          extensions: pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, curl, mbstring, intl, sodium, zip, fileinfo${{ matrix.scenario == 'cache-memcached' && ', memcached' || '' }}${{ matrix.backend == 'mssql' && ', pdo_sqlsrv' || '' }}
           tools: composer:v2
           coverage: none
       - name: Set up isolated runner paths
