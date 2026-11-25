@@ -1291,10 +1291,10 @@ jobs:
           - {scenario: ecosystem-webdav-archive-collision, backend: pgsql}
           - {scenario: ecosystem-webdav-archive-encrypted, backend: pgsql}
           - {scenario: ecosystem-webdav-archive-traversal, backend: pgsql}
-          - {scenario: ecosystem-gridfs-archive-selection, backend: pgsql}
-          - {scenario: ecosystem-gridfs-archive-collision, backend: pgsql}
-          - {scenario: ecosystem-gridfs-archive-encrypted, backend: pgsql}
-          - {scenario: ecosystem-gridfs-archive-traversal, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-selection, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-archive-collision, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-archive-encrypted, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-archive-traversal, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-sftp2-archive-selection, backend: pgsql}
           - {scenario: ecosystem-sftp2-archive-collision, backend: pgsql}
           - {scenario: ecosystem-sftp2-archive-encrypted, backend: pgsql}
@@ -1526,9 +1526,9 @@ jobs:
           - {scenario: ecosystem-webdav-archive-outage-source, backend: pgsql}
           - {scenario: ecosystem-webdav-archive-outage-save, backend: pgsql}
           - {scenario: ecosystem-webdav-archive-outage-extract, backend: pgsql}
-          - {scenario: ecosystem-gridfs-archive-outage-source, backend: pgsql}
-          - {scenario: ecosystem-gridfs-archive-outage-save, backend: pgsql}
-          - {scenario: ecosystem-gridfs-archive-outage-extract, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-outage-source, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-archive-outage-save, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-archive-outage-extract, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-async-s3-archive-outage-source, backend: pgsql}
           - {scenario: ecosystem-async-s3-archive-outage-save, backend: pgsql}
           - {scenario: ecosystem-async-s3-archive-outage-extract, backend: pgsql}

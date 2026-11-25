@@ -119,7 +119,7 @@ foreach (explode("\n", trim($raw)) as $line) {
         $id = basename($context['path']);
         if (isset($expected[$id]['failure'])) {
             ensure($context['request_id'] === 'lab-' . $id && $context['exception']['class'] === \RuntimeException::class
-                && !isset($context['exception']['message'], $context['exception']['trace']), 'Exception logging policy differed.');
+                && !array_key_exists('message', $context['exception']) && !array_key_exists('trace', $context['exception']), 'Exception logging policy differed.');
             $seen[$id]['failure'] = ($seen[$id]['failure'] ?? 0) + 1;
         }
     }

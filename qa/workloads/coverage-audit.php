@@ -38,15 +38,31 @@ function auditMatrix(string $repository, string $workloads): array
     $stress = substr($stress, strpos($stress, '$scenario = match'), strpos($stress, '$mode =') - strpos($stress, '$scenario = match'));
     $rows = [];
     $scenarios = [];
+    $routes = [];
+    $dimensions = ['backend' => [], 'host' => [], 'matcher' => [], 'php' => []];
     foreach ($matches as $match) {
         $scenario = trim($match[1]);
         $row = ['scenario' => $scenario, 'backend' => '', 'host' => 'worker', 'matcher' => 'fused', 'php' => '8.6'];
+        $fields = ['scenario' => true];
         foreach (explode(',', ltrim($match[2], ',')) as $part) {
+            auditAssert(str_contains($part, ':'), 'Malformed matrix field: ' . $scenario);
             [$key, $value] = array_map('trim', explode(':', $part, 2));
-            auditAssert(array_key_exists($key, $row), 'Unknown matrix key: ' . $key);
+            auditAssert(array_key_exists($key, $row) && !isset($fields[$key]), 'Unknown or repeated matrix key: ' . $key);
+            $fields[$key] = true;
             $row[$key] = trim($value, "'\"");
         }
-        auditAssert($row['backend'] !== '' && in_array($row['matcher'], ['fused', 'sharded'], true), 'Invalid backend or route matcher: ' . $scenario);
+        auditAssert(in_array($row['backend'], ['pgsql', 'mysql', 'mariadb', 'sqlite', 'mssql'], true)
+            && in_array($row['host'], ['worker', 'native', 'fpm', 'frankenphp', 'roadrunner', 'swoole', 'openswoole'], true)
+            && in_array($row['matcher'], ['fused', 'sharded'], true)
+            && in_array($row['php'], ['8.4', '8.5', '8.6'], true), 'Invalid matrix dimension: ' . $scenario);
+        if ($scenario === 'ecosystem-mongodb' || str_starts_with($scenario, 'ecosystem-cache-mongodb-') || str_starts_with($scenario, 'ecosystem-gridfs')) {
+            auditAssert($row['php'] === '8.4', 'MongoDB extension provisioning uses PHP 8.4: ' . $scenario);
+        }
+        foreach ($dimensions as $dimension => &$counts) {
+            $value = $row[$dimension];
+            $counts[$value] = ($counts[$value] ?? 0) + 1;
+        }
+        unset($counts);
         $key = implode('|', $row);
         auditAssert(!isset($rows[$key]), 'Duplicate normalized matrix row: ' . $key);
         $rows[$key] = $row;
@@ -54,11 +70,14 @@ function auditMatrix(string $repository, string $workloads): array
         if (str_starts_with($scenario, 'ecosystem-')) {
             $route = auditShellRoute($ecosystem, $scenario);
             auditAssert($route !== null, 'Missing ecosystem dispatch: ' . $scenario);
+            $routes[$scenario] = $route;
             if ($route === 'ecosystem-*') {
                 auditAssert(str_contains($direct, "'" . substr($scenario, 10) . "' =>"), 'Missing PHP ecosystem branch: ' . $scenario);
             }
         } elseif (str_starts_with($scenario, 'db-')) {
-            auditAssert(auditShellRoute($database, $scenario) !== null, 'Missing database dispatch: ' . $scenario);
+            $route = auditShellRoute($database, $scenario);
+            auditAssert($route !== null, 'Missing database dispatch: ' . $scenario);
+            $routes[$scenario] = $route;
         } elseif (in_array($scenario, ['browser-file', 'browser-database', 'browser-policy-cors', 'browser-policy-representation', 'browser-policy-trace', 'browser-policy-errors'], true)) {
             auditAssert(auditShellRoute(auditRead($workloads . '/http.sh'), $scenario) !== null, 'Missing session storage dispatch: ' . $scenario);
         } elseif (!in_array($scenario, ['http', 'browser', 'operations', 'transfer', 'transfer-cleanup', 'oauth-http'], true)) {
@@ -85,8 +104,24 @@ function auditMatrix(string $repository, string $workloads): array
     }
     auditAssert(count($shardCounts) === 8 && array_sum($shardCounts) === count($rows), 'Incomplete matrix shard inventory.');
     ksort($scenarios);
+    ksort($routes);
+    foreach ($dimensions as &$counts) {
+        ksort($counts);
+        auditAssert(array_sum($counts) === count($rows), 'Incomplete matrix dimension accounting.');
+    }
+    unset($counts);
 
-    return ['matrix_rows' => count($rows), 'matrix_shards' => $shardCounts, 'unique_scenarios' => array_keys($scenarios), 'rows' => array_values($rows)];
+    $engineering = auditRead($repository . '/.github/workflows/phpprobe-acceptance.yml');
+    auditAssert(preg_match('/^\h+mode:\h*\[([^\]]+)\]/m', $engineering, $modes) === 1, 'Missing PHPProbe mode matrix.');
+    $probeModes = array_map('trim', explode(',', $modes[1]));
+    auditAssert(count(array_unique($probeModes)) === count($probeModes), 'Duplicate PHPProbe mode.');
+    $probe = auditRead($workloads . '/phpprobe.sh');
+    foreach ($probeModes as $mode) {
+        auditAssert(auditShellRoute($probe, $mode) !== null, 'Missing PHPProbe dispatch: ' . $mode);
+    }
+
+    return ['matrix_rows' => count($rows), 'matrix_shards' => $shardCounts, 'unique_scenarios' => array_keys($scenarios),
+        'dimensions' => $dimensions, 'shell_routes' => $routes, 'engineering_modes' => $probeModes, 'rows' => array_values($rows)];
 }
 
 function auditShellRoute(string $source, string $scenario): ?string
@@ -201,4 +236,4 @@ ksort($packages);
 $inventory = ['matrix' => $matrix, 'source_declarations' => $packages, 'qualification' => 'Lexical declarations and dispatch only; no behavioral coverage claims.'];
 $encoded = json_encode($inventory, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
 auditAssert(file_put_contents($evidence . '/public-api-inventory.json', $encoded, LOCK_EX) === strlen($encoded), 'Inventory evidence write failed.');
-echo json_encode(['matrix_rows' => $matrix['matrix_rows'], 'scenario_count' => count($matrix['unique_scenarios']), 'packages' => array_map(static fn(array $package): array => ['version' => $package['version'], 'declared_types' => count($package['types'])], $packages)], JSON_THROW_ON_ERROR), PHP_EOL;
+echo json_encode(['matrix_rows' => $matrix['matrix_rows'], 'scenario_count' => count($matrix['unique_scenarios']), 'engineering_count' => count($matrix['engineering_modes']), 'packages' => array_map(static fn(array $package): array => ['version' => $package['version'], 'declared_types' => count($package['types'])], $packages)], JSON_THROW_ON_ERROR), PHP_EOL;
