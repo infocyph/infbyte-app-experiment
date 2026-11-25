@@ -38,6 +38,7 @@ function evidenceDirectory(): string
 require __DIR__ . '/ecosystem-data.php';
 require __DIR__ . '/ecosystem-security.php';
 require __DIR__ . '/ecosystem-runtime.php';
+require __DIR__ . '/ecosystem-runwire-outbound.php';
 require __DIR__ . '/ecosystem-runtime-budget.php';
 require __DIR__ . '/ecosystem-messaging.php';
 require __DIR__ . '/ecosystem-messaging-events.php';
@@ -113,6 +114,30 @@ require __DIR__ . '/ecosystem-module-dependencies.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'runwire-outbound-h1-get' => runwireOutboundContracts('h1', 'get'),
+    'runwire-outbound-h1-head' => runwireOutboundContracts('h1', 'head'),
+    'runwire-outbound-h1-binary' => runwireOutboundContracts('h1', 'binary'),
+    'runwire-outbound-h1-no-content' => runwireOutboundContracts('h1', 'no-content'),
+    'runwire-outbound-h1-not-modified' => runwireOutboundContracts('h1', 'not-modified'),
+    'runwire-outbound-h1-not-found' => runwireOutboundContracts('h1', 'not-found'),
+    'runwire-outbound-h1-unavailable' => runwireOutboundContracts('h1', 'unavailable'),
+    'runwire-outbound-h1-short' => runwireOutboundContracts('h1', 'short'),
+    'runwire-outbound-h1-long' => runwireOutboundContracts('h1', 'long'),
+    'runwire-outbound-h1-disconnect' => runwireOutboundContracts('h1', 'disconnect'),
+    'runwire-outbound-h1-deadline' => runwireOutboundContracts('h1', 'deadline'),
+    'runwire-outbound-h1-cancel' => runwireOutboundContracts('h1', 'cancel'),
+    'runwire-outbound-h2-get' => runwireOutboundContracts('h2', 'get'),
+    'runwire-outbound-h2-head' => runwireOutboundContracts('h2', 'head'),
+    'runwire-outbound-h2-binary' => runwireOutboundContracts('h2', 'binary'),
+    'runwire-outbound-h2-no-content' => runwireOutboundContracts('h2', 'no-content'),
+    'runwire-outbound-h2-not-modified' => runwireOutboundContracts('h2', 'not-modified'),
+    'runwire-outbound-h2-not-found' => runwireOutboundContracts('h2', 'not-found'),
+    'runwire-outbound-h2-unavailable' => runwireOutboundContracts('h2', 'unavailable'),
+    'runwire-outbound-h2-short' => runwireOutboundContracts('h2', 'short'),
+    'runwire-outbound-h2-long' => runwireOutboundContracts('h2', 'long'),
+    'runwire-outbound-h2-disconnect' => runwireOutboundContracts('h2', 'disconnect'),
+    'runwire-outbound-h2-deadline' => runwireOutboundContracts('h2', 'deadline'),
+    'runwire-outbound-h2-cancel' => runwireOutboundContracts('h2', 'cancel'),
     'worker-budget' => workerBudgetWorkload(),
     'conditional-modules' => conditionalModulesWorkload(),
     'cache-redis-cluster-tls-trust' => clusterTlsContracts('trust'),

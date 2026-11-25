@@ -1921,6 +1921,30 @@ jobs:
           - {scenario: ecosystem-sftp2-order-rename-after, backend: mariadb}
           - {scenario: ecosystem-sftp2-order-rename-after, backend: sqlite}
           - {scenario: ecosystem-sftp2-order-rename-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-runwire-outbound-h1-get, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h1-head, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h1-binary, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h1-no-content, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h1-not-modified, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h1-not-found, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h1-unavailable, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h1-short, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h1-long, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h1-disconnect, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h1-deadline, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h1-cancel, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-get, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-head, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-binary, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-no-content, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-not-modified, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-not-found, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-unavailable, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-short, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-long, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-disconnect, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-deadline, backend: pgsql}
+          - {scenario: ecosystem-runwire-outbound-h2-cancel, backend: pgsql}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

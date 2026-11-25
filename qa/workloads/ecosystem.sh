@@ -58,6 +58,7 @@ case "$SCENARIO" in
   ecosystem-remote-order-recovery) bash "$GITHUB_WORKSPACE/qa/workloads/remote-order-recovery.sh" ;;
   ecosystem-connected|ecosystem-recovery|ecosystem-active-recovery) bash "$GITHUB_WORKSPACE/qa/workloads/connected.sh" ;;
   ecosystem-core-lifecycle) bash "$GITHUB_WORKSPACE/qa/workloads/core-lifecycle.sh" ;;
+  ecosystem-runwire-outbound-*) bash "$GITHUB_WORKSPACE/qa/workloads/runwire-outbound.sh" ;;
   ecosystem-*) php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log" ;;
   *) echo "Unknown ecosystem scenario" >&2; exit 1 ;;
 esac
