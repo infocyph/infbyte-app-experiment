@@ -1287,6 +1287,54 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: browser-file, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser-file, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser-file, backend: pgsql, host: fpm, matcher: fused, php: '8.4'}
+          - {scenario: browser-file, backend: pgsql, host: fpm, matcher: sharded, php: '8.4'}
+          - {scenario: browser-file, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser-file, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-file, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser-file, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-file, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
+          - {scenario: browser-file, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
+          - {scenario: browser-file, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
+          - {scenario: browser-file, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
+          - {scenario: browser-database, backend: pgsql, host: native, matcher: fused}
+          - {scenario: browser-database, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: browser-database, backend: pgsql, host: fpm, matcher: fused, php: '8.4'}
+          - {scenario: browser-database, backend: pgsql, host: fpm, matcher: sharded, php: '8.4'}
+          - {scenario: browser-database, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser-database, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-database, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser-database, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-database, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
+          - {scenario: browser-database, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
+          - {scenario: browser-database, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
+          - {scenario: browser-database, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
+          - {scenario: browser-database, backend: mysql, host: native, matcher: fused}
+          - {scenario: browser-database, backend: mysql, host: native, matcher: sharded}
+          - {scenario: browser-database, backend: mysql, host: fpm, matcher: fused, php: '8.4'}
+          - {scenario: browser-database, backend: mysql, host: fpm, matcher: sharded, php: '8.4'}
+          - {scenario: browser-database, backend: mysql, host: roadrunner, matcher: fused}
+          - {scenario: browser-database, backend: mysql, host: roadrunner, matcher: sharded}
+          - {scenario: browser-database, backend: mysql, host: frankenphp, matcher: fused}
+          - {scenario: browser-database, backend: mysql, host: frankenphp, matcher: sharded}
+          - {scenario: browser-database, backend: mysql, host: swoole, matcher: fused, php: '8.5'}
+          - {scenario: browser-database, backend: mysql, host: swoole, matcher: sharded, php: '8.5'}
+          - {scenario: browser-database, backend: mysql, host: openswoole, matcher: fused, php: '8.6'}
+          - {scenario: browser-database, backend: mysql, host: openswoole, matcher: sharded, php: '8.6'}
+          - {scenario: browser-database, backend: mariadb, host: native, matcher: fused}
+          - {scenario: browser-database, backend: mariadb, host: native, matcher: sharded}
+          - {scenario: browser-database, backend: mariadb, host: fpm, matcher: fused, php: '8.4'}
+          - {scenario: browser-database, backend: mariadb, host: fpm, matcher: sharded, php: '8.4'}
+          - {scenario: browser-database, backend: mariadb, host: roadrunner, matcher: fused}
+          - {scenario: browser-database, backend: mariadb, host: roadrunner, matcher: sharded}
+          - {scenario: browser-database, backend: mariadb, host: frankenphp, matcher: fused}
+          - {scenario: browser-database, backend: mariadb, host: frankenphp, matcher: sharded}
+          - {scenario: browser-database, backend: mariadb, host: swoole, matcher: fused, php: '8.5'}
+          - {scenario: browser-database, backend: mariadb, host: swoole, matcher: sharded, php: '8.5'}
+          - {scenario: browser-database, backend: mariadb, host: openswoole, matcher: fused, php: '8.6'}
+          - {scenario: browser-database, backend: mariadb, host: openswoole, matcher: sharded, php: '8.6'}
           - {scenario: browser, backend: pgsql, host: roadrunner, matcher: fused}
           - {scenario: browser, backend: pgsql, host: roadrunner, matcher: sharded}
           - {scenario: browser, backend: pgsql, host: frankenphp, matcher: fused}

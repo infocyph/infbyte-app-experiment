@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 unset COMPOSER_NO_DEV
+case "$SCENARIO" in
+  browser-file|browser-database)
+    export LAB_SESSION_DRIVER="${SCENARIO#browser-}"
+    export SCENARIO=browser
+    ;;
+esac
 export AUTH_TOKEN_SECRET="$(php -r 'echo bin2hex(random_bytes(32));')"
 export AUTH_OTP_RECOVERY_HMAC_KEY="$(php -r 'echo bin2hex(random_bytes(32));')"
 export AUTH_OTP_PROTECTION_KEY="$(php -r 'echo rtrim(strtr(base64_encode(random_bytes(32)), "+/", "-_"), "=");')"
@@ -18,6 +24,9 @@ if [[ "$SCENARIO" == oauth-http ]]; then
 fi
 php "$GITHUB_WORKSPACE/qa/workloads/prepare-http.php"
 if [[ "$SCENARIO" == browser ]]; then
+  if [[ -n "${LAB_SESSION_DRIVER:-}" ]]; then
+    php "$GITHUB_WORKSPACE/qa/workloads/browser-storage-probe.php" install
+  fi
   mkdir -p "$PROJECT/storage/lab-public"
   php -r 'file_put_contents($argv[1],str_repeat("0123456789abcdef",8192),LOCK_EX);' "$PROJECT/storage/lab-public/report.bin"
 elif [[ "$SCENARIO" == oauth-http ]]; then
@@ -175,6 +184,9 @@ if [[ "$SCENARIO" == browser ]]; then
   if (( failed )); then cat "$EVIDENCE"/browser-error-*.log >&2; exit 1; fi
   php "$GITHUB_WORKSPACE/qa/workloads/report.php" 200 "$(( $(php -r 'echo intdiv(hrtime(true), 1000000);') - start ))" 8 "$EVIDENCE"/browser-*.jsonl | tee "$EVIDENCE/browser-summary.json"
   stop_host
+  if [[ -n "${LAB_SESSION_DRIVER:-}" ]]; then
+    php "$GITHUB_WORKSPACE/qa/workloads/browser-storage-probe.php" observe 200 | tee "$EVIDENCE/browser-storage.json"
+  fi
   start_host
   php "$client" verify 200
   stop_host

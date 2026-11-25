@@ -122,6 +122,16 @@ function configuration(): array
             'lock' => ['enabled' => true, 'store' => 'shared', 'wait' => 10.0, 'lease' => 30.0],
             'csrf' => ['check_origin' => true, 'origin' => 'https://experiment.test'],
         ];
+        $sessionDriver = getenv('LAB_SESSION_DRIVER') ?: 'cache';
+        ensure(in_array($sessionDriver, ['cache', 'file', 'database'], true), 'Unknown browser session driver.');
+        $config['session']['driver'] = $sessionDriver;
+        if ($sessionDriver === 'file') {
+            $config['app']['topology'] = 'single_node';
+            $config['session']['stores']['file'] = ['path' => $root . '/storage/lab-sessions'];
+        } elseif ($sessionDriver === 'database') {
+            $config['app']['capabilities'][] = 'database';
+            $config['session']['stores']['database'] = ['connection' => 'main', 'table' => 'lab_browser_sessions'];
+        }
     }
 
     if (in_array(getenv('SCENARIO'), ['ecosystem-connected', 'ecosystem-recovery', 'ecosystem-active-recovery'], true)) {
