@@ -287,3 +287,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B59 — broker DLQ and FIFO
 - [x] RabbitMQ dead-letter/reconnection and SQS-compatible FIFO/deduplication lanes.
 - [ ] Hosted verification, provider-specific TLS/outage and acknowledgement uncertainty.
+
+## B60 — authentication and replay lifecycle
+- [x] Four actual SQL/Redis auth lifecycle and distributed replay lanes.
+- [ ] Hosted qualification and remaining HTTP/conditional auth variants.

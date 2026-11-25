@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+export AUTH_TOKEN_SECRET="$(php -r 'echo bin2hex(random_bytes(32));')"
+export AUTH_OTP_RECOVERY_HMAC_KEY="$(php -r 'echo bin2hex(random_bytes(32));')"
+export AUTH_OTP_PROTECTION_KEY="$(php -r 'echo rtrim(strtr(base64_encode(random_bytes(32)), "+/", "-_"), "=");')"
+if [[ "$SCENARIO" == ecosystem-jwt-replay ]]; then
+  mkdir -p "$PROJECT/storage/lab-oauth-keys"
+  openssl ecparam -name prime256v1 -genkey -noout -out "$PROJECT/storage/lab-oauth-keys/private.pem"
+  openssl ec -in "$PROJECT/storage/lab-oauth-keys/private.pem" -pubout -out "$PROJECT/storage/lab-oauth-keys/public.pem"
+fi
+probe="$GITHUB_WORKSPACE/qa/workloads/auth-lifecycle.php"
+php "$probe" setup
+if [[ "$SCENARIO" == ecosystem-auth-lifecycle ]]; then
+  php "$probe" lifecycle | tee "$EVIDENCE/auth-lifecycle.log"
+  exit
+fi
+export LAB_REPLAY_EXPIRY="$(php -r 'echo time()+600;')"
+pids=()
+for worker in $(seq 1 12); do
+  php "$probe" replay-race > "$EVIDENCE/replay-$worker.txt" &
+  pids+=("$!")
+done
+failed=0
+for pid in "${pids[@]}"; do if ! wait "$pid"; then failed=1; fi; done
+(( failed == 0 ))
+awk 'BEGIN{total=0} /^[01]$/{total+=$1;next}{exit 1} END{if(NR!=12 || total!=1) exit 1}' "$EVIDENCE"/replay-*.txt
+php "$probe" replay-verify | tee "$EVIDENCE/replay-verify.log"

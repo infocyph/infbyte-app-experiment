@@ -159,3 +159,5 @@ B57 adds remote JWKS integration with real TLS fixture and Redis cache; explicit
 B58 adds a real PostgreSQL protocol-level lost COMMIT acknowledgement test; not a simulated callback failure.
 
 B59 adds actual AMQP dead-letter routing and unacknowledged recovery plus SQS-compatible FIFO order and deduplication.
+
+B60 adds account lockout, device trust, remember family rotation and independent SQL replay race.

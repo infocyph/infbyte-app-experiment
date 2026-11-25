@@ -15,6 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-auth-lifecycle, backend: mysql}
+          - {scenario: ecosystem-jwt-replay, backend: mysql}
+          - {scenario: ecosystem-auth-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-jwt-replay, backend: pgsql}
           - {scenario: ecosystem-amqp-dlq, backend: pgsql}
           - {scenario: ecosystem-sqs-fifo, backend: pgsql}
           - {scenario: db-commit-uncertain, backend: pgsql}

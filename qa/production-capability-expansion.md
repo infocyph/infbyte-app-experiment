@@ -247,3 +247,7 @@ I: PostgreSQL wire fault proxy forwards startup and real SQL traffic, observes t
 ## B59 — actual broker DLQ and FIFO boundaries
 
 I: RabbitMQ durable dead-letter exchange and unacknowledged connection closure with redelivery identity; ElasticMQ FIFO single-group ordering, in-flight group blocking and stable message-ID deduplication through the documented application-owned SQS adapter. No exactly-once business effect claim and no AWS production certification. Hosted verification pending; broker TLS/outage and ambiguous acknowledgement remain open. DATA/OPS: real backend effects and bounded waiting.
+
+## B60 — durable authentication lifecycle and distributed replay
+
+I: four jobs on MySQL/PostgreSQL. Account lock/suspend/disable and unlock, real Redis threshold lockout, durable device registration/trust/revocation/ownership, remember-token family rotation and replay-triggered revocation; separate published Foundation SQL Epicrypt replay-store race with 12 independent processes, exactly one winner and namespace isolation. No secret/token artifact output. SEC-01/09, DATA-01: authoritative account and replay state; hosted verification pending. Actual browser OAuth endpoints and conditional driver combinations remain open.

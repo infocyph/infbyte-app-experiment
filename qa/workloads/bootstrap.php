@@ -145,7 +145,7 @@ function configuration(): array
         $config['app']['capabilities'] = ['cache', 'database', 'filesystem', 'validation', 'runwire'];
     }
 
-    if (in_array(getenv('SCENARIO'), ['oauth', 'refresh', 'oidc', 'dpop'], true)) {
+    if (in_array(getenv('SCENARIO'), ['oauth', 'refresh', 'oidc', 'dpop', 'ecosystem-jwt-replay'], true)) {
         $keyRoot = $root . '/storage/lab-oauth-keys';
         $config['auth']['oauth'] = [
             'enabled' => true, 'issuer' => 'https://identity.example.test',
