@@ -565,3 +565,7 @@ I: a no-dev consumer lane adapts the published runtime's HTTP/1 socket-level bud
 ## B138 — OpenSSH SFTP rename settlement uncertainty
 
 I: independent loopback OpenSSH subsystem fixture forwards actual SFTP v3 packets to the native sftp-server. A bounded relay withholds the specific fixture rename request before forwarding, or observes the native success status then closes the channel without forwarding it. Both cases require Flysystem/Pathwise failure, explicit independent source/target reconciliation, tenant isolation and healthy fresh client; only the not-applied case is retried. Fixed fixture paths and one-shot markers detect automatic replay. No payload or password logging, no external target. 427 routine rows; hosted qualification pending (DATA, SEC, OPS, EXEC-03).
+
+## B139 — PHPProbe diagnostic acceptance extensions
+
+I: three independent engineering-only lanes exercise reference changed-only with complete declaration indexing, unchanged historical finding isolation, actual missing extension despite simulated Composer platform and PSR-4 mismatch, SARIF count parity; duplicate cache cold/warm, corrupt cache, content-change invalidation even with preserved size/mtime, mode/options and error thresholds; strict/parser comment mode, literal-string exclusion, marker filtering, PHPDoc mismatch, SARIF and invalid option handling. No production gate changes, suppressions or baseline additions. The separate engineering matrix grows from seven to ten; routine production rows remain 427. Hosted qualification pending (FLOW-01, FLOW-02, EXEC-03).

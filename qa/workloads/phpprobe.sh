@@ -180,6 +180,93 @@ PHP
     expect_exit 0 graph-cli.json graph --root="$root" src
     php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); $b=json_decode(file_get_contents($argv[2]),true,flags:JSON_THROW_ON_ERROR); if($a!==$b) exit(1);' "$evidence/graph-api.json" "$evidence/graph-cli.json"
     ;;
+reference-scope)
+    mkdir -p src/Contracts
+    php -r '$a=json_decode(file_get_contents("composer.json"),true,flags:JSON_THROW_ON_ERROR);$a["autoload"]["psr-4"]["Lab\\"]="src/";file_put_contents("composer.json",json_encode($a,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR));'
+    printf '%s\n' '<?php namespace Lab\Contracts; interface Payment {}' > src/Contracts/Payment.php
+    printf '%s\n' '<?php namespace Lab; final class Historical { public MissingHistorical $value; }' > src/Historical.php
+    printf '%s\n' '<?php namespace Lab; final class Current {}' > src/Current.php
+    git init -q
+    git config user.email playground@example.invalid
+    git config user.name Playground
+    git add src composer.json
+    git commit -qm baseline
+    base="$(git rev-parse HEAD)"
+    printf '%s\n' '<?php namespace Lab; final class Current { public \Lab\Contracts\Payment $value; }' > src/Current.php
+    expect_exit 0 reference-changed-valid.json reference --json --changed-only --changed-base="$base" src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);if($a["files_checked"]!==1||$a["findings"]!==[])exit(1);' "$evidence/reference-changed-valid.json"
+    printf '%s\n' '<?php namespace Lab; final class Current { public \Lab\Contracts\Paymant $value; }' > src/Current.php
+    expect_exit 1 reference-changed-invalid.json reference --json --changed-only --changed-base="$base" src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$f=$a["findings"];if(count($f)!==1||$f[0]["type"]!=="unknown_fqcn"||$f[0]["symbol"]!=="Lab\\Contracts\\Paymant"||$f[0]["candidates"][0]["fqcn"]!=="Lab\\Contracts\\Payment")exit(1);' "$evidence/reference-changed-invalid.json"
+    expect_exit 1 reference-full.json reference --json src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);if(count($a["findings"])!==2)exit(1);' "$evidence/reference-full.json"
+    printf '%s\n' '<?php namespace Lab; final class Current { public \Lab\Contracts\Payment $value; }' > src/Current.php
+    printf '%s\n' '<?php namespace Lab\Wrong; final class WrongLocation {}' > src/WrongLocation.php
+    php -r '$a=json_decode(file_get_contents("composer.json"),true,flags:JSON_THROW_ON_ERROR);$a["require"]["ext-phpprobe_fixture_missing"]="*";$a["config"]["platform"]["ext-phpprobe_fixture_missing"]="1.0";file_put_contents("fixture-composer.json",json_encode($a,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR));'
+    expect_exit 1 reference-extension.json reference --json --composer=fixture-composer.json src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$types=array_count_values(array_column($a["findings"],"type"));if($a["extensions_missing"]!==1||($types["missing_extension"]??0)!==1||($types["psr4_fqcn_mismatch"]??0)!==1||($types["unknown_fqcn"]??0)!==1)exit(1);' "$evidence/reference-extension.json"
+    expect_exit 1 reference-sarif.json reference --format=sarif --composer=fixture-composer.json src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);if($a["version"]!=="2.1.0"||count($a["runs"][0]["results"])!==3)exit(1);' "$evidence/reference-sarif.json"
+    ;;
+duplicate-cache)
+    mkdir -p left right
+    cat > left/Alpha.php <<'PHP'
+<?php
+final class Alpha
+{
+    public function render(array $items): array
+    {
+        $result = [];
+        foreach ($items as $item) {
+            $result[] = strtoupper((string) $item);
+        }
+        return $result;
+    }
+}
+PHP
+    sed -e 's/Alpha/Beta/g' -e 's/render/build/g' -e 's/items/values/g' -e 's/result/output/g' -e 's/item/value/g' left/Alpha.php > right/Beta.php
+    args=(duplicates --json --mode=gate --fuzzy --min-lines=5 --min-tokens=20 --cache-file="$root/clone-cache.json" --fail-on=warning left right)
+    expect_exit 1 clone-cold.json "${args[@]}"
+    expect_exit 1 clone-warm.json "${args[@]}"
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$b=json_decode(file_get_contents($argv[2]),true,flags:JSON_THROW_ON_ERROR);if($a["cache_hit"]!==false||$b["cache_hit"]!==true||$a["clones"]===[])exit(1);unset($a["cache_hit"],$b["cache_hit"]);if($a!==$b)exit(1);' "$evidence/clone-cold.json" "$evidence/clone-warm.json"
+    printf '{broken' > clone-cache.json
+    expect_exit 1 clone-corrupt.json "${args[@]}"
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$b=json_decode(file_get_contents($argv[2]),true,flags:JSON_THROW_ON_ERROR);if($b["cache_hit"]!==false||$a["clones"]!==$b["clones"])exit(1);' "$evidence/clone-cold.json" "$evidence/clone-corrupt.json"
+    expect_exit 1 clone-no-cache.json "${args[@]}" --no-cache
+    expect_exit 1 clone-audit.json "${args[@]}" --mode=audit
+    php -r 'foreach(array_slice($argv,1) as $p){$a=json_decode(file_get_contents($p),true,flags:JSON_THROW_ON_ERROR);if($a["cache_hit"]!==false||$a["clones"]===[])exit(1);}' "$evidence/clone-no-cache.json" "$evidence/clone-audit.json"
+    expect_exit 1 clone-error-threshold.json "${args[@]}" --fail-on=error --error-duplicate-percentage=0
+    expect_exit 2 clone-invalid-option.txt duplicates --mode=gate --min-tokens=0 left right
+    # Preserve the old size and modification timestamp, but change actual source bytes.
+    php -r '$p="right/Beta.php";$n=filesize($p);$t=filemtime($p);$s="<?php final class Beta {}";file_put_contents($p,str_pad($s,$n));touch($p,$t);'
+    expect_exit 0 clone-content-change.json "${args[@]}"
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);if($a["cache_hit"]!==false||$a["clones"]!==[])exit(1);' "$evidence/clone-content-change.json"
+    ;;
+comment-options)
+    cat > src/Policy.php <<'PHP'
+<?php
+final class PolicyFixture
+{
+    public const TEXT = "// SECURITY(auth): this is a string";
+    // SECURITY(auth): fixture marker for diagnostic testing
+    // TODO(PROJ-142): fixture marker for diagnostic testing
+    /**
+     * @param string $count
+     * @return string
+     */
+    public function total(int $count): int { return $count; }
+}
+PHP
+    expect_exit 1 comment-policy.json comments --json --policy=strict --doc-mode=parser --fail-on=info --explain src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$markers=array_values(array_filter($a["findings"],fn($f)=>$f["type"]==="comment_marker"));if(count($markers)!==2||array_column($markers,"tag")!==["SECURITY","TODO"]||!in_array("phpdoc_signature_mismatch",array_column($a["findings"],"type"),true))exit(1);' "$evidence/comment-policy.json"
+    expect_exit 1 comment-filter.json comments --json --tags=TODO --fail-on=info src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$m=array_values(array_filter($a["findings"],fn($f)=>$f["type"]==="comment_marker"));if(count($m)!==1||$m[0]["tag"]!=="TODO")exit(1);' "$evidence/comment-filter.json"
+    expect_exit 1 comment-sarif.json comments --format=sarif --policy=strict --doc-mode=parser --fail-on=info src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$b=json_decode(file_get_contents($argv[2]),true,flags:JSON_THROW_ON_ERROR);if($b["version"]!=="2.1.0"||count($a["findings"])!==count($b["runs"][0]["results"]))exit(1);' "$evidence/comment-policy.json" "$evidence/comment-sarif.json"
+    expect_exit 2 comment-invalid-mode.txt comments --doc-mode=invalid src
+    printf '%s\n' '<?php final class PolicyFixture { public const TEXT = "// SECURITY(auth): text"; }' > src/Policy.php
+    expect_exit 0 comment-clean.json comments --json --policy=strict --doc-mode=parser --fail-on=info src
+    ;;
 config-check)
     expect_exit 0 presets.txt presets
     expect_exit 0 preset.json preset standard
