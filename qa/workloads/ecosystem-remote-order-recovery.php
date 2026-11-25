@@ -136,9 +136,15 @@ function remotePublicationOrder(string $backend, string $mode, string $phase): v
     verify(in_array($phase, ['seed', 'fault', 'recover', 'consume'], true), 'Unknown order publication phase.');
     [$db, $serializer] = messagingSetup($phase === 'seed');
     $id = 'receipt-publication';
-    $digest = hash('sha256', $backend === 'gridfs' ? str_repeat("\x00\xffreceipt-gridfs\n", 65536) : str_repeat("receipt\0\xff\n", 16384));
-    $publication = static function (string $stage) use ($backend, $mode): void {
-        if ($backend === 'gridfs') {
+    $rename = in_array($backend, ['ftp', 'sftp', 'sftp2'], true);
+    $digest = hash('sha256', $backend === 'gridfs' ? str_repeat("\x00\xffreceipt-gridfs\n", 65536) : str_repeat("receipt\0\xff\n", $rename ? 4096 : 16384));
+    $final = $rename ? 'receipts/' . $mode . '-published.bin' : 'receipts/final.bin';
+    $stagePath = $rename ? 'receipts/' . $mode . '-stage.bin' : 'receipts/fault-stage.bin';
+    $publication = static function (string $stage) use ($backend, $mode, $rename): void {
+        if ($rename) {
+            verify(getenv('LAB_STORAGE_BACKEND') === $backend, 'Rename fixture backend mismatch.');
+            sftpRenameFaultWorkload($stage, $mode);
+        } elseif ($backend === 'gridfs') {
             gridfsPublicationFaultWorkload($mode, $stage);
         } else {
             remoteHttpPublicationContracts($backend, $mode, $stage);
@@ -193,7 +199,7 @@ function remotePublicationOrder(string $backend, string $mode, string $phase): v
             verify($transport->size($queue) === 2, 'Confirmed duplicate publication missing.');
             return;
         }
-        $peer = additionalStorageContext($backend);
+        $peer = $rename ? storageOutageContext(false) : additionalStorageContext($backend);
         $disk = $peer->filesystem();
         $foreign = $peer->filesystem('foreign');
         verify($transport->size($queue) === 2, 'Replacement consumer did not observe both confirmed deliveries.');
@@ -202,7 +208,7 @@ function remotePublicationOrder(string $backend, string $mode, string $phase): v
             $job = $delivery->envelope()->message;
             verify($job instanceof LabJob && $job->id === $id && $job->step === 1 && $delivery->messageId === $id,
                 'Unexpected receipt publication identity.');
-            verify(hash('sha256', $disk->read('receipts/final.bin')) === $digest && !$disk->fileExists('receipts/fault-stage.bin'),
+            verify(hash('sha256', $disk->read($final)) === $digest && !$disk->fileExists($stagePath),
                 'Consumer observed partial or missing publication.');
             brokerRecordEffect($db, $job);
             $transport->acknowledge($delivery);
@@ -212,7 +218,7 @@ function remotePublicationOrder(string $backend, string $mode, string $phase): v
         verify($deliveries === 2 && $transport->size($queue) === 0 && $db->table('lab_job_effects')->count() === 1
             && (int) $db->table('lab_job_effects')->find($id)['step'] === 1
             && (int) $db->table('lab_publication_outbox')->find($id)['relayed'] === 1, 'Durable reconciliation mismatch.');
-        verify($foreign->read('receipts/final.bin') === 'foreign-final' && $foreign->read('receipts/fault-stage.bin') === 'foreign-stage',
+        verify($foreign->read($final) === ($rename ? 'foreign' : 'foreign-final') && $foreign->read($stagePath) === 'foreign-stage',
             'Publication crossed tenant boundary.');
         echo "$backend $mode: four fresh processes, confirmed retry and one durable effect reconciled\n";
     } finally {

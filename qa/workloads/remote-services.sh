@@ -19,7 +19,7 @@ case "$SCENARIO" in
   ecosystem-*-order-http-publication-*) provision="${SCENARIO%-order-http-publication-*}" ;;
   ecosystem-*-archive-*) provision="${SCENARIO%-archive-*}" ;;
   ecosystem-gridfs-publication-before|ecosystem-gridfs-publication-after) provision=ecosystem-gridfs ;;
-  ecosystem-ftp-rename-before|ecosystem-ftp-rename-after|ecosystem-ftp-interrupted-upload) provision=ecosystem-ftp ;;
+  ecosystem-ftp-order-rename-*|ecosystem-ftp-rename-before|ecosystem-ftp-rename-after|ecosystem-ftp-interrupted-upload) provision=ecosystem-ftp ;;
   ecosystem-sftp2-interrupted-upload) provision=ecosystem-sftp2 ;;
   ecosystem-webdav-http-publication-before|ecosystem-webdav-http-publication-after|ecosystem-async-s3-http-publication-before|ecosystem-async-s3-http-publication-after|ecosystem-azure-http-publication-before|ecosystem-azure-http-publication-after|ecosystem-gcs-http-publication-before|ecosystem-gcs-http-publication-after)
     provision="${SCENARIO%-http-publication-*}" ;;
@@ -94,7 +94,7 @@ case "$provision" in
     python="$RUNNER_TEMP/storage-peer-venv/bin/python"
     "$python" -m pip install 'pyftpdlib>=2,<3' 'wsgidav>=4,<5' 'cheroot>=10,<12'
     mkdir -p "$RUNNER_TEMP/storage-peer/tenant-a" "$RUNNER_TEMP/storage-peer/tenant-b"
-    if [[ "$SCENARIO" == ecosystem-ftp-rename-* ]]; then
+    if [[ "$SCENARIO" == ecosystem-ftp-rename-* || "$SCENARIO" == ecosystem-ftp-order-rename-* ]]; then
       export LAB_FTP_SIGNAL="$RUNNER_TEMP/ftp-rename-signal"
       mkdir -m 700 "$LAB_FTP_SIGNAL"
       printf off > "$LAB_FTP_SIGNAL/phase"
@@ -130,7 +130,7 @@ case "$provision" in
     ;;
   *) exit 1 ;;
 esac
-if [[ "$SCENARIO" == *-remote-order-recovery || "$SCENARIO" == *-order-http-publication-* || "$SCENARIO" == ecosystem-gridfs-order-publication-* ]]; then
+if [[ "$SCENARIO" == *-remote-order-recovery || "$SCENARIO" == *-order-http-publication-* || "$SCENARIO" == ecosystem-gridfs-order-publication-* || "$SCENARIO" == ecosystem-ftp-order-rename-* ]]; then
   containers+=(lab-remote-orders-broker)
   composer require php-amqplib/php-amqplib --no-interaction --prefer-dist --no-progress
   docker run -d --name lab-remote-orders-broker -p 127.0.0.1:15672:5672 -e RABBITMQ_DEFAULT_USER=experiment -e RABBITMQ_DEFAULT_PASS=fixture-only-password rabbitmq:4
@@ -211,7 +211,7 @@ elif [[ "$SCENARIO" == ecosystem-s3-publication-fault ]]; then
   done
   test -f "$EVIDENCE/s3-peer-ready"
   timeout 90s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" s3-publication-fault | tee "$EVIDENCE/ecosystem.log"
-elif [[ "$SCENARIO" == ecosystem-ftp-rename-* ]]; then
+elif [[ "$SCENARIO" == ecosystem-ftp-rename-* || "$SCENARIO" == ecosystem-ftp-order-rename-* ]]; then
   probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
   export LAB_STORAGE_BACKEND=ftp
   mode="${SCENARIO##*-}"
@@ -220,9 +220,17 @@ elif [[ "$SCENARIO" == ecosystem-ftp-rename-* ]]; then
     sleep 1
   done
   timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/12121'
-  timeout 60s php "$probe" sftp-rename-seed "$mode"
+  if [[ "$SCENARIO" == ecosystem-ftp-order-rename-* ]]; then
+    timeout 120s php "$probe" remote-publication-order ftp "$mode" seed | tee "$EVIDENCE/publication-order-seed.log"
+  else
+    timeout 60s php "$probe" sftp-rename-seed "$mode"
+  fi
   printf '%s' "$mode" > "$LAB_FTP_SIGNAL/phase"
-  timeout 60s php "$probe" sftp-rename-fault "$mode" | tee "$EVIDENCE/ftp-rename-fault.log"
+  if [[ "$SCENARIO" == ecosystem-ftp-order-rename-* ]]; then
+    timeout 120s php "$probe" remote-publication-order ftp "$mode" fault | tee "$EVIDENCE/publication-order-fault.log"
+  else
+    timeout 60s php "$probe" sftp-rename-fault "$mode" | tee "$EVIDENCE/ftp-rename-fault.log"
+  fi
   cp "$LAB_FTP_SIGNAL/$mode" "$EVIDENCE/ftp-rename-boundary.txt"
   prefix="$RUNNER_TEMP/storage-peer/tenant-a/receipts/$mode"
   if [[ "$mode" == before ]]; then
@@ -234,7 +242,13 @@ elif [[ "$SCENARIO" == ecosystem-ftp-rename-* ]]; then
   fi
   test ! -e "$LAB_FTP_SIGNAL/replayed-$mode"
   printf off > "$LAB_FTP_SIGNAL/phase"
-  timeout 60s php "$probe" sftp-rename-recover "$mode" | tee "$EVIDENCE/ftp-rename-recovery.log"
+  if [[ "$SCENARIO" == ecosystem-ftp-order-rename-* ]]; then
+    for phase in recover consume; do
+      timeout 120s php "$probe" remote-publication-order ftp "$mode" "$phase" | tee "$EVIDENCE/publication-order-$phase.log"
+    done
+  else
+    timeout 60s php "$probe" sftp-rename-recover "$mode" | tee "$EVIDENCE/ftp-rename-recovery.log"
+  fi
 elif [[ "$SCENARIO" == ecosystem-sftp-publication-fault || "$SCENARIO" == ecosystem-sftp2-interrupted-upload || "$SCENARIO" == ecosystem-ftp-interrupted-upload ]]; then
   export LAB_STORAGE_BACKEND=sftp
   if [[ "$SCENARIO" == ecosystem-sftp2-interrupted-upload ]]; then LAB_STORAGE_BACKEND=sftp2; fi

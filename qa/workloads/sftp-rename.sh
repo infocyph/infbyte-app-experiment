@@ -3,7 +3,7 @@ set -Eeuo pipefail
 cd "$PROJECT"
 probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
 root="$GITHUB_WORKSPACE/qa/workloads"
-cleanup() { docker rm -f lab-sftp-rename >/dev/null 2>&1 || :; }
+cleanup() { docker rm -f lab-sftp-rename lab-remote-orders-broker >/dev/null 2>&1 || :; }
 trap cleanup EXIT
 export LAB_SFTP_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
 docker build -t lab-sftp-rename -f "$root/SftpRename.Dockerfile" "$root"
@@ -16,12 +16,25 @@ ssh-keyscan -T 2 -p 12222 127.0.0.1 >/dev/null 2>&1
 export LAB_SFTP_HOST_KEYS="$(docker exec lab-sftp-rename sh -c 'for f in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$f" -E sha256; done' | awk '{print $2}')"
 export LAB_STORAGE_BACKEND=sftp
 adapter=league/flysystem-sftp-v3
-if [[ "$SCENARIO" == ecosystem-sftp2-rename-* ]]; then
+if [[ "$SCENARIO" == ecosystem-sftp2-rename-* || "$SCENARIO" == ecosystem-sftp2-order-rename-* ]]; then
   LAB_STORAGE_BACKEND=sftp2
   adapter=league/flysystem-sftp-v2
 fi
-composer require "$adapter" --no-interaction --prefer-dist --no-progress
+packages=("$adapter")
+combined=0
+if [[ "$SCENARIO" == *-order-rename-* ]]; then
+  combined=1
+  packages+=(php-amqplib/php-amqplib)
+  docker run -d --name lab-remote-orders-broker -p 127.0.0.1:15672:5672 -e RABBITMQ_DEFAULT_USER=experiment -e RABBITMQ_DEFAULT_PASS=fixture-only-password rabbitmq:4 >/dev/null
+  for attempt in {1..90}; do
+    if docker exec lab-remote-orders-broker rabbitmq-diagnostics -q ping >/dev/null; then break; fi
+    sleep 1
+  done
+  docker exec lab-remote-orders-broker rabbitmq-diagnostics -q ping >/dev/null
+fi
+composer require "${packages[@]}" --no-interaction --prefer-dist --no-progress
 composer check-platform-reqs --no-dev
+composer show --format=json > "$EVIDENCE/packages.json"
 docker exec -u experiment lab-sftp-rename sh -c 'printf off > /signal/phase'
 modes=(before after)
 case "$SCENARIO" in
@@ -29,9 +42,17 @@ case "$SCENARIO" in
   *-after) modes=(after) ;;
 esac
 for mode in "${modes[@]}"; do
-  timeout 60s php "$probe" sftp-rename-seed "$mode"
+  if ((combined)); then
+    timeout 120s php "$probe" remote-publication-order "$LAB_STORAGE_BACKEND" "$mode" seed | tee "$EVIDENCE/publication-order-seed.log"
+  else
+    timeout 60s php "$probe" sftp-rename-seed "$mode"
+  fi
   docker exec -u experiment lab-sftp-rename sh -c 'printf "%s" "$1" > /signal/phase' sh "$mode"
-  timeout 60s php "$probe" sftp-rename-fault "$mode" | tee "$EVIDENCE/sftp-rename-$mode.log"
+  if ((combined)); then
+    timeout 120s php "$probe" remote-publication-order "$LAB_STORAGE_BACKEND" "$mode" fault | tee "$EVIDENCE/publication-order-fault.log"
+  else
+    timeout 60s php "$probe" sftp-rename-fault "$mode" | tee "$EVIDENCE/sftp-rename-$mode.log"
+  fi
   docker exec lab-sftp-rename cat "/signal/$mode" > "$EVIDENCE/sftp-rename-$mode.txt"
   if [[ "$mode" == before ]]; then
     grep -Fx 'rename request withheld' "$EVIDENCE/sftp-rename-$mode.txt"
@@ -44,5 +65,11 @@ for mode in "${modes[@]}"; do
   fi
   docker exec lab-sftp-rename test ! -e "/signal/replayed-$mode"
   docker exec -u experiment lab-sftp-rename sh -c 'printf off > /signal/phase'
-  timeout 60s php "$probe" sftp-rename-recover "$mode" | tee -a "$EVIDENCE/sftp-rename-$mode.log"
+  if ((combined)); then
+    for phase in recover consume; do
+      timeout 120s php "$probe" remote-publication-order "$LAB_STORAGE_BACKEND" "$mode" "$phase" | tee "$EVIDENCE/publication-order-$phase.log"
+    done
+  else
+    timeout 60s php "$probe" sftp-rename-recover "$mode" | tee -a "$EVIDENCE/sftp-rename-$mode.log"
+  fi
 done

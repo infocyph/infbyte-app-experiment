@@ -1891,6 +1891,36 @@ jobs:
           - {scenario: ecosystem-gridfs-order-publication-after, backend: mariadb, php: '8.4'}
           - {scenario: ecosystem-gridfs-order-publication-after, backend: sqlite, php: '8.4'}
           - {scenario: ecosystem-gridfs-order-publication-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-ftp-order-rename-before, backend: pgsql}
+          - {scenario: ecosystem-ftp-order-rename-before, backend: mysql}
+          - {scenario: ecosystem-ftp-order-rename-before, backend: mariadb}
+          - {scenario: ecosystem-ftp-order-rename-before, backend: sqlite}
+          - {scenario: ecosystem-ftp-order-rename-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-ftp-order-rename-after, backend: pgsql}
+          - {scenario: ecosystem-ftp-order-rename-after, backend: mysql}
+          - {scenario: ecosystem-ftp-order-rename-after, backend: mariadb}
+          - {scenario: ecosystem-ftp-order-rename-after, backend: sqlite}
+          - {scenario: ecosystem-ftp-order-rename-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sftp-order-rename-before, backend: pgsql}
+          - {scenario: ecosystem-sftp-order-rename-before, backend: mysql}
+          - {scenario: ecosystem-sftp-order-rename-before, backend: mariadb}
+          - {scenario: ecosystem-sftp-order-rename-before, backend: sqlite}
+          - {scenario: ecosystem-sftp-order-rename-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sftp-order-rename-after, backend: pgsql}
+          - {scenario: ecosystem-sftp-order-rename-after, backend: mysql}
+          - {scenario: ecosystem-sftp-order-rename-after, backend: mariadb}
+          - {scenario: ecosystem-sftp-order-rename-after, backend: sqlite}
+          - {scenario: ecosystem-sftp-order-rename-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sftp2-order-rename-before, backend: pgsql}
+          - {scenario: ecosystem-sftp2-order-rename-before, backend: mysql}
+          - {scenario: ecosystem-sftp2-order-rename-before, backend: mariadb}
+          - {scenario: ecosystem-sftp2-order-rename-before, backend: sqlite}
+          - {scenario: ecosystem-sftp2-order-rename-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-sftp2-order-rename-after, backend: pgsql}
+          - {scenario: ecosystem-sftp2-order-rename-after, backend: mysql}
+          - {scenario: ecosystem-sftp2-order-rename-after, backend: mariadb}
+          - {scenario: ecosystem-sftp2-order-rename-after, backend: sqlite}
+          - {scenario: ecosystem-sftp2-order-rename-after, backend: mssql, php: '8.4'}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

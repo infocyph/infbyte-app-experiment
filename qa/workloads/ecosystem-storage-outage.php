@@ -257,6 +257,7 @@ function sftpRenameFaultWorkload(string $phase, string $mode): void
     if ($phase === 'seed') {
         $disk->write($source, $payload);
         $foreign->write($target, 'foreign');
+        $foreign->write($source, 'foreign-stage');
         verify(!$disk->fileExists($target), 'Unexpected existing target.');
         return;
     }
@@ -270,7 +271,7 @@ function sftpRenameFaultWorkload(string $phase, string $mode): void
         $disk->move($source, $target);
     }
     verify(!$disk->fileExists($source) && $disk->read($target) === $payload, 'Rename reconciliation failed.');
-    verify($foreign->read($target) === 'foreign', 'Rename crossed tenant boundary.');
+    verify($foreign->read($target) === 'foreign' && $foreign->read($source) === 'foreign-stage', 'Rename crossed tenant boundary.');
     $disk->write('receipts/healthy-' . $mode, 'healthy');
     verify($disk->read('receipts/healthy-' . $mode) === 'healthy', 'Fresh storage client failed.');
     echo "SFTP $mode rename reconciliation passed\n";
