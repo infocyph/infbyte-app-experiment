@@ -61,6 +61,7 @@ require __DIR__ . '/ecosystem-file-lifecycle.php';
 require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-utility-lifecycle.php';
 require __DIR__ . '/ecosystem-value-crypto.php';
+require __DIR__ . '/ecosystem-array-contracts.php';
 require __DIR__ . '/ecosystem-di-factories.php';
 require __DIR__ . '/ecosystem-grpc-inbound.php';
 require __DIR__ . '/ecosystem-validation-casts.php';
@@ -106,6 +107,8 @@ match ($argv[1] ?? '') {
     'http-signatures' => httpSignaturesWorkload(),
     'uid-families' => uidFamiliesWorkload(),
     'array-transforms' => arrayTransformsWorkload(),
+    'array-set-contracts' => arraySetContractsWorkload(),
+    'array-dto-guard' => arrayDtoGuardWorkload(),
     'di-environment' => diEnvironmentWorkload(),
     'sftp-trust' => sftpTrustWorkload(),
     'storage-outage-seed' => storageOutageWorkload('seed'),

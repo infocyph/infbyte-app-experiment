@@ -393,3 +393,7 @@ I: two additional compiled native host lanes (fused/sharded). Eight independent 
 ## B85 — value types and cryptographic interoperability
 
 I: two independent lanes cover UID value metadata, custom epochs/formats, six Sonyflake/TBSL bases, opaque integer and byte roundtrips, mixed ordering, invalid boundaries; Epicrypt RFC 8032 Ed25519 known vector, independent libsodium signature/MAC roundtrips, binary/large messages, malformed proofs/keys, opaque issuance/digest length and mutation rejection. No generated token or key material in evidence. Remaining Randflake variants and key lifecycle stay open. 295 routine rows; hosted verification pending.
+
+## B86 — ArrayKit bounded DTO and transformation contracts
+
+I: two independent lanes with native PHP reference membership/sort, adaptive input sizes, strict mixed sets and integer precision, group key rejection, immutable collection ownership, typed mapped nested DTO hydration, guarded cycle/depth/node rejection before mutation, shape validation, literal path control roundtrips and bounded wildcard/overlap operations. Remaining helper variants and configuration lifecycle stay open. 297 routine rows; hosted verification pending.

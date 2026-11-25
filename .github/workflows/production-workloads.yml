@@ -156,6 +156,8 @@ jobs:
           - {scenario: ecosystem-http-signatures, backend: pgsql}
           - {scenario: ecosystem-uid-families, backend: pgsql}
           - {scenario: ecosystem-array-transforms, backend: pgsql}
+          - {scenario: ecosystem-array-set-contracts, backend: pgsql}
+          - {scenario: ecosystem-array-dto-guard, backend: pgsql}
           - {scenario: ecosystem-di-environment, backend: pgsql}
           - {scenario: ecosystem-sftp-trust, backend: pgsql}
           - {scenario: ecosystem-sftp-outage, backend: pgsql}
