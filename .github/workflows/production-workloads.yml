@@ -272,6 +272,8 @@ jobs:
           - {scenario: ecosystem-jwt-jws, backend: pgsql}
           - {scenario: ecosystem-jwe, backend: pgsql}
           - {scenario: ecosystem-gateway, backend: pgsql}
+          - {scenario: ecosystem-telemetry-risk, backend: pgsql}
+          - {scenario: ecosystem-telemetry-otel, backend: pgsql}
           - {scenario: ecosystem-response-cache, backend: pgsql}
           - {scenario: ecosystem-throttle, backend: pgsql}
           - {scenario: ecosystem-cookie-protection, backend: pgsql}

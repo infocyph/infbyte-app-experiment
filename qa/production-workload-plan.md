@@ -457,3 +457,7 @@ I: independent TLS/ALPN H2 client constrains stream credit to 4 KiB, proves sibl
 ## B101 — Native HTTP/3 response pressure and directional cancellation
 
 I: independent aioquic client uses verified TLS, constrained initial transport credit and concurrent streams to reconcile exact 256 KiB response bytes with server pressure/drain evidence, an incomplete response cancelled by STOP_SENDING, partial upload cancelled by RESET_STREAM, and healthy reuse of the same QUIC connection. Native ext-quic is mandatory; no TCP fallback. 354 routine rows; hosted qualification pending (REQUEST, MEM, OPS).
+
+## B102 — Webrick telemetry, risk/error composition and actual OpenTelemetry SDK
+
+I: one minimal W3C lane verifies all four risk decisions in enforcement/shadow, isolated spans, request/trace propagation, NEL, safe access logging, negotiated production error and custom-denial no-store. Another lane installs the real optional OpenTelemetry SDK and asserts parent IDs, active scope cleanup, exported span status, epoch timestamps and exception events. Source review found a likely upstream SDK contract mismatch: Webrick's status helper expects integers while current OpenTelemetry API StatusCode values are strings; start timestamp also uses monotonic hrtime rather than epoch nanos. No upstream fix or weakened assertion; runtime evidence pending. 356 routine rows (OBS, REQUEST, SEC).

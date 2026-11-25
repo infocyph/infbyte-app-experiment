@@ -26,6 +26,12 @@ case "$SCENARIO" in
   ecosystem-redis-cluster|ecosystem-mongodb|ecosystem-s3|ecosystem-sftp|ecosystem-sftp-trust|ecosystem-sftp-outage|ecosystem-s3-outage|ecosystem-s3-publication-fault|ecosystem-ftp|ecosystem-webdav|ecosystem-gridfs|ecosystem-sftp2|ecosystem-async-s3|ecosystem-azure|ecosystem-gcs|ecosystem-storage-local-modes) bash "$GITHUB_WORKSPACE/qa/workloads/remote-services.sh" ;;
   ecosystem-http-policy|ecosystem-http-pool|ecosystem-http-transfer) bash "$GITHUB_WORKSPACE/qa/workloads/http-policy.sh" ;;
   ecosystem-endurance) bash "$GITHUB_WORKSPACE/qa/workloads/endurance.sh" ;;
+  ecosystem-telemetry-otel)
+    cd "$PROJECT"
+    composer require open-telemetry/sdk --no-interaction --prefer-dist --no-progress
+    composer check-platform-reqs --no-dev
+    composer show --format=json > "$EVIDENCE/packages.json"
+    php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" telemetry-otel | tee "$EVIDENCE/ecosystem.log" ;;
   ecosystem-closure)
     cd "$PROJECT"
     composer require opis/closure:^4.5 --no-interaction --prefer-dist --no-progress

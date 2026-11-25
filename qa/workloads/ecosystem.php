@@ -44,6 +44,7 @@ require __DIR__ . '/ecosystem-remote.php';
 require __DIR__ . '/ecosystem-http.php';
 require __DIR__ . '/ecosystem-contracts.php';
 require __DIR__ . '/ecosystem-webrick.php';
+require __DIR__ . '/ecosystem-telemetry.php';
 require __DIR__ . '/ecosystem-jose.php';
 require __DIR__ . '/ecosystem-mailbox.php';
 require __DIR__ . '/ecosystem-brokers.php';
@@ -163,6 +164,8 @@ match ($argv[1] ?? '') {
     'jwt-jws' => jwtJwsWorkload(),
     'jwe' => jweWorkload(),
     'gateway' => gatewayWorkload(),
+    'telemetry-risk' => telemetryRiskWorkload(),
+    'telemetry-otel' => telemetryOtelWorkload(),
     'response-cache' => responseCacheWorkload(),
     'throttle' => throttleWorkload(),
     'cookie-protection' => cookieProtectionWorkload(),
