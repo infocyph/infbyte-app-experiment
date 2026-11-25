@@ -299,6 +299,99 @@ config-check)
     expect_exit 1 check-invalid.json check --format=json --report-dir="$evidence/check-invalid" src
     cmp phpprobe.json "$evidence/generated-config.json"
     ;;
+config-precedence)
+    mkdir -p configured selected selected/ignored selected/also-ignored
+    printf '%s\n' '<?php function broken( {' > configured/Broken.php
+    printf '%s\n' '<?php final class Selected {}' > selected/Valid.php
+    printf '%s\n' '<?php function broken( {' > selected/ignored/Broken.php
+    printf '%s\n' '<?php function broken( {' > selected/also-ignored/Broken.php
+    printf '%s\n' '{"preset":"default","syntax":{"paths":["configured"],"exclude":["selected/ignored"],"parallel":1}}' > phpprobe.json
+    expect_exit 1 configured.json syntax --json
+    expect_exit 0 overridden.json syntax --json --parallel=4 --exclude=selected/also-ignored selected
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$b=json_decode(file_get_contents($argv[2]),true,flags:JSON_THROW_ON_ERROR);if($a["files_checked"]!==1||count($a["failures"])!==1||$b["files_checked"]!==1||$b["failures"]!==[])exit(1);' "$evidence/configured.json" "$evidence/overridden.json"
+    ;;
+config-schema-init)
+    printf '%s\n' '{"syntax":{"parallel":0}}' > invalid-schema.json
+    expect_exit 1 schema-invalid.json config validate --config=invalid-schema.json --json
+    printf '%s\n' '{"unknown_root":true}' > unknown-schema.json
+    expect_exit 1 schema-unknown.json config validate --config=unknown-schema.json --json
+    printf '%s\n' '[]' > array-root.json
+    expect_exit 2 schema-array.json config validate --config=array-root.json --json
+    expect_exit 0 init-first.txt init --preset=default --with-ci
+    cp phpprobe.json "$evidence/first-config.json"
+    cp .github/workflows/phpprobe.yml "$evidence/first-workflow.yml"
+    expect_exit 2 init-existing.txt init --preset=strict --with-ci
+    cmp phpprobe.json "$evidence/first-config.json"
+    cmp .github/workflows/phpprobe.yml "$evidence/first-workflow.yml"
+    expect_exit 0 init-force.txt init --preset=strict --with-ci --force
+    php -r '$a=json_decode(file_get_contents("phpprobe.json"),true,flags:JSON_THROW_ON_ERROR);if($a["preset"]!=="strict")exit(1);'
+    ;;
+check-gate-artifacts)
+    printf '%s\n' '<?php final class Broken {' > src/Broken.php
+    expect_exit 1 gate-broken.json check --format=json --summary-json="$evidence/broken-summary.json" --report-dir="$evidence/broken-report" src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);if($a["checks"]!==["syntax"=>1]||$a["skipped"]!==["reference","duplicates","comments"]||$a["exit_code"]!==1)exit(1);' "$evidence/broken-summary.json"
+    test -f "$evidence/broken-report/syntax.json"
+    for checker in reference duplicates comments; do test ! -e "$evidence/broken-report/$checker.json"; done
+    printf '%s\n' '<?php declare(strict_types=1); final class Broken {}' > src/Broken.php
+    expect_exit 0 gate-clean.json check --format=json --summary-json="$evidence/clean-summary.json" --report-dir="$evidence/clean-report" src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);if(count($a["checks"])!==4||array_sum($a["checks"])!==0||$a["skipped"]!==[]||$a["exit_code"]!==0)exit(1);' "$evidence/clean-summary.json"
+    for checker in syntax reference duplicates comments; do test -s "$evidence/clean-report/$checker.json"; done
+    cmp "$evidence/clean-report/summary.json" "$evidence/clean-summary.json"
+    test -s "$evidence/clean-report/summary.md"
+    test -s "$evidence/clean-report/report.sarif"
+    ;;
+comment-custom)
+    cat > phpprobe.json <<'JSON'
+{"preset":"default","comments":{"scan_markers":false,"custom_rules":[{"id":"fixture-line","pattern":"/LABSECRET/","scope":"line","severity":"high"},{"id":"fixture-block","pattern":"/LABSECRET/","scope":"block","severity":"warning"},{"id":"disabled","pattern":"/LABSECRET/","enabled":false}],"rules":{"custom_rule_fixture_block":{"enabled":false}}}}
+JSON
+    cat > src/Custom.php <<'PHP'
+<?php
+final class CustomFixture
+{
+    public const TEXT = 'LABSECRET';
+    // LABSECRET
+    /* LABSECRET */
+}
+PHP
+    expect_exit 1 custom-active.json comments --json --fail-on=info src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$m=array_values(array_filter($a["findings"],fn($f)=>str_starts_with($f["type"],"custom_rule_")));if(count($m)!==1||$m[0]["type"]!=="custom_rule_fixture_line"||$m[0]["severity"]!=="high")exit(1);' "$evidence/custom-active.json"
+    php -r '$p="phpprobe.json";$a=json_decode(file_get_contents($p),true,flags:JSON_THROW_ON_ERROR);$a["comments"]["rules"]["custom_rule_fixture_line"]=["enabled"=>false];file_put_contents($p,json_encode($a,JSON_THROW_ON_ERROR));'
+    expect_exit 0 custom-disabled.json comments --json --fail-on=info src
+    ;;
+comment-suppression)
+    cat > src/Scoped.php <<'PHP'
+<?php
+final class ScopeFixture
+{
+    // @phpprobe-ignore comment_marker scope=symbol symbol=ScopeFixture::first
+    public function first(): void
+    {
+        // SECURITY(auth): fixture first marker
+    }
+    public function second(): void
+    {
+        // SECURITY(auth): fixture second marker
+    }
+    // @phpprobe-ignore unknown_fixture_rule
+    // @phpprobe-ignore comment_marker until=2000-01-01
+    // @phpprobe-ignore phpdoc_signature_mismatch scope=symbol symbol=ScopeFixture::second
+}
+PHP
+    expect_exit 1 suppression.json comments --json --fail-on=info src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$t=array_count_values(array_column($a["findings"],"type"));if(($t["comment_marker"]??0)!==1||($t["invalid_suppression_rule"]??0)!==1||($t["expired_suppression_rule"]??0)!==1||($t["dead_suppression_rule"]??0)!==1||$a["suppressed_count"]!==1)exit(1);' "$evidence/suppression.json"
+    ;;
+graph-root-boundary)
+    mkdir -p src/nested foreign
+    printf '%s\n' '<?php namespace Lab; final class First {}' > src/First.php
+    printf '%s\n' '<?php namespace Lab; final class Second {}' > src/nested/Second.php
+    printf '%s\n' '<?php namespace Lab; final class Foreign {}' > foreign/Foreign.php
+    expect_exit 0 graph-relative.json graph --root="$root/src" --pretty src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$n=array_column($a["nodes"],null,"id");if($a["files_scanned"]!==2||$n["class-like:Lab\\First"]["file"]!=="First.php"||$n["class-like:Lab\\Second"]["file"]!=="nested/Second.php")exit(1);' "$evidence/graph-relative.json"
+    expect_exit 2 graph-outside.txt graph --root="$root/src" --output="$evidence/forbidden.json" src foreign
+    test ! -e "$evidence/forbidden.json"
+    expect_exit 0 graph-replaced.txt graph --root="$root/src" --exclude=src/nested --output="$evidence/graph-replaced.json" src
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);if($a["files_scanned"]!==1)exit(1);' "$evidence/graph-replaced.json"
+    ;;
 *)
     printf 'Unknown PHPProbe acceptance mode: %s\n' "$PROBE_MODE" >&2
     exit 2

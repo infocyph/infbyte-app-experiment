@@ -784,3 +784,7 @@ I: 35 independently executable database lanes across PostgreSQL/MySQL/MariaDB/SQ
 ## B191 — Compiled signed URL generation and route middleware composition
 
 I: 22 independently executable compiled-kernel lanes (11 contracts on fused/sharded matchers): permanent/temporary/named alias and domain generation, default TTL/absolute expiry/leeway, canonical top-level query HMAC with independent native oracle and ignored parameter, tamper/malformed expiry rejection, relative signature versus route-domain boundary, key overlap/retirement, ordered signed authorization before negotiation and gzip compression, frozen URL registry and invalid input rejection. Exact handler evidence confirms rejected requests do not execute; public route remains isolated. CORE-01, SEC, DATA, EXEC-03: source and dispatch reviewed; hosted execution pending. 1247 routine rows.
+
+## B192 — Published PHPProbe configuration and governance boundaries
+
+I: six independent engineering-only lanes (17 total engineering modes): real CLI configuration path replacement and exclusion augmentation, invalid schema/root and init no-overwrite/force behavior, syntax gate subprocess/report isolation, scoped custom comment rules and overrides, valid/unknown/expired/dead suppression governance, graph portable root/output rejection. Fixture-only policy suppressions are deliberately tested, not applied to repository gates. CORE-01, DATA, OPS, EXEC-03: source and dispatch reviewed; hosted execution pending. Routine production rows unchanged at 1247.
