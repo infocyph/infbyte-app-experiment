@@ -279,6 +279,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-cache-mongodb-tls-trust, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-tls-atomic, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-tls-restart, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-sqs-tls-contracts, backend: pgsql}
+          - {scenario: ecosystem-sqs-tls-contracts, backend: mysql}
+          - {scenario: ecosystem-sqs-tls-contracts, backend: mariadb}
+          - {scenario: ecosystem-sqs-tls-contracts, backend: sqlite}
           - {scenario: ecosystem-wire-outbound-h3, backend: pgsql}
           - {scenario: ecosystem-cache-tls, backend: pgsql}
           - {scenario: ecosystem-valkey-tls, backend: pgsql}
@@ -542,6 +549,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-sqs-tls-contracts, backend: mssql}
           - {scenario: ecosystem-business-cache-queue, backend: pgsql}
           - {scenario: ecosystem-business-cache-queue, backend: mysql}
           - {scenario: ecosystem-business-cache-queue, backend: mariadb}

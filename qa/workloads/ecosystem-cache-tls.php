@@ -131,3 +131,70 @@ function counterTlsWorkload(string $phase): void
     }
     echo "TLS counter $phase passed\n";
 }
+
+function labMongoTlsClient(string $certificate, string $host = 'localhost', bool $tls = true): \MongoDB\Client
+{
+    $options = ['serverSelectionTimeoutMS' => 2500, 'connectTimeoutMS' => 1000, 'socketTimeoutMS' => 3000, 'directConnection' => true, 'tls' => $tls];
+    if ($tls) {
+        $options['tlsCAFile'] = $certificate;
+    }
+    return new \MongoDB\Client("mongodb://$host:27018", $options);
+}
+
+function labMongoTlsCache(string $namespace): Cache
+{
+    return Cache::mongodb($namespace, client: labMongoTlsClient(getenv('LAB_REMOTE_TLS_ROOT') . '/cert.pem'),
+        database: 'experiment', options: new CacheOptions(integrityKey: 'fixture-remote-tls-integrity-key', failOpen: false));
+}
+
+function mongoTlsContracts(string $phase): void
+{
+    $root = (string) getenv('LAB_REMOTE_TLS_ROOT');
+    $cert = $root . '/cert.pem';
+    if ($phase === 'trust') {
+        $client = labMongoTlsClient($cert);
+        verify((int) $client->selectDatabase('admin')->command(['ping' => 1])->toArray()[0]['ok'] === 1, 'Trusted native TLS handshake failed.');
+        foreach ([
+            [$root . '/wrong.pem', 'localhost', true],
+            [$cert, '127.0.0.1', true],
+            [$cert, 'localhost', false],
+        ] as [$ca, $host, $tls]) {
+            expectFailure(static fn() => labMongoTlsClient($ca, $host, $tls)->selectDatabase('admin')->command(['ping' => 1])->toArray(),
+                \MongoDB\Driver\Exception\ConnectionException::class, 'Untrusted or plaintext MongoDB connection accepted.');
+        }
+        $cache = labMongoTlsCache('lab-tls-trust');
+        $peer = labMongoTlsCache('lab-tls-trust');
+        $foreign = labMongoTlsCache('lab-tls-foreign');
+        $value = ['binary' => "a\0\xff", 'nullable' => null, 'false' => false];
+        verify($cache->set('record', $value, 300) && $peer->get('record') === $value, 'TLS cache independent payload mismatch.');
+        verify($foreign->set('record', 'foreign', 300) && $cache->clear() && !$peer->has('record') && $foreign->get('record') === 'foreign', 'TLS namespace clear crossed boundary.');
+    } elseif ($phase === 'atomic') {
+        $cache = labMongoTlsCache('lab-tls-atomic');
+        $atomic = $cache->atomic();
+        verify($atomic !== null, 'Native MongoDB atomic capability missing.');
+        $results = parallelRace(static function (int $worker): int {
+            $atomic = labMongoTlsCache('lab-tls-atomic')->atomic();
+            verify($atomic !== null, 'Worker atomic capability missing.');
+            return $atomic->setIfAbsent('claim', $worker, 300) ? 1 : 0;
+        }, 'mongo-tls-claim', 12);
+        verify(array_sum($results) === 1, 'TLS atomic race admitted multiple owners.');
+        $value = $cache->get('claim');
+        verify(is_int($value) && !$atomic->compareAndSet('claim', (string) $value, 'invalid', 300), 'TLS atomic type comparison differed.');
+        verify($atomic->compareAndSet('claim', $value, 'settled', 300) && $atomic->getAndDelete('claim') === 'settled' && !$cache->has('claim'), 'TLS CAS/consume reconciliation failed.');
+    } elseif ($phase === 'offline') {
+        expectFailure(static fn() => labMongoTlsClient($cert)->selectDatabase('admin')->command(['ping' => 1])->toArray(),
+            \MongoDB\Driver\Exception\ConnectionException::class, 'Stopped native TLS server reported reachable.');
+        expectFailure(static fn() => labMongoTlsCache('lab-tls-restart')->set('durable', 'rejected', 300),
+            \Infocyph\CacheLayer\Exceptions\CacheBackendException::class, 'Offline TLS write reported success.');
+    } elseif ($phase === 'seed') {
+        $cache = labMongoTlsCache('lab-tls-restart');
+        verify($cache->set('durable', 'confirmed', 300), 'Durable TLS cache seed failed.');
+    } elseif ($phase === 'recover') {
+        $cache = labMongoTlsCache('lab-tls-restart');
+        verify($cache->get('durable') === 'confirmed', 'Offline TLS write altered committed value.');
+        verify($cache->set('durable', 'replacement', 300) && labMongoTlsCache('lab-tls-restart')->get('durable') === 'replacement', 'Recovered native TLS publication failed.');
+    } else {
+        throw new InvalidArgumentException('Unknown native MongoDB TLS phase.');
+    }
+    echo "Native MongoDB TLS $phase completed\n";
+}

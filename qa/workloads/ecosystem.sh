@@ -2,6 +2,7 @@
 set -euo pipefail
 bash "$GITHUB_WORKSPACE/qa/workloads/database-init.sh"
 case "$SCENARIO" in
+  ecosystem-cache-mongodb-tls-trust|ecosystem-cache-mongodb-tls-atomic|ecosystem-cache-mongodb-tls-restart|ecosystem-sqs-tls-contracts) bash "$GITHUB_WORKSPACE/qa/workloads/remote-tls.sh" ;;
   ecosystem-auth-lifecycle|ecosystem-jwt-replay|ecosystem-consent-lifecycle|ecosystem-consent-permissions|ecosystem-consent-scope-policy) bash "$GITHUB_WORKSPACE/qa/workloads/auth-lifecycle.sh" ;;
   ecosystem-remote-jwks) bash "$GITHUB_WORKSPACE/qa/workloads/jwks.sh" ;;
   ecosystem-jwks-dns-*) bash "$GITHUB_WORKSPACE/qa/workloads/jwks-dns.sh" ;;

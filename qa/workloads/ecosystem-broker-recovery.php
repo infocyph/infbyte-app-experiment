@@ -489,3 +489,57 @@ function sqsOwnershipContracts(string $contract): void
     }
     echo "SQS-compatible $contract with independent SQL effect reconciliation completed\n";
 }
+
+function labSqsTlsClient(string $endpoint, string $certificate): SqsClient
+{
+    return new SqsClient([
+        'version' => 'latest', 'region' => 'us-east-1', 'endpoint' => $endpoint,
+        'credentials' => ['key' => 'fixture', 'secret' => 'fixture'], 'retries' => 0,
+        'http' => ['connect_timeout' => 2, 'timeout' => 5, 'verify' => $certificate],
+    ]);
+}
+
+function sqsTlsContracts(): void
+{
+    [$db, $serializer] = messagingSetup();
+    $root = (string) getenv('LAB_REMOTE_TLS_ROOT');
+    $endpoint = 'https://localhost:19325';
+    $cert = $root . '/cert.pem';
+    $client = labSqsTlsClient($endpoint, $cert);
+    $client->listQueues();
+    foreach ([
+        [$endpoint, $root . '/wrong.pem'],
+        ['https://127.0.0.1:19325', $cert],
+        ['http://localhost:19325', $cert],
+    ] as [$target, $ca]) {
+        expectFailure(static fn() => labSqsTlsClient($target, $ca)->listQueues(), \Aws\Exception\AwsException::class, 'Untrusted or plaintext broker transport accepted.');
+    }
+    $queue = 'tls-ownership';
+    $created = $client->createQueue(['QueueName' => $queue])['QueueUrl'];
+    $path = parse_url($created, PHP_URL_PATH);
+    verify(is_string($path) && $path !== '', 'SQS-compatible queue path missing.');
+    // The emulator advertises its local HTTP origin. Keep its queue path but
+    // explicitly route every consumer operation through the verified TLS edge.
+    $url = $endpoint . $path;
+    $first = new SqsTransport(new LabSqsBackend($client, $url), $serializer);
+    $replacement = new SqsTransport(new LabSqsBackend(labSqsTlsClient($endpoint, $cert), $url), $serializer);
+    try {
+        $first->send(new Envelope(new LabJob('tls-effect', 7)), $queue);
+        $delivery = iterator_to_array($first->receive($queue, 1, 10.0))[0];
+        brokerRecordEffect($db, $delivery->envelope()->message);
+        $first->release($delivery, 2.0);
+        verify(iterator_to_array($replacement->receive($queue, 1, 10.0)) === [], 'Released receipt ignored visibility delay.');
+        $deadline = hrtime(true) + 15_000_000_000;
+        do {
+            $rows = iterator_to_array($replacement->receive($queue, 1, 10.0));
+        } while ($rows === [] && hrtime(true) < $deadline);
+        verify(count($rows) === 1 && $rows[0]->messageId === $delivery->messageId && $rows[0]->receipt !== $delivery->receipt, 'TLS receipt recovery differs.');
+        brokerRecordEffect($db, $rows[0]->envelope()->message);
+        $replacement->acknowledge($rows[0]);
+        verify($db->table('lab_job_effects')->count() === 1 && (int) $db->table('lab_job_effects')->find('tls-effect')['step'] === 7, 'TLS broker settlement duplicated SQL effect.');
+        verify(iterator_to_array($first->receive($queue, 1)) === [], 'Acknowledged TLS delivery remained available.');
+    } finally {
+        $client->deleteQueue(['QueueUrl' => $url]);
+    }
+    echo "Verified SQS-compatible HTTPS edge, trust/identity/plaintext rejection and durable receipt recovery completed\n";
+}

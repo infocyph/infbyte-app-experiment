@@ -738,3 +738,7 @@ I: 20 lanes, four contracts on five actual SQL drivers. Nested cancellation with
 ## B180 — HTTP/2 multiplexed connection response budget
 
 I: three actual TLS H2 lanes (drain, reset, independent connection). Independent h2 peer advertises zero stream receive credit, holds two 24 KiB bodies within separate 32 KiB stream limits, observes third rejection at the 64 KiB aggregate limit, then grants credit or resets and verifies recovered exact binary digests. Second connection must retain independent capacity. Also corrected B178 asynchronous acknowledgement oracle with an ordered round trip, and B179 closure-reference capture during retry evidence collection (source review, no runtime outcome analysis). CORE-01, DATA, OPS, EXEC-03: wiring reviewed; hosted outcomes deferred. 1104 routine rows.
+
+## B181 — Native MongoDB TLS and SQS-compatible verified HTTPS
+
+I: eight lanes, three native MongoDB driver contracts (TLS trust, strict CAS/consume race, TLS stop/restart) and five SQL-backed SQS-compatible HTTPS edge/receipt reconciliation lanes. Distinct wrong CA, hostname and plaintext rejection; actual MongoDB service and isolated TLS edge to emulator. No cloud-provider certification; private fixture key material removed by cleanup. CORE-01, DATA, SEC, OPS, EXEC-03: source/matrix wiring reviewed; hosted outcomes deferred. 1112 routine rows.
