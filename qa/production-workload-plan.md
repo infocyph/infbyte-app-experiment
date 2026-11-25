@@ -762,3 +762,7 @@ I: 25 real SQL lanes across PostgreSQL/MySQL/MariaDB/SQLite/SQL Server: structur
 - Seven independent ReqShield scenarios: size domains/units, date boundaries, strict typed membership, pattern configuration, network values, conditional presence truth tables, nested distinct groups; dynamic and compiled paths with reuse.
 - Five ArrayKit scenarios: numeric classification, bucket/extremum projections, ragged matrix rejection and leaf preservation, path moves and collision non-mutation, read-cache toggling and invalidation.
 - Implementation committed; hosted execution and qualification pending. No vendor changes.
+
+## B177 — InterMix scoped input and execution-carrier ownership
+
+I: 18 independent lanes (nine contracts on dynamic and strict compiled runtimes): declared input identity/nullable alias, missing/invalid seeds, fresh construction and invocation overrides, interleaved Fiber isolation, overlapping explicit context attachments, stale/foreign/serialization rejection, child exception recovery, tagged iterator lifetime and failed-request replacement. Actual published container APIs; no private carrier helpers or vendor changes. CORE-01, TYPE, SEC, OPS, EXEC-03: matrix/dispatch wiring reviewed; hosted runtime verification deferred. 1066 routine rows.

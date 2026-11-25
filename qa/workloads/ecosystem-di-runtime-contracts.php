@@ -181,3 +181,156 @@ function diCacheOutageWorkload(): void
     verify($recoveredPool->get('unrelated') === 42, 'Definition recovery changed unrelated key.');
     echo "Real Redis outage, strict/fail-open definition policy, singleton ownership and durable generation recovery passed\n";
 }
+
+final readonly class LabRequestInput
+{
+    public function __construct(public string $tenant) {}
+}
+
+final readonly class LabScopedProjection
+{
+    public function __construct(public LabRequestInput $input) {}
+}
+
+function diOwnershipRuntime(string $mode): RuntimeContainerInterface
+{
+    $builder = ContainerBuilder::create('lab-di-ownership')
+        ->input(LabRequestInput::class)->input('nullable')
+        ->alias('request.input', LabRequestInput::class)
+        ->autowire(LabScopedProjection::class, LabScopedProjection::class, lifetime: LifetimeEnum::Scoped, tags: ['projection'])
+        ->autowire(LabGraphScoped::class, LabGraphScoped::class, lifetime: LifetimeEnum::Scoped)
+        ->value('stable', 'stable');
+    if ($mode === 'dynamic') {
+        return $builder->build();
+    }
+    $path = evidenceDirectory() . '/ownership-' . bin2hex(random_bytes(8)) . '.php';
+    $report = $builder->compile($path, strict: true);
+    verify($report['skipped'] === [], 'Strict input/scope graph retained fallback entries.');
+    return $builder->productionPrevalidated($path, $report['digest']);
+}
+
+function diOwnershipContracts(string $mode, string $contract): void
+{
+    $runtime = diOwnershipRuntime($mode);
+    $input = new LabRequestInput('alpha');
+    $seed = [LabRequestInput::class => $input, 'nullable' => null];
+    $get = static fn(RuntimeContainerInterface $scope): LabScopedProjection => $scope->get(LabScopedProjection::class);
+    switch ($contract) {
+        case 'input-identity':
+            $first = $runtime->withinScope('request', static function (RuntimeContainerInterface $scope) use ($input, $get): LabScopedProjection {
+                $first = $get($scope);
+                verify($first === $get($scope) && $first->input === $input && $scope->get('request.input') === $input, 'Scoped input/alias identity differs.');
+                verify($scope->get('nullable') === null && $scope->get('stable') === 'stable', 'Nullable input or stable definition differs.');
+                return $first;
+            }, $seed);
+            $secondInput = new LabRequestInput('beta');
+            $second = $runtime->withinScope('request', $get, [LabRequestInput::class => $secondInput]);
+            verify($first !== $second && $second->input === $secondInput, 'Request input leaked to replacement.');
+            break;
+        case 'input-rejection':
+            expectFailure(static fn() => $runtime->withinScope('request', $get), ContainerException::class, 'Missing request input accepted.');
+            expectFailure(static fn() => $runtime->withinScope('request', static fn() => null, ['request.input' => $input]), ContainerException::class, 'Alias seed accepted.');
+            expectFailure(static fn() => $runtime->withinScope('request', static fn() => null, ['stable' => 'overwritten']), ContainerException::class, 'Singleton seed accepted.');
+            verify($runtime->withinScope('request', $get, $seed)->input === $input && $runtime->get('stable') === 'stable', 'Rejected seed damaged subsequent request.');
+            break;
+        case 'make-invoke':
+            $runtime->withinScope('request', static function (RuntimeContainerInterface $scope) use ($input, $get): void {
+                $cached = $get($scope);
+                $fresh = $scope->make(LabScopedProjection::class);
+                verify($fresh !== $cached && $fresh->input === $input && $get($scope) === $cached, 'Fresh construction changed scoped ownership.');
+                $call = static fn(LabRequestInput $input, int $amount = 3): array => [$input, $amount];
+                verify($scope->invoke($call) === [$input, 3], 'Scoped callable argument resolution differs.');
+                $override = new LabRequestInput('explicit');
+                verify($scope->invoke($call, ['input' => $override, 'amount' => 0]) === [$override, 0], 'Explicit invocation override lost.');
+            }, $seed);
+            break;
+        case 'fiber-isolation':
+            $first = new Fiber(static fn() => $runtime->withinScope('request', static function (RuntimeContainerInterface $scope) use ($get): LabScopedProjection {
+                $projection = $get($scope);
+                Fiber::suspend($projection);
+                verify($get($scope) === $projection, 'First carrier lost its scope.');
+                return $projection;
+            }, $seed));
+            $secondInput = new LabRequestInput('beta');
+            $second = new Fiber(static fn() => $runtime->withinScope('request', static function (RuntimeContainerInterface $scope) use ($get): LabScopedProjection {
+                $projection = $get($scope);
+                Fiber::suspend($projection);
+                verify($get($scope) === $projection, 'Second carrier lost its scope.');
+                return $projection;
+            }, [LabRequestInput::class => $secondInput]));
+            $a = $first->start();
+            $b = $second->start();
+            verify($a !== $b && $a->input === $input && $b->input === $secondInput, 'Concurrent carriers shared request state.');
+            $second->resume();
+            $first->resume();
+            verify($first->getReturn() === $a && $second->getReturn() === $b, 'Carrier completion changed ownership.');
+            break;
+        case 'fiber-attachment':
+            $runtime->withinScope('request', static function (RuntimeContainerInterface $scope) use ($get): void {
+                $parent = $get($scope);
+                $context = $scope->captureScopeContext();
+                $child = static fn() => $scope->withinScopeContext($context, static function (RuntimeContainerInterface $active) use ($get): LabScopedProjection {
+                    $projection = $get($active);
+                    Fiber::suspend($projection);
+                    return $get($active);
+                });
+                $a = new Fiber($child);
+                $b = new Fiber($child);
+                verify($a->start() === $parent && $b->start() === $parent, 'Explicit attachments did not share owner identity.');
+                $b->resume();
+                $a->resume();
+                verify($a->getReturn() === $parent && $b->getReturn() === $parent && $get($scope) === $parent, 'Sibling detach invalidated owner.');
+            }, $seed);
+            break;
+        case 'context-rejection':
+            expectFailure($runtime->captureScopeContext(...), ContainerException::class, 'Capture outside scope accepted.');
+            $context = $runtime->withinScope('request', static fn(RuntimeContainerInterface $scope) => $scope->captureScopeContext(), $seed);
+            expectFailure(static fn() => $runtime->withinScopeContext($context, $get), ContainerException::class, 'Expired owner context accepted.');
+            $runtime->withinScope('request', static function (RuntimeContainerInterface $scope) use ($mode, $get): void {
+                $context = $scope->captureScopeContext();
+                $foreign = diOwnershipRuntime($mode);
+                expectFailure(static fn() => $foreign->withinScopeContext($context, $get), ContainerException::class, 'Foreign container accepted scope context.');
+                expectFailure(static fn() => serialize($context), ContainerException::class, 'Scope handle could be serialized.');
+                verify($get($scope) === $get($scope), 'Rejected transfer changed owner.');
+            }, $seed);
+            break;
+        case 'attachment-failure':
+            $runtime->withinScope('request', static function (RuntimeContainerInterface $scope) use ($get): void {
+                $parent = $get($scope);
+                $context = $scope->captureScopeContext();
+                $fiber = new Fiber(static function () use ($scope, $context, $get): LabScopedProjection {
+                    expectFailure(static fn() => $scope->withinScopeContext($context, static function (RuntimeContainerInterface $active) use ($get): never {
+                        $get($active);
+                        throw new DomainException('intentional attachment failure');
+                    }), DomainException::class, 'Child failure swallowed.');
+                    return $scope->withinScope('independent', $get, [LabRequestInput::class => new LabRequestInput('child')]);
+                });
+                $fiber->start();
+                $fresh = $fiber->getReturn();
+                verify($fresh !== $parent && $fresh->input->tenant === 'child' && $get($scope) === $parent, 'Failed child retained attached state or closed owner.');
+            }, $seed);
+            break;
+        case 'tagged-ownership':
+            $runtime->withinScope('request', static function (RuntimeContainerInterface $scope) use ($get): void {
+                $expected = $get($scope);
+                $items = iterator_to_array($scope->tagged('projection'));
+                verify($items === [LabScopedProjection::class => $expected], 'Tagged entries lost scoped identity.');
+                verify(iterator_to_array($scope->tagged('projection')) === $items, 'Repeated tagged resolution changed instance.');
+            }, $seed);
+            $iterator = $runtime->withinScope('request', static fn(RuntimeContainerInterface $scope) => $scope->tagged('projection'), $seed);
+            expectFailure(static fn() => iterator_to_array($iterator), ContainerException::class, 'Escaped tagged iterator reused closed scope.');
+            break;
+        case 'failed-request':
+            expectFailure(static fn() => $runtime->withinScope('request', static function (RuntimeContainerInterface $scope) use ($get): never {
+                $get($scope);
+                throw new DomainException('intentional request failure');
+            }, $seed), DomainException::class, 'Request failure swallowed.');
+            expectFailure($runtime->captureScopeContext(...), ContainerException::class, 'Failed request retained active scope.');
+            $replacement = new LabRequestInput('replacement');
+            verify($runtime->withinScope('request', $get, [LabRequestInput::class => $replacement])->input === $replacement, 'Failed request contaminated replacement.');
+            break;
+        default:
+            throw new InvalidArgumentException('Unknown DI ownership contract.');
+    }
+    echo "InterMix $mode/$contract ownership assertions completed\n";
+}

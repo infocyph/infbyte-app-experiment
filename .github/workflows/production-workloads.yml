@@ -787,6 +787,24 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-di-ownership-input-identity-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-input-identity-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-input-rejection-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-input-rejection-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-make-invoke-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-make-invoke-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-fiber-isolation-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-fiber-isolation-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-fiber-attachment-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-fiber-attachment-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-context-rejection-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-context-rejection-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-attachment-failure-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-attachment-failure-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-tagged-ownership-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-tagged-ownership-compiled, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-failed-request-dynamic, backend: pgsql}
+          - {scenario: ecosystem-di-ownership-failed-request-compiled, backend: pgsql}
           - {scenario: ecosystem-validation-granular-sizes, backend: pgsql}
           - {scenario: ecosystem-validation-granular-dates, backend: pgsql}
           - {scenario: ecosystem-validation-granular-collections, backend: pgsql}
