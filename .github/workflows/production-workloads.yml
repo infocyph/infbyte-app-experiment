@@ -279,6 +279,36 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-schema-evolution-column, backend: pgsql}
+          - {scenario: db-schema-evolution-column, backend: mysql}
+          - {scenario: db-schema-evolution-column, backend: mariadb}
+          - {scenario: db-schema-evolution-column, backend: sqlite}
+          - {scenario: db-schema-evolution-column, backend: mssql}
+          - {scenario: db-schema-evolution-unique, backend: pgsql}
+          - {scenario: db-schema-evolution-unique, backend: mysql}
+          - {scenario: db-schema-evolution-unique, backend: mariadb}
+          - {scenario: db-schema-evolution-unique, backend: sqlite}
+          - {scenario: db-schema-evolution-unique, backend: mssql}
+          - {scenario: db-schema-evolution-index, backend: pgsql}
+          - {scenario: db-schema-evolution-index, backend: mysql}
+          - {scenario: db-schema-evolution-index, backend: mariadb}
+          - {scenario: db-schema-evolution-index, backend: sqlite}
+          - {scenario: db-schema-evolution-index, backend: mssql}
+          - {scenario: db-schema-evolution-foreign-set-null, backend: pgsql}
+          - {scenario: db-schema-evolution-foreign-set-null, backend: mysql}
+          - {scenario: db-schema-evolution-foreign-set-null, backend: mariadb}
+          - {scenario: db-schema-evolution-foreign-set-null, backend: sqlite}
+          - {scenario: db-schema-evolution-foreign-set-null, backend: mssql}
+          - {scenario: db-schema-evolution-foreign-drop, backend: pgsql}
+          - {scenario: db-schema-evolution-foreign-drop, backend: mysql}
+          - {scenario: db-schema-evolution-foreign-drop, backend: mariadb}
+          - {scenario: db-schema-evolution-foreign-drop, backend: sqlite}
+          - {scenario: db-schema-evolution-foreign-drop, backend: mssql}
+          - {scenario: db-schema-evolution-destructive-guard, backend: pgsql}
+          - {scenario: db-schema-evolution-destructive-guard, backend: mysql}
+          - {scenario: db-schema-evolution-destructive-guard, backend: mariadb}
+          - {scenario: db-schema-evolution-destructive-guard, backend: sqlite}
+          - {scenario: db-schema-evolution-destructive-guard, backend: mssql}
           - {scenario: db-conditional-builder, backend: pgsql}
           - {scenario: db-conditional-builder, backend: mysql}
           - {scenario: db-conditional-builder, backend: mariadb}

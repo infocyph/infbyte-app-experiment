@@ -852,3 +852,7 @@ I: 21 independent lanes across PostgreSQL/MySQL/MariaDB: named worker and pool-o
 ## B198 — Real Foundation pooled worker supervision
 
 I: nine lanes across PostgreSQL/MySQL/MariaDB: actual two-process Omnibus pool through unbooted Foundation WorkerManager, twelve SQL-backed receipts and per-child max-two message recycling, abrupt SIGKILL with an outstanding durable reservation and recovery by a different PID, named runtime-control shutdown with independent registry and process-group cleanup, and prebooted parent rejection. Separate seed/supervisor/observer/verifier processes; durable receipt primary key exposes duplicate effects. Hosted execution pending. 1384 routine rows.
+
+## B199 — Five-driver schema evolution and destructive boundaries
+
+I: 30 independently executable workloads: column addition/rename/drop with null and committed data preservation; composite unique index drop, duplicate rejection on recreation, cleanup and recovery; index rename/drop/recreate (SQLite explicit unsupported rename and equivalent explicit drop/create); native foreign SET NULL; foreign constraint removal/recreation (SQLite explicit unsupported drop with original enforcement); destructive guard, compile-only DDL and explicit application. Independent connections verify physical schema and durable rows. CORE-01, DATA, TYPE, FLOW-02, EXEC-03: source contracts and matrix inspected; hosted execution pending. 1414 routine rows. SQL Server automatic clustered HA remains a separate fixture.

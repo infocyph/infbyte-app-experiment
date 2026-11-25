@@ -277,6 +277,7 @@ require __DIR__ . '/database-active-backup.php';
 require __DIR__ . '/database-contracts.php';
 require __DIR__ . '/database-query-advanced-contracts.php';
 require __DIR__ . '/database-residual-contracts.php';
+require __DIR__ . '/database-schema-evolution.php';
 
 $db = new Connection(config(($argv[1] ?? '') === 'mysql-physical-verify' ? ['port' => 3308] : []));
 match ($argv[1] ?? '') {
@@ -284,6 +285,12 @@ match ($argv[1] ?? '') {
     'runtime-nested-deadline' => databaseRuntimePolicyContracts($db, 'nested-deadline'),
     'runtime-retry-boundary' => databaseRuntimePolicyContracts($db, 'retry-boundary'),
     'runtime-event-ownership' => databaseRuntimePolicyContracts($db, 'event-ownership'),
+    'schema-evolution-column' => schemaEvolutionContracts($db, 'column'),
+    'schema-evolution-unique' => schemaEvolutionContracts($db, 'unique'),
+    'schema-evolution-index' => schemaEvolutionContracts($db, 'index'),
+    'schema-evolution-foreign-set-null' => schemaEvolutionContracts($db, 'foreign-set-null'),
+    'schema-evolution-foreign-drop' => schemaEvolutionContracts($db, 'foreign-drop'),
+    'schema-evolution-destructive-guard' => schemaEvolutionContracts($db, 'destructive-guard'),
     'conditional-builder' => databaseConditionalBuilderContracts($db),
     'correlated-exists' => databaseExistsContracts($db),
     'cross-join' => databaseCrossJoinContracts($db),
