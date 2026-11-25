@@ -22,7 +22,7 @@ case "$SCENARIO" in
   ecosystem-tenants) bash "$GITHUB_WORKSPACE/qa/workloads/tenants.sh" ;;
   ecosystem-smtp-uncertain|ecosystem-smtp-tls-auth) bash "$GITHUB_WORKSPACE/qa/workloads/smtp-faults.sh" ;;
   ecosystem-mailbox-tls|ecosystem-mailbox-idle) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox-tls.sh" ;;
-  ecosystem-otp-redis-tls-*|ecosystem-otp-valkey-tls-*|ecosystem-cache-tls|ecosystem-valkey-tls|ecosystem-counter-restart|ecosystem-valkey-counter-restart) bash "$GITHUB_WORKSPACE/qa/workloads/cache-tls.sh" ;;
+  ecosystem-cache-tls-live-*|ecosystem-valkey-tls-live-*|ecosystem-otp-redis-tls-*|ecosystem-otp-valkey-tls-*|ecosystem-cache-tls|ecosystem-valkey-tls|ecosystem-counter-restart|ecosystem-valkey-counter-restart) bash "$GITHUB_WORKSPACE/qa/workloads/cache-tls.sh" ;;
   ecosystem-counter-uncertain|ecosystem-valkey-counter-uncertain) bash "$GITHUB_WORKSPACE/qa/workloads/counter-uncertain.sh" ;;
   ecosystem-counter-election|ecosystem-valkey-counter-election|ecosystem-otp-election-redis|ecosystem-otp-election-valkey) bash "$GITHUB_WORKSPACE/qa/workloads/counter-election.sh" ;;
   ecosystem-foundation-cache-outage-*|ecosystem-cache-outage|ecosystem-cache-valkey-outage|ecosystem-cache-memcached-outage|ecosystem-di-cache-outage|ecosystem-foundation-risk-outage-redis|ecosystem-foundation-risk-outage-valkey|ecosystem-foundation-risk-outage-memcached) bash "$GITHUB_WORKSPACE/qa/workloads/cache-outage.sh" ;;
@@ -34,7 +34,7 @@ case "$SCENARIO" in
   ecosystem-module-*) bash "$GITHUB_WORKSPACE/qa/workloads/module-matrix.sh" ;;
   ecosystem-otp-cluster-*) bash "$GITHUB_WORKSPACE/qa/workloads/otp-cluster-election.sh" ;;
   ecosystem-amqp-quorum-*) bash "$GITHUB_WORKSPACE/qa/workloads/amqp-quorum.sh" ;;
-  ecosystem-amqp-tls) bash "$GITHUB_WORKSPACE/qa/workloads/broker-tls.sh" ;;
+  ecosystem-amqp-tls-settlement-*|ecosystem-amqp-tls) bash "$GITHUB_WORKSPACE/qa/workloads/broker-tls.sh" ;;
   ecosystem-amqp-crash|ecosystem-sqs-fifo-groups|ecosystem-sqs-visibility-recovery|ecosystem-amqp|ecosystem-sqs|ecosystem-amqp-dlq|ecosystem-sqs-fifo|ecosystem-sqs-redrive|ecosystem-amqp-ack-uncertain|ecosystem-amqp-wire-ack|ecosystem-sqs-ack-uncertain|ecosystem-sqs-wire-ack|ecosystem-amqp-consumer-failures|ecosystem-sqs-consumer-failures) bash "$GITHUB_WORKSPACE/qa/workloads/brokers.sh" ;;
   ecosystem-imap|ecosystem-pop3) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox.sh" ;;
   ecosystem-sftp-order-rename-*|ecosystem-sftp2-order-rename-*|ecosystem-sftp-rename-uncertain|ecosystem-sftp2-rename-before|ecosystem-sftp2-rename-after) bash "$GITHUB_WORKSPACE/qa/workloads/sftp-rename.sh" ;;

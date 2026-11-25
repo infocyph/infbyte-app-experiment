@@ -8,7 +8,8 @@ import sys
 from h2.config import H2Configuration
 from h2.connection import H2Connection
 from h2.errors import ErrorCodes
-from h2.events import RequestReceived, StreamEnded, StreamReset
+from h2.events import RequestReceived, StreamEnded, StreamReset, PingAckReceived
+from hyperframe.frame import GoAwayFrame
 
 root = Path(sys.argv[1])
 contract, count = sys.argv[2], int(sys.argv[3])
@@ -33,6 +34,8 @@ class Peer(socketserver.BaseRequestHandler):
         started = False
         canceled = False
         blocked = False
+        ping_sent = False
+        ping_acked = False
 
         while True:
             data = sock.recv(65535)
@@ -49,18 +52,37 @@ class Peer(socketserver.BaseRequestHandler):
                 elif isinstance(event, StreamEnded):
                     ended.add(event.stream_id)
                 elif isinstance(event, StreamReset):
-                    assert contract == "cancel" and event.stream_id == 1 and event.error_code == ErrorCodes.CANCEL
+                    assert contract in ("cancel", "deadline") and event.stream_id == 1 and event.error_code == ErrorCodes.CANCEL
                     assert not canceled
                     canceled = True
                     record("cancel", stream=event.stream_id)
-            if len(ended) == count and not started:
+                elif isinstance(event, PingAckReceived):
+                    assert contract == "ping" and event.ping_data == b"lab-ping" and not ping_acked
+                    ping_acked = True
+                    record("ping-ack")
+            if len(ended) == count and contract == "ping" and not ping_sent:
+                session.ping(b"lab-ping")
+                ping_sent = True
+                record("ping")
+            if len(ended) == count and not started and (contract != "ping" or ping_acked):
                 started = True
+                if contract == "goaway":
+                    # Serialize a real GOAWAY without closing hyper-h2's local state,
+                    # so the peer can finish previously accepted streams.
+                    sock.sendall(session.data_to_send())
+                    frame = GoAwayFrame(0)
+                    frame.last_stream_id = 2 * count - 3
+                    frame.error_code = ErrorCodes.NO_ERROR
+                    sock.sendall(frame.serialize())
+                    record("goaway", last=frame.last_stream_id)
                 for stream in sorted(ended, reverse=True):
                     index = (stream + 1) // 2
                     headers = requests[stream]
                     assert headers[":path"] == f"/stream/{index}"
                     head = contract == "head" and index % 2 == 1
                     assert headers[":method"] == ("HEAD" if head else "GET")
+                    if contract == "goaway" and index == count:
+                        continue
                     if contract == "reset" and index == 1:
                         session.reset_stream(stream, error_code=ErrorCodes.CANCEL)
                         record("reset", stream=stream)
@@ -68,7 +90,7 @@ class Peer(socketserver.BaseRequestHandler):
                     body = bytes([64 + index]) * 98304 if contract == "flow" else f"stream-{index}".encode()
                     session.send_headers(stream, [(":status", "200"), ("x-stream-id", str(index)),
                                                   ("content-length", str(len(body)))], end_stream=head)
-                    if not head and not (contract == "cancel" and index == 1):
+                    if not head and not (contract in ("cancel", "deadline") and index == 1):
                         pending[stream] = body
             # Send only while both real connection and stream windows permit.
             while pending:
@@ -90,7 +112,7 @@ class Peer(socketserver.BaseRequestHandler):
                     break
             if len(ended) == count + 1:
                 recovery = max(ended)
-                assert not pending and (contract != "cancel" or canceled)
+                assert not pending and (contract not in ("cancel", "deadline") or canceled)
                 assert requests[recovery][":path"] == "/recovery" and requests[recovery][":method"] == "GET"
                 session.send_headers(recovery, [(":status", "200"), ("x-stream-id", "recovery"),
                                                 ("content-length", "9")])

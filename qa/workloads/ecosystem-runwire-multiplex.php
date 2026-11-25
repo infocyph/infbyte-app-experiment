@@ -17,6 +17,7 @@ use Infocyph\Runwire\Network\DialOptions;
 use Infocyph\Runwire\Network\HappyEyeballsDialer;
 use Infocyph\Runwire\Network\TlsClientOptions;
 use Infocyph\Runwire\Runtime\Enum\CancellationReason;
+use Infocyph\Runwire\RequestDeadline;
 
 function runwireMultiplexContracts(string $contract, int $count): void
 {
@@ -43,7 +44,8 @@ function runwireMultiplexContracts(string $contract, int $count): void
     ): void {
         $method = $contract === 'head' && $id % 2 === 1 ? 'HEAD' : 'GET';
         $request = new ClientRequest($method, $origin . '/stream/' . $id, protocol: $policy,
-            cancellation: $contract === 'cancel' && $id === 1 ? $source->token() : null);
+            cancellation: $contract === 'cancel' && $id === 1 ? $source->token() : null,
+            deadline: $contract === 'deadline' && $id === 1 ? RequestDeadline::afterSeconds(2.0, hrtime(true)) : null);
         $ids[$id] = $client->request($request,
             static function (int $status, Headers $headers) use ($id, $contract, $source, $loop, &$statuses, &$cancelTimer): void {
                 $statuses[$id][] = [$status, $headers->first('x-stream-id')];
@@ -58,7 +60,7 @@ function runwireMultiplexContracts(string $contract, int $count): void
     try {
         $dialer->connect('tcp://127.0.0.1:' . $port,
             static function (?Connection $socket, ?Throwable $error) use (
-                $loop, $origin, $policy, $count, $submit, &$connection, &$transport, &$failure, &$ready,
+                $loop, $origin, $policy, $count, $submit, $contract, &$connection, &$transport, &$failure, &$ready,
                 &$settled, &$recovered,
             ): void {
                 $connection = $socket;
@@ -68,17 +70,25 @@ function runwireMultiplexContracts(string $contract, int $count): void
                     return;
                 }
                 $transport = new Http2MultiplexConnection($loop, $socket,
-                    static function (Http2MultiplexConnection $client) use ($loop, $origin, $policy, $count, $submit, &$ready, &$settled, &$recovered, &$failure): void {
+                    static function (Http2MultiplexConnection $client) use ($loop, $origin, $policy, $count, $submit, $contract, &$ready, &$settled, &$recovered, &$failure): void {
                         ++$ready;
-                        $complete = static function (int $id, ?Throwable $error) use ($loop, $client, $count, $origin, $policy, &$settled, &$recovered, &$failure): void {
+                        $complete = static function (int $id, ?Throwable $error) use ($loop, $client, $count, $origin, $policy, $contract, &$settled, &$recovered, &$failure): void {
                             $settled[$id][] = $error;
                             if (count($settled) !== $count) {
                                 return;
                             }
-                            $loop->defer(static function () use ($loop, $client, $origin, $policy, &$recovered, &$failure): void {
+                            $loop->defer(static function () use ($loop, $client, $origin, $policy, $contract, &$recovered, &$failure): void {
                                 try {
                                     verify($client->activeCount() === 0, 'Completed streams retained admission slots.');
                                     $noop = static function (): void {};
+                                    if ($contract === 'goaway') {
+                                        expectFailure(static fn() => $client->request(new ClientRequest('GET', $origin . '/recovery', protocol: $policy),
+                                            $noop, $noop, $noop), RuntimeException::class, 'GOAWAY admitted a replacement stream.');
+                                        $recovered = true;
+                                        $client->close();
+                                        $loop->stop();
+                                        return;
+                                    }
                                     expectFailure(static fn() => $client->request(
                                         new ClientRequest('GET', 'https://other.invalid/forbidden', protocol: $policy),
                                         $noop, $noop, $noop), InvalidArgumentException::class, 'Shared connection accepted another origin.');
@@ -116,10 +126,15 @@ function runwireMultiplexContracts(string $contract, int $count): void
             verify(($ids[$id] ?? null) === 2 * $id - 1 && count($settled[$id] ?? []) === 1, 'Stream identity or terminal count differs.');
             $error = $settled[$id][0];
             $body = $bodies[$id] ?? '';
-            if ($id === 1 && in_array($contract, ['cancel', 'reset'], true)) {
-                verify($error instanceof RuntimeException && str_contains($error->getMessage(), $contract === 'cancel' ? 'canceled' : 'RST_STREAM') && $body === '',
+            if ($contract === 'goaway' && $id === $count) {
+                verify($error instanceof RuntimeException && str_contains($error->getMessage(), 'GOAWAY')
+                    && $body === '' && ($statuses[$id] ?? []) === [], 'GOAWAY refused stream exposed a response.');
+                continue;
+            }
+            if ($id === 1 && in_array($contract, ['cancel', 'reset', 'deadline'], true)) {
+                verify($error instanceof RuntimeException && str_contains($error->getMessage(), $contract === 'reset' ? 'RST_STREAM' : 'canceled') && $body === '',
                     'Failed stream exposed a body or wrong error.');
-                verify(($statuses[$id] ?? []) === ($contract === 'cancel' ? [[200, '1']] : []), 'Failed stream header ownership differs.');
+                verify(($statuses[$id] ?? []) === ($contract === 'reset' ? [] : [[200, '1']]), 'Failed stream header ownership differs.');
                 continue;
             }
             $expected = $contract === 'head' && $id % 2 === 1 ? ''
@@ -141,5 +156,5 @@ function runwireMultiplexContracts(string $contract, int $count): void
     $diagnostics = $loop->diagnostics();
     verify($dialer->pendingCount() === 0 && $numeric->pendingCount() === 0 && $diagnostics->readWatchers === 0
         && $diagnostics->writeWatchers === 0 && $diagnostics->timersActive === 0, 'Multiplex ownership leaked.');
-    echo "Native H2 $contract with $count concurrent streams and same-connection recovery passed\n";
+    echo "Native H2 $contract with $count concurrent streams and terminal/admission reconciliation passed\n";
 }

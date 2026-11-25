@@ -2045,6 +2045,43 @@ jobs:
           - {scenario: ecosystem-intermix-helper-retry-backoff, backend: pgsql}
           - {scenario: ecosystem-intermix-helper-retry-predicate, backend: pgsql}
           - {scenario: ecosystem-intermix-helper-retry-invalid-budget, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-validated-publication, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-validated-publication, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-validated-publication, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-rollback-publication, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-rollback-publication, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-rollback-publication, backend: mariadb}
+          - {scenario: ecosystem-foundation-messaging-cache-publication, backend: pgsql}
+          - {scenario: ecosystem-foundation-messaging-cache-publication, backend: mysql}
+          - {scenario: ecosystem-foundation-messaging-cache-publication, backend: mariadb}
+          - {scenario: ecosystem-cache-tls-live-read, backend: pgsql}
+          - {scenario: ecosystem-cache-tls-live-write, backend: pgsql}
+          - {scenario: ecosystem-cache-tls-live-atomic, backend: pgsql}
+          - {scenario: ecosystem-valkey-tls-live-read, backend: pgsql}
+          - {scenario: ecosystem-valkey-tls-live-write, backend: pgsql}
+          - {scenario: ecosystem-valkey-tls-live-atomic, backend: pgsql}
+          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: pgsql}
+          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mysql}
+          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mariadb}
+          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: sqlite}
+          - {scenario: ecosystem-amqp-tls-settlement-unsettled, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: pgsql}
+          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mysql}
+          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mariadb}
+          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: sqlite}
+          - {scenario: ecosystem-amqp-tls-settlement-acknowledged, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-runwire-multiplex-ping-2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-ping-4, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-ping-8, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-ping-16, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-deadline-2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-deadline-4, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-deadline-8, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-deadline-16, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-goaway-2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-goaway-4, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-goaway-8, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-goaway-16, backend: pgsql}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

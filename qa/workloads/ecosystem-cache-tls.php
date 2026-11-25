@@ -198,3 +198,55 @@ function mongoTlsContracts(string $phase): void
     }
     echo "Native MongoDB TLS $phase completed\n";
 }
+
+function cacheTlsLiveOutage(string $contract): void
+{
+    $root = (string) getenv('LAB_CACHE_TLS_ROOT');
+    $make = static function (string $namespace, bool $open) use ($root): Cache {
+        $client = labTlsRedis($root . '/cert.pem');
+        $options = new CacheOptions(failOpen: $open);
+
+        return getenv('LAB_TLS_BACKEND') === 'valkey'
+            ? Cache::valkey($namespace, client: $client, options: $options)
+            : Cache::redis($namespace, client: $client, options: $options);
+    };
+    $closed = $make('lab-tls-live', false);
+    $open = $make('lab-tls-live', true);
+    $foreign = $make('lab-tls-foreign', false);
+    $value = ['value' => 42, 'binary' => "a\0\xff"];
+    verify($closed->set('durable', $value, 600) && $open->get('durable') === $value
+        && $foreign->set('durable', 'foreign', 600), 'TLS seed or namespace isolation failed.');
+    $atomic = $closed->atomic();
+    $openAtomic = $open->atomic();
+    verify($atomic !== null && $openAtomic !== null && $atomic->setIfAbsent('claim', 1, 600), 'TLS atomic seed failed.');
+    verify(touch($root . '/seeded'), 'TLS outage readiness failed.');
+    cacheWaitMarker($root . '/stopped');
+    $exception = \Infocyph\CacheLayer\Exceptions\CacheBackendException::class;
+    match ($contract) {
+        'read' => (static function () use ($closed, $open, $exception): void {
+            expectFailure(static fn() => $closed->get('durable'), $exception, 'Strict TLS read concealed outage.');
+            verify($open->get('durable', 'fallback') === 'fallback', 'Open TLS read did not return default.');
+        })(),
+        'write' => (static function () use ($closed, $open, $exception): void {
+            expectFailure(static fn() => $closed->set('lost', 1, 600), $exception, 'Strict TLS write reported success.');
+            verify(!$open->set('durable', 'lost', 600), 'Open TLS write reported success.');
+        })(),
+        'atomic' => (static function () use ($atomic, $openAtomic, $exception): void {
+            expectFailure(static fn() => $atomic->compareAndSet('claim', 1, 2, 600), $exception, 'Strict TLS CAS concealed outage.');
+            verify(!$openAtomic->setIfAbsent('lost', 1, 600) && $openAtomic->getAndDelete('claim', 'fallback') === 'fallback',
+                'Open TLS atomics reported success during outage.');
+        })(),
+        default => throw new InvalidArgumentException('Unknown TLS live outage contract.'),
+    };
+    verify(touch($root . '/observed'), 'TLS outage observation unavailable.');
+    cacheWaitMarker($root . '/restarted');
+    $replacement = $make('lab-tls-live', false);
+    $peer = $make('lab-tls-foreign', false);
+    verify($replacement->get('durable') === $value && !$replacement->has('lost') && $replacement->get('claim') === 1
+        && $peer->get('durable') === 'foreign', 'Recovered TLS cache lost confirmed state or applied rejected mutation.');
+    $replacementAtomic = $replacement->atomic();
+    verify($replacementAtomic !== null && $replacementAtomic->compareAndSet('claim', 1, 2, 600)
+        && $replacementAtomic->getAndDelete('claim') === 2 && !$replacement->has('claim'), 'Fresh TLS client did not recover atomic capability.');
+    verify($replacement->set('recovered', true, 600) && $make('lab-tls-live', false)->get('recovered') === true, 'Replacement publication failed.');
+    echo "Connected TLS $contract outage and durable recovery passed\n";
+}

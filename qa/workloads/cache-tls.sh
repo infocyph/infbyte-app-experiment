@@ -65,6 +65,33 @@ if [[ "$SCENARIO" == ecosystem-otp-*-tls-* ]]; then
   else
     php "$probe" otp-tls-verify | tee "$EVIDENCE/otp-recovery.log"
   fi
+elif [[ "$SCENARIO" == *-tls-live-* ]]; then
+  php "$probe" "${SCENARIO#ecosystem-}" > "$EVIDENCE/cache-tls-live.log" 2>&1 &
+  worker=$!
+  trap 'kill "$worker" 2>/dev/null || :; wait "$worker" 2>/dev/null || :; docker rm -f "$name" >/dev/null 2>&1 || :; rm -rf "$root"' EXIT
+  marker() {
+    for attempt in {1..400}; do
+      [[ -f "$root/$1" ]] && return
+      kill -0 "$worker"
+      sleep 0.1
+    done
+    return 1
+  }
+  marker seeded
+  docker kill "$name" >/dev/null
+  if timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/17390' 2>/dev/null; then exit 1; fi
+  touch "$root/stopped"
+  marker observed
+  docker start "$name" >/dev/null
+  ready=0
+  for attempt in {1..40}; do
+    if docker exec "$name" "$cli" --tls --cacert /tls/cert.pem -h localhost PING | grep -qx PONG; then ready=1; break; fi
+    sleep 1
+  done
+  test "$ready" = 1
+  touch "$root/restarted"
+  wait "$worker"
+  cat "$EVIDENCE/cache-tls-live.log"
 elif [[ "$SCENARIO" == *counter-restart ]]; then
   php "$probe" counter-tls-seed | tee "$EVIDENCE/counter-seed.log"
   docker stop -t 10 "$name" >/dev/null

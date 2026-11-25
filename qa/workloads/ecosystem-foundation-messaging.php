@@ -88,7 +88,19 @@ function foundationMessagingContracts(string $contract): void
         ],
         'scheduled_messages' => ['receipt' => LabConfiguredReceiptFactory::class, 'invalid' => LabInvalidReceiptFactory::class],
     ];
-    $newApp = static fn() => foundationProviderApp(['messaging' => $config], ['database', 'messaging']);
+    $specialist = in_array($contract, ['validated-publication', 'rollback-publication', 'cache-publication'], true);
+    $overrides = ['messaging' => $config];
+    $capabilities = ['database', 'messaging'];
+    if ($specialist) {
+        $overrides['validation'] = ['schemas' => ['lab.receipt' => ['sku' => 'required|integer|exists:lab_messaging_stock,id', 'quantity' => 'required|integer|min:1']]];
+        $overrides['cache'] = ['default' => 'lab-receipts', 'stores' => [
+            'lab-receipts' => ['driver' => 'file', 'directory' => evidenceDirectory() . '/specialist-cache', 'namespace' => 'lab-receipts', 'fail_open' => false],
+            'lab-foreign' => ['driver' => 'file', 'directory' => evidenceDirectory() . '/specialist-cache', 'namespace' => 'lab-foreign', 'fail_open' => false],
+        ]];
+        verify(mkdir(evidenceDirectory() . '/specialist-cache', 0700), 'Specialist cache directory unavailable.');
+        $capabilities = ['database', 'messaging', 'validation', 'cache'];
+    }
+    $newApp = static fn() => foundationProviderApp($overrides, $capabilities);
     if ($contract === 'invalid-durable') {
         foreach ([['enabled' => false], ['failure_store' => ''], ['failure_store' => 'unsupported']] as $invalid) {
             $bad = array_replace_recursive($config, ['durable' => $invalid]);
@@ -133,7 +145,68 @@ function foundationMessagingContracts(string $contract): void
             }
         });
     };
-    if ($contract === 'worker-options') {
+    if ($specialist) {
+        $app->execution()->run(static function () use ($app, $contract): void {
+            $db = $app->make(DBLayerFactory::class)->connection();
+            $db->statement('CREATE TABLE lab_messaging_stock (id INTEGER PRIMARY KEY, quantity INTEGER NOT NULL)');
+            $db->statement('CREATE TABLE lab_messaging_orders (id VARCHAR(80) PRIMARY KEY, quantity INTEGER NOT NULL)');
+            verify($db->table('lab_messaging_stock')->insert(['id' => 1, 'quantity' => 5]), 'Stock seed failed.');
+            $validator = $app->make(\Infocyph\Foundation\Validation\ValidatorFactory::class)->compile('lab.receipt');
+            $manager = $app->make(\Infocyph\Foundation\Cache\CacheManager::class);
+            $cache = $manager->store();
+            $foreign = $manager->store('lab-foreign');
+            verify($cache->set('stock', 5, 600) && $foreign->set('stock', 99, 600), 'Cache seed failed.');
+            $bus = $app->make(MessageBus::class);
+            $commits = 0;
+            $place = static function (string $id, array $input, bool $rollback) use ($db, $validator, $cache, $bus, &$commits): bool {
+                if (!$validator->validate($input)->passes()) {
+                    return false;
+                }
+                $db->transaction(static function ($active) use ($id, $input, $rollback, $cache, $bus, &$commits): void {
+                    verify($active->table('lab_messaging_stock')->where('id', '=', 1)->update(['quantity' => 5 - $input['quantity']]) === 1, 'Stock update failed.');
+                    verify($active->table('lab_messaging_orders')->insert(['id' => $id, 'quantity' => $input['quantity']]), 'Order write failed.');
+                    $active->afterCommit(static function () use ($id, $cache, $bus, &$commits): void {
+                        ++$commits;
+                        verify($cache->delete('stock'), 'Committed cache invalidation failed.');
+                        $bus->dispatch(new Receipt($id, 'normal'));
+                    });
+                    if ($rollback) {
+                        throw new DomainException('intentional order rollback');
+                    }
+                });
+
+                return true;
+            };
+            if ($contract === 'validated-publication') {
+                verify(!$place('invalid', ['sku' => 999, 'quantity' => 1], false)
+                    && !$place('invalid', ['sku' => 1, 'quantity' => 0], false), 'Invalid admission published work.');
+            } elseif ($contract === 'rollback-publication') {
+                labMessagingReject(static fn() => $place('rolled-back', ['sku' => 1, 'quantity' => 2], true),
+                    DomainException::class, 'Rollback exception was swallowed.');
+            }
+            verify($commits === 0 && $db->table('lab_messaging_orders')->count() === 0
+                && (int) $db->table('lab_messaging_stock')->find(1)['quantity'] === 5
+                && $cache->get('stock') === 5 && $foreign->get('stock') === 99
+                && $app->make(DBLayerTransport::class)->size('lab-receipts') === 0, 'Rejected admission leaked durable or cache effects.');
+            verify($place('specialist-receipt', ['sku' => 1, 'quantity' => 2], false) && $commits === 1
+                && !$cache->has('stock') && $foreign->get('stock') === 99, 'Committed publication/invalidation did not settle.');
+            if ($contract === 'cache-publication') {
+                verify($cache->remember('stock', static fn(): int => (int) $db->table('lab_messaging_stock')->find(1)['quantity'], 600) === 3,
+                    'Cache refill did not observe committed SQL state.');
+            }
+        });
+        verify($transport->size('lab-receipts') === 1 && $effects($app) === [], 'Deferred message was not isolated from consumer effects.');
+        $replacement = $newApp();
+        $replacement->make(OmnibusWorkerFactory::class)->make('one')->run();
+        verify($effects($replacement) === ['specialist-receipt'] && $replacement->make(DBLayerTransport::class)->size('lab-receipts') === 0, 'Replacement worker lost committed receipt.');
+        $replacement->execution()->run(static function () use ($replacement, $contract): void {
+            $db = $replacement->make(DBLayerFactory::class)->connection();
+            $manager = $replacement->make(\Infocyph\Foundation\Cache\CacheManager::class);
+            verify($db->table('lab_messaging_orders')->count() === 1 && (int) $db->table('lab_messaging_stock')->find(1)['quantity'] === 3
+                && $manager->store('lab-foreign')->get('stock') === 99
+                && $manager->store()->get('stock') === ($contract === 'cache-publication' ? 3 : null), 'Replacement observed incorrect durable or cache state.');
+        });
+    } elseif ($contract === 'worker-options') {
         verify($factory->has('bounded') && !$factory->has('missing'), 'Worker registry lookup differs.');
         $options = $factory->options('bounded');
         verify($options->queue === 'lab-receipts' && $options->prefetch === 8 && $options->visibilitySeconds === 15.0 && $options->maxMessages === 2 && !$options->handleSignals, 'Resolved worker options differ.');

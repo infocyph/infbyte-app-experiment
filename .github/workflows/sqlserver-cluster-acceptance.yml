@@ -1,0 +1,80 @@
+name: SQL Server external clustered HA acceptance
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DISPOSABLE-HA-LAB to authorize fencing the current primary in the dedicated lab.'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: sqlserver-external-ha-lab
+  cancel-in-progress: false
+jobs:
+  external-ha:
+    if: inputs.confirm == 'DISPOSABLE-HA-LAB' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: sqlserver-ha-lab
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlsrv
+          tools: composer:v2
+          coverage: none
+      - name: Install published consumer
+        run: |
+          set -euo pipefail
+          printf 'PROJECT=%s/production-app\nEVIDENCE=%s/ha-evidence\n' "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/ha-evidence"
+          composer create-project --no-dev --prefer-dist --no-interaction --no-progress infocyph/infbyte "$RUNNER_TEMP/production-app" '^4.0'
+          cd "$RUNNER_TEMP/production-app"
+          php infbyte module:install data.database --json=1
+          php infbyte module:enable data.database --json=1
+          composer check-platform-reqs --no-dev
+          if ! odbcinst -q -d -n 'ODBC Driver 18 for SQL Server' >/dev/null 2>&1; then
+            . /etc/os-release
+            curl -fsSL "https://packages.microsoft.com/config/ubuntu/$VERSION_ID/packages-microsoft-prod.deb" -o "$RUNNER_TEMP/packages-microsoft-prod.deb"
+            sudo dpkg -i "$RUNNER_TEMP/packages-microsoft-prod.deb"
+            sudo apt-get update
+            sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18
+          fi
+          odbcinst -q -d -n 'ODBC Driver 18 for SQL Server'
+      - name: Seed external synchronized replicas and exercise native fencing
+        env:
+          LAB_HA_LISTENER: ${{ vars.SQL_HA_LISTENER }}
+          LAB_HA_USER: ${{ secrets.SQL_HA_USER }}
+          LAB_HA_PASSWORD: ${{ secrets.SQL_HA_PASSWORD }}
+          LAB_HA_MANAGER: ${{ vars.SQL_HA_MANAGER }}
+          LAB_HA_SSH_KEY: ${{ secrets.SQL_HA_SSH_KEY }}
+          LAB_HA_KNOWN_HOSTS: ${{ secrets.SQL_HA_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "$LAB_HA_LISTENER" && test -n "$LAB_HA_USER" && test -n "$LAB_HA_PASSWORD"
+          test -n "$LAB_HA_SSH_KEY" && test -n "$LAB_HA_KNOWN_HOSTS"
+          [[ "$LAB_HA_MANAGER" =~ ^[a-zA-Z0-9_-]+@[a-zA-Z0-9.-]+$ ]]
+          root="$(mktemp -d)"
+          trap 'rm -rf "$root"' EXIT
+          printf '%s\n' "$LAB_HA_SSH_KEY" > "$root/key"
+          printf '%s\n' "$LAB_HA_KNOWN_HOSTS" > "$root/known_hosts"
+          unset LAB_HA_SSH_KEY LAB_HA_KNOWN_HOSTS
+          remote() { ssh -i "$root/key" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$root/known_hosts" -o ConnectTimeout=10 "$LAB_HA_MANAGER" "$@"; }
+          test "$(remote 'sudo -n crm_attribute --type crm_config --name stonith-enabled --query --quiet')" = true
+          remote 'sudo -n corosync-quorumtool -s' | grep -E '^Quorate:[[:space:]]+Yes$'
+          timeout 120s php qa/workloads/sqlserver-cluster-acceptance.php seed
+          primary="$(php -r '$s=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);echo $s["primary"];' "$EVIDENCE/ha-state.json")"
+          [[ "$primary" =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$ ]]
+          test "$(remote 'uname -n')" != "$primary"
+          remote "sudo -n stonith_admin --reboot '$primary' --timeout 120" | tee "$EVIDENCE/fence.log"
+          remote "sudo -n stonith_admin --history '$primary'" > "$EVIDENCE/fence-history.log"
+          timeout 240s php qa/workloads/sqlserver-cluster-acceptance.php recover
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: sqlserver-cluster-acceptance
+          path: ${{ runner.temp }}/ha-evidence/
+          if-no-files-found: error

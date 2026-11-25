@@ -32,8 +32,10 @@ $rows=array_map(fn($s)=>json_decode($s,true,flags:JSON_THROW_ON_ERROR),file($arg
 $kind=fn($name)=>array_values(array_filter($rows,fn($row)=>$row["kind"]===$name));
 $count=(int)$argv[2];$contract=$argv[3];$expected=[];
 for($i=1;$i<=$count;$i++)$expected[]=["kind"=>"request","stream"=>2*$i-1,"path"=>"/stream/".$i,"method"=>$contract==="head"&&$i%2===1?"HEAD":"GET"];
-$expected[]=["kind"=>"request","stream"=>2*$count+1,"path"=>"/recovery","method"=>"GET"];
-if($kind("connection")!==[["kind"=>"connection","alpn"=>"h2"]]||$kind("request")!==$expected||$kind("recovered")!==[["kind"=>"recovered","stream"=>2*$count+1]])exit(1);
-foreach(["reset","cancel"] as $fault)if($kind($fault)!==($contract===$fault?[["kind"=>$fault,"stream"=>1]]:[]))exit(1);
+if($contract!=="goaway")$expected[]=["kind"=>"request","stream"=>2*$count+1,"path"=>"/recovery","method"=>"GET"];
+if($kind("connection")!==[["kind"=>"connection","alpn"=>"h2"]]||$kind("request")!==$expected||$kind("recovered")!==($contract==="goaway"?[]:[["kind"=>"recovered","stream"=>2*$count+1]]))exit(1);
+foreach(["reset","cancel"] as $fault)if($kind($fault)!==(($contract===$fault||($contract==="deadline"&&$fault==="cancel"))?[["kind"=>$fault,"stream"=>1]]:[]))exit(1);
+if($contract==="ping"&&($kind("ping")!==[["kind"=>"ping"]]||$kind("ping-ack")!==[["kind"=>"ping-ack"]]))exit(1);
+if($contract==="goaway"&&$kind("goaway")!==[["kind"=>"goaway","last"=>2*$count-3]])exit(1);
 if($contract==="flow"&&$kind("window-block")===[])exit(1);
 ' "$EVIDENCE/runwire-multiplex-events.jsonl" "$count" "$contract"

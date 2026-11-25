@@ -543,3 +543,63 @@ function sqsTlsContracts(): void
     }
     echo "Verified SQS-compatible HTTPS edge, trust/identity/plaintext rejection and durable receipt recovery completed\n";
 }
+
+function amqpTlsSettlementContracts(string $phase, string $contract): void
+{
+    [$db, $serializer] = messagingSetup($phase === 'seed');
+    $root = (string) getenv('LAB_AMQP_TLS_ROOT');
+    $connection = labAmqpTls('localhost', $root . '/ca.crt');
+    $channel = $connection->channel();
+    $queue = 'lab-tls-settlement';
+    $transport = new AmqpTransport(new LabAmqpBackend($channel), $serializer);
+    if ($phase === 'seed') {
+        $channel->queue_declare($queue, false, true, false, false);
+        $channel->confirm_select();
+        $confirmed = 0;
+        $channel->set_ack_handler(static function () use (&$confirmed): void { ++$confirmed; });
+        $channel->set_nack_handler(static function (): never { throw new RuntimeException('TLS broker rejected publication.'); });
+        $channel->set_return_listener(static function (): never { throw new RuntimeException('TLS broker returned unrouted message.'); });
+        foreach (range(1, 6) as $id) {
+            $transport->send(new Envelope(new LabJob('tls-settle-' . $id, $id)), $queue);
+        }
+        $channel->wait_for_pending_acks_returns(10.0);
+        verify($confirmed === 6, 'TLS publisher confirmation missing.');
+        $deliveries = iterator_to_array($transport->receive($queue, 1));
+        verify(count($deliveries) === 1 && $deliveries[0]->envelope()->message->id === 'tls-settle-1', 'Initial receipt missing.');
+        $first = $deliveries[0];
+        brokerRecordEffect($db, $first->envelope()->message);
+        if ($contract === 'acknowledged') {
+            $transport->acknowledge($first);
+            verify($transport->size($queue) === 5, 'Ordered acknowledgement confirmation failed.');
+        }
+        verify(file_put_contents($root . '/settlement-id', $first->messageId, LOCK_EX) !== false && touch($root . '/seeded'), 'Settlement barrier failed.');
+        cacheWaitMarker($root . '/stopped');
+        expectFailure(static fn() => $channel->queue_declare($queue, true), \PhpAmqpLib\Exception\AMQPExceptionInterface::class, 'Killed TLS broker remained available.');
+        verify(touch($root . '/observed'), 'Broker outage observation failed.');
+        return;
+    }
+    try {
+        $seen = [];
+        $expectedIds = range($contract === 'acknowledged' ? 2 : 1, 6);
+        foreach ($transport->receive($queue, 6) as $delivery) {
+            $job = $delivery->envelope()->message;
+            verify($job instanceof LabJob && !isset($seen[$job->step]) && $job->id === 'tls-settle-' . $job->step, 'Recovery delivery identity differs.');
+            if ($job->step === 1) {
+                verify($delivery->messageId === file_get_contents($root . '/settlement-id') && $delivery->attempt >= 2, 'Unsettled TLS receipt lost redelivery identity.');
+            }
+            brokerRecordEffect($db, $job);
+            $transport->acknowledge($delivery);
+            $seen[$job->step] = true;
+        }
+        $channel->queue_declare($queue, true);
+        $actualIds = array_keys($seen);
+        sort($actualIds);
+        verify($actualIds === $expectedIds && $transport->size($queue) === 0 && $db->table('lab_job_effects')->count() === 6, 'TLS broker recovery lost or duplicated durable effects.');
+        foreach (range(1, 6) as $id) {
+            verify((int) $db->table('lab_job_effects')->find('tls-settle-' . $id)['step'] === $id, 'Durable effect reconciliation failed.');
+        }
+    } finally {
+        $connection->close();
+    }
+    echo "TLS broker $contract settlement recovered across real crash\n";
+}

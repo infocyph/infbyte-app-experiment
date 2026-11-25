@@ -48,6 +48,28 @@ composer show --format=json > "$EVIDENCE/packages.json"
 ready
 export LAB_AMQP_TLS_ROOT="$root"
 probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
+if [[ "$SCENARIO" == ecosystem-amqp-tls-settlement-* ]]; then
+  contract="${SCENARIO##*-}"
+  php "$probe" amqp-tls-settlement-phase seed "$contract" > "$EVIDENCE/amqp-tls-settlement-seed.log" 2>&1 &
+  worker=$!
+  trap 'kill "$worker" 2>/dev/null || :; wait "$worker" 2>/dev/null || :; cleanup' EXIT
+  for attempt in {1..400}; do
+    [[ -f "$root/seeded" ]] && break
+    kill -0 "$worker"
+    sleep 0.1
+  done
+  test -f "$root/seeded"
+  docker kill lab-broker-tls >/dev/null
+  if timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/15671' 2>/dev/null; then exit 1; fi
+  touch "$root/stopped"
+  wait "$worker"
+  test -f "$root/observed"
+  cat "$EVIDENCE/amqp-tls-settlement-seed.log"
+  docker start lab-broker-tls >/dev/null
+  ready
+  php "$probe" amqp-tls-settlement-phase recover "$contract" | tee "$EVIDENCE/amqp-tls-settlement-recover.log"
+  exit 0
+fi
 php "$probe" amqp-tls-seed | tee "$EVIDENCE/amqp-seed.log"
 docker stop -t 20 lab-broker-tls >/dev/null
 if timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/15671' 2>/dev/null; then exit 1; fi
