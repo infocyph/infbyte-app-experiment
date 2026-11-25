@@ -1138,6 +1138,25 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-foundation-communication-auth-header, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-auth-query, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-auth-basic, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-auth-bearer, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-profile, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-invalid-profile, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-tls, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-body-limit, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-cookies, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-retry, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-idempotency, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-rate-limit, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-circuit, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-webhook, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-webhook-retry, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-webhook-bound, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-double-retry, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-production-peer, backend: pgsql}
+          - {scenario: ecosystem-foundation-communication-production-host, backend: pgsql}
           - {scenario: ecosystem-otp-redis-tls-restart, backend: pgsql}
           - {scenario: ecosystem-otp-redis-tls-live, backend: pgsql}
           - {scenario: ecosystem-otp-valkey-tls-restart, backend: pgsql}

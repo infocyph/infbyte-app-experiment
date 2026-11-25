@@ -68,6 +68,7 @@ require __DIR__ . '/ecosystem-cache-contracts.php';
 require __DIR__ . '/ecosystem-cache-locking.php';
 require __DIR__ . '/ecosystem-foundation-contracts.php';
 require __DIR__ . '/ecosystem-foundation-providers.php';
+require __DIR__ . '/ecosystem-foundation-communication.php';
 require __DIR__ . '/ecosystem-foundation-storage-cache.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
 require __DIR__ . '/ecosystem-storage-boundaries.php';
@@ -708,6 +709,25 @@ match ($argv[1] ?? '') {
     'http-response-limit-multi-body' => httpResponseLimitContracts('multi', 'body'),
     'http-response-limit-multi-header-bytes' => httpResponseLimitContracts('multi', 'header-bytes'),
     'http-response-limit-multi-header-count' => httpResponseLimitContracts('multi', 'header-count'),
+    'foundation-communication-auth-header' => foundationCommunicationContracts('auth-header'),
+    'foundation-communication-auth-query' => foundationCommunicationContracts('auth-query'),
+    'foundation-communication-auth-basic' => foundationCommunicationContracts('auth-basic'),
+    'foundation-communication-auth-bearer' => foundationCommunicationContracts('auth-bearer'),
+    'foundation-communication-profile' => foundationCommunicationContracts('profile'),
+    'foundation-communication-invalid-profile' => foundationCommunicationContracts('invalid-profile'),
+    'foundation-communication-tls' => foundationCommunicationContracts('tls'),
+    'foundation-communication-body-limit' => foundationCommunicationContracts('body-limit'),
+    'foundation-communication-cookies' => foundationCommunicationContracts('cookies'),
+    'foundation-communication-retry' => foundationCommunicationContracts('retry'),
+    'foundation-communication-idempotency' => foundationCommunicationContracts('idempotency'),
+    'foundation-communication-rate-limit' => foundationCommunicationContracts('rate-limit'),
+    'foundation-communication-circuit' => foundationCommunicationContracts('circuit'),
+    'foundation-communication-webhook' => foundationCommunicationContracts('webhook'),
+    'foundation-communication-webhook-retry' => foundationCommunicationContracts('webhook-retry'),
+    'foundation-communication-webhook-bound' => foundationCommunicationContracts('webhook-bound'),
+    'foundation-communication-double-retry' => foundationCommunicationContracts('double-retry'),
+    'foundation-communication-production-peer' => foundationCommunicationContracts('production-peer'),
+    'foundation-communication-production-host' => foundationCommunicationContracts('production-host'),
     'http-policy' => httpPolicyWorkload(),
     'redis-cluster' => redisClusterWorkload(),
     'mongodb' => mongoWorkload(),

@@ -1,6 +1,8 @@
 """Loopback TLS HTTP peer; records only synthetic request counts."""
 import json
 import hashlib
+import hmac
+import base64
 from email.parser import BytesParser
 from email.policy import default
 import os
@@ -85,6 +87,25 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(413, {})
             return
         path = urlsplit(self.path).path
+        if path.startswith("/foundation-webhook"):
+            payload = self.rfile.read(length)
+            delivery = self.headers.get("X-TB-Delivery", "")
+            event = self.headers.get("X-TB-Event", "")
+            stamp = self.headers.get("X-TB-Timestamp", "")
+            signed = stamp.encode() + b".talkingbytes.webhook.v2\0" + event.encode() + b"\0" + delivery.encode() + b"\0" + payload
+            expected = "t=" + stamp + ",v2=" + hmac.new(b"fixture-signing-only", signed, hashlib.sha256).hexdigest()
+            digest = hashlib.sha256(payload).hexdigest()
+            with lock:
+                counts[path] = counts.get(path, 0) + 1
+                attempt = counts[path]
+                first = mutations.setdefault(path, (digest, delivery))
+            valid = (hmac.compare_digest(expected, self.headers.get("X-TB-Signature", ""))
+                     and delivery == "foundation-delivery" and event == "orders.created"
+                     and self.headers.get("X-TB-Attempt") == str(attempt))
+            status = 503 if path.endswith("-retry") and attempt < 3 else 200
+            self.reply(status, {"attempt": attempt, "valid": valid, "same_body": first == (digest, delivery),
+                                "profile": self.headers.get("X-Lab-Profile")}, [("Retry-After", "0")])
+            return
         if path.startswith("/mutation/"):
             payload = self.rfile.read(length)
             digest = hashlib.sha256(payload).hexdigest()
@@ -138,6 +159,21 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(503, {"attempt": attempt}, [("Retry-After", "0")])
         elif path == "/missing":
             self.reply(404, {"attempt": attempt})
+        elif path == "/foundation-profile":
+            auth = self.headers.get("Authorization", "")
+            if auth == "Bearer fixture-token":
+                driver = "bearer"
+            elif auth == "Basic " + base64.b64encode(b"fixture:fixture-password").decode():
+                driver = "basic"
+            elif self.headers.get("X-Lab-Key") == "fixture-key":
+                driver = "header"
+            elif parse_qs(urlsplit(self.path).query).get("fixture_key") == ["fixture-key"]:
+                driver = "query"
+            else:
+                driver = "none"
+            self.reply(200, {"profile": self.headers.get("X-Lab-Profile"), "auth": driver})
+        elif path == "/foundation-fail":
+            self.reply(503, {"attempt": attempt})
         elif path == "/redirect-query":
             query = parse_qs(urlsplit(self.path).query)
             if query.get("phase") == ["target"]:
