@@ -9,6 +9,8 @@ require __DIR__ . '/bootstrap.php';
 $app = application();
 $scenario = match (getenv('SCENARIO')) {
     'orders' => new Orders($app),
+    'import' => new DataImport($app),
+    'native-otp' => new NativeOtp($app),
     'storage' => new Storage($app),
     'oauth' => new OAuth($app),
     'accounts' => new Accounts($app),

@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Experiment;
 
-use Infocyph\DBLayer\Migration\MigrationRunner;
 use Infocyph\Foundation\Application\Application;
 use Infocyph\Foundation\Auth\Account\Account;
 use Infocyph\Foundation\Auth\Account\AccountStatus;
 use Infocyph\Foundation\Auth\AuthServices;
 use Infocyph\Foundation\Auth\Contract\Storage\SessionStoreInterface;
 use Infocyph\Foundation\Auth\Http\AuthActions;
-use Infocyph\Foundation\Database\AuthSchema\AuthSchema;
-use Infocyph\Foundation\Database\AuthSchema\AuthTables;
+use Infocyph\Foundation\Database\AuthSchema\AuthSchemaInstaller;
 use Infocyph\Foundation\Database\DBLayerFactory;
 
 final readonly class Accounts
@@ -22,8 +20,9 @@ final readonly class Accounts
     /** @throws \Throwable */
     public function setup(): void
     {
-        $db = $this->app->make(DBLayerFactory::class)->connection();
-        new MigrationRunner($db, [new AuthSchema(new AuthTables())])->run();
+        $installer = $this->app->make(AuthSchemaInstaller::class);
+        $installer->install();
+        ensure($installer->installed(), 'Native auth schema is not ready within its CLI execution scope.');
     }
 
     /** @throws \Throwable */

@@ -15,6 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: import, backend: mysql}
+          - {scenario: import, backend: pgsql}
+          - {scenario: native-otp, backend: pgsql}
           - {scenario: orders, backend: pgsql}
           - {scenario: orders, backend: mysql}
           - {scenario: accounts, backend: pgsql}
@@ -205,7 +208,7 @@ jobs:
           done
           export GRPC_TEST_PORT="$(php -r 'echo json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR)["port"];' "$RUNNER_TEMP/grpc-ready.json")"
           for concurrency in 1 4 8; do
-            start="$(date +%s%3N)"
+            start="$(php -r 'echo intdiv(hrtime(true), 1000000);')"
             pids=()
             for worker in $(seq 1 "$concurrency"); do
               php qa/workloads/grpc-client.php "$concurrency-$worker" 100 > "$EVIDENCE/results-$concurrency-$worker.jsonl" 2> "$EVIDENCE/errors-$concurrency-$worker.log" &
@@ -214,7 +217,7 @@ jobs:
             failed=0
             for pid in "${pids[@]}"; do if ! wait "$pid"; then failed=1; fi; done
             if (( failed )); then cat "$EVIDENCE"/errors-"$concurrency"-*.log >&2; exit 1; fi
-            php qa/workloads/report.php "$((concurrency * 100))" "$(( $(date +%s%3N) - start ))" "$concurrency" "$EVIDENCE"/results-"$concurrency"-*.jsonl | tee "$EVIDENCE/summary-$concurrency.json"
+            php qa/workloads/report.php "$((concurrency * 100))" "$(( $(php -r 'echo intdiv(hrtime(true), 1000000);') - start ))" "$concurrency" "$EVIDENCE"/results-"$concurrency"-*.jsonl | tee "$EVIDENCE/summary-$concurrency.json"
           done
       - uses: actions/upload-artifact@v7
         if: always()
