@@ -15,6 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-invalidation-sql, backend: mysql}
+          - {scenario: ecosystem-invalidation-sql, backend: pgsql}
+          - {scenario: ecosystem-invalidation-stream, backend: pgsql}
           - {scenario: browser, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
           - {scenario: browser, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
           - {scenario: browser, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}

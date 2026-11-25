@@ -46,9 +46,12 @@ require __DIR__ . '/ecosystem-webrick.php';
 require __DIR__ . '/ecosystem-jose.php';
 require __DIR__ . '/ecosystem-mailbox.php';
 require __DIR__ . '/ecosystem-brokers.php';
+require __DIR__ . '/ecosystem-invalidation.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'invalidation-sql' => invalidationSqlWorkload(),
+    'invalidation-stream' => invalidationStreamWorkload(),
     'amqp' => amqpWorkload(),
     'sqs' => sqsWorkload(),
     'imap' => imapWorkload(),

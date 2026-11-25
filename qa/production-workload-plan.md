@@ -187,3 +187,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B34 — Swoole-family hosted runtime parity
 - [x] Four actual Swoole/OpenSwoole browser lanes, both compiled matchers.
 - [ ] Hosted verification and remaining host/protocol options.
+
+## B35 — distributed invalidation and outbox
+- [x] Three independent SQL/Redis Streams coherence lanes.
+- [ ] Hosted verification, multiprocess node and transport failure cases.

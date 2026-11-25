@@ -147,3 +147,7 @@ I: eight Gray-code shards × 32 distinct masks cover all 256 explicit optional-f
 ## B34 — actual Swoole-family host acceptance
 
 I: four new browser workload jobs (Swoole PHP 8.5 and OpenSwoole PHP 8.6 × fused/sharded), with actual extension checks, explicit Runwire SWOOLE host selection, existing 200 concurrent browser operations, host replacement and session/HTTP invariants. PHP 8.5 for Swoole follows Foundation's documented upstream 8.6 extension compilation limitation; no fake host or native fallback. RoadRunner, FrankenPHP and other separately supported direct adapters remain open. Hosted verification pending.
+
+## B35 — distributed invalidation and transactional outbox
+
+I: real MySQL/PostgreSQL and Redis Streams, independent local SQLite node stores, namespace isolation, key/namespace invalidation, offline catchup, durable cursor replacement and history rotation; SQL native outbox commit/rollback visibility and idempotent post-commit local application; actual stream trim retention-gap recovery. APCu disabled deliberately to isolate independent node stores within one process; multiprocess node/transport-outage coverage remains open. Hosted verification pending.

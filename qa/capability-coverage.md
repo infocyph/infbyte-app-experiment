@@ -109,3 +109,5 @@ B32 adds RabbitMQ and SQS-compatible integration using documented application-ow
 B33 adds explicit 256-mask Foundation topology qualification and shared-package lifecycle; specialist driver permutations remain open.
 
 B34 adds actual Swoole PHP 8.5 and OpenSwoole PHP 8.6 browser runtime acceptance (fused/sharded); no native fallback.
+
+B35 adds real distributed invalidation logs, offline cursor/retention and transactional outbox scenarios; node caches are independent local SQLite stores.
