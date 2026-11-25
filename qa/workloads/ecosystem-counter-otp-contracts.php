@@ -161,3 +161,33 @@ function counterElectionWorkload(bool $seed): void
     }
     echo "$backend counter election " . ($seed ? 'seed' : 'verification') . " passed\n";
 }
+
+
+function counterUncertainWorkload(string $backend, int $port): void
+{
+    $root = (string) getenv('LAB_COUNTER_FAULT_ROOT');
+    $factory = static fn(int $target): AtomicCounterStoreInterface => $backend === 'redis'
+        ? AtomicCounters::redis('lab-uncertain', "redis://127.0.0.1:$target")
+        : AtomicCounters::valkey('lab-uncertain', "valkey://127.0.0.1:$target");
+    $direct = $factory($port);
+    foreach (['before', 'after'] as $key) {
+        verify($direct->increment($key, 10, 600)->value === 10, 'Counter seed failed.');
+        $proxy = $factory(17392);
+        expectFailure(static fn() => $proxy->increment($key, 7, 3600), AtomicCounterException::class, 'Unconfirmed mutation reported success.');
+        verify(is_file($root . '/fault-' . $key), 'Expected socket fault was not reached.');
+        verify(!is_file($root . '/replay-' . $key), 'Client automatically replayed uncertain mutation.');
+        $fresh = $factory($port);
+        verify($fresh->get($key) === ($key === 'before' ? 10 : 17), 'Independent read did not reconcile actual mutation.');
+        if ($key === 'before') {
+            verify($fresh->increment($key, 7)->value === 17, 'Proven uncommitted operation failed to recover.');
+        }
+        verify($fresh->get($key) === 17, 'Reconciled counter value differs.');
+    }
+    $client = new Redis();
+    verify($client->connect('127.0.0.1', $port, 2.0), 'Independent TTL observer unavailable.');
+    foreach (['before', 'after'] as $key) {
+        $ttl = $client->ttl('cachelayer:counter:lab-uncertain:' . $key);
+        verify($ttl > 0 && $ttl <= 600, 'Uncertain update extended original TTL.');
+    }
+    echo "$backend actual mutation response loss and no automatic replay passed\n";
+}

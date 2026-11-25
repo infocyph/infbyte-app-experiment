@@ -84,6 +84,8 @@ match ($argv[1] ?? '') {
     'counter-tls-offline' => counterTlsWorkload('offline'),
     'counter-tls-recover' => counterTlsWorkload('recover'),
     'counter-contracts' => counterContractsWorkload(),
+    'counter-uncertain' => counterUncertainWorkload('redis', 6379),
+    'valkey-counter-uncertain' => counterUncertainWorkload('valkey', 6380),
     'counter-election-seed' => counterElectionWorkload(true),
     'counter-election-verify' => counterElectionWorkload(false),
     'otp-valkey' => otpAdditionalBackendWorkload('valkey'),

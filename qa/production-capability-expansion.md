@@ -425,3 +425,7 @@ I: one minimal W3C lane verifies all four risk decisions in enforcement/shadow, 
 ## B103 — SMTP settlement ambiguity and verified authentication transport
 
 I: two independent loopback SMTP lanes exercise full DATA acceptance with lost final reply versus explicit 451 rejection and confirmed delivery, stable prepared message identity and no automatic replay; actual STARTTLS/implicit TLS, PLAIN/LOGIN, untrusted CA, downgrade refusal and credential-redacted transcript. Disposable peer records bounded fixture payload digests only; no external email or exactly-once claim. 358 routine rows; hosted verification pending (DATA-01, SEC, OPS, EXEC-03).
+
+## B104 — Actual Redis/Valkey atomic counter settlement ambiguity
+
+I: independent bounded RESP2 relay drops one EVAL before forwarding and withholds one real successful EVAL response. Direct observer reconciles 10 versus 17, rejects automatic replay, verifies fixed TTL and explicitly retries only the proven uncommitted operation. Two hosted lanes; fixture is loopback and plaintext, not a provider exactly-once guarantee. 360 routine rows; hosted qualification pending (DATA, OPS, EXEC-03).
