@@ -324,6 +324,10 @@ jobs:
           - {scenario: ecosystem-smtp-uncertain, backend: pgsql}
           - {scenario: ecosystem-smtp-tls-auth, backend: pgsql}
           - {scenario: ecosystem-omnibus-workflow, backend: pgsql}
+          - {scenario: ecosystem-omnibus-middleware, backend: pgsql}
+          - {scenario: ecosystem-omnibus-middleware, backend: mysql}
+          - {scenario: ecosystem-omnibus-events, backend: pgsql}
+          - {scenario: ecosystem-omnibus-events, backend: mysql}
           - {scenario: ecosystem-omnibus-workflow, backend: mysql}
           - {scenario: ecosystem-omnibus-redis, backend: pgsql}
           - {scenario: ecosystem-omnibus-redis, backend: mysql}
