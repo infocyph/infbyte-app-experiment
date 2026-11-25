@@ -143,3 +143,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B23 — native gRPC streaming and TLS
 - [x] Independent TLS generated-stub native unary/server/client/bidi, deadline, cancellation and channel recovery lane.
 - [ ] Hosted qualification and remaining inbound and protocol features.
+
+## B24 — HTTPS security and retry workload
+- [x] Independent real TLS two-origin TalkingBytes HTTP policy lane.
+- [ ] Hosted verification and remaining transport features.

@@ -103,3 +103,7 @@ I: four isolated hosted jobs for a three-primary Redis Cluster (all slots, no HA
 ## B23 — generated-stub native gRPC over TLS
 
 I: separate native gRPC job (unary lane preserved) using published grpc/grpc and protobuf, real Python HTTP/2 TLS peer with disposable SAN certificate and actual generated-style BaseStub methods. Four workers × 20 cycles, 64 messages per stream, trailers, deadline, cancellation, wrong trust anchor and channel recovery. Bidi follows documented outbound-then-inbound contract, not interactive full duplex. TLS secrets kept outside artifacts. Hosted evidence pending; inbound application dispatcher and other protocol lanes remain open.
+
+## B24 — real HTTPS communication safety
+
+I: actual two-origin TLS HTTP peer, self-signed trust rejection and explicit CA success, 503 recovery with exact attempt count and no 404 retry, sensitive header removal on cross-origin redirect, allow-host and private network rejection, redirect cap, secure cookie path containment, timeout and reuse. No live external destinations or credential artifacts. Hosted qualification pending. Remaining HTTP streaming/multi, Runwire transport and other protocol/provider variants remain open.

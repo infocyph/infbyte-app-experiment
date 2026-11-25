@@ -87,3 +87,5 @@ B21 adds advanced DB transaction/lock contracts and native PDO ownership. No clo
 B22 adds real Redis Cluster, MongoDB, S3-compatible and SFTP v3 scenarios; see detailed register for topology and protocol limitations.
 
 B23 adds native TLS streaming acceptance, preserving the independent unary lane. Full duplex and inbound framework dispatch are not certified.
+
+B24 adds real HTTPS trust, retries, redirect credential boundaries, cookie path and timeout recovery acceptance.
