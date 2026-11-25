@@ -397,3 +397,7 @@ I: two independent lanes cover UID value metadata, custom epochs/formats, six So
 ## B86 — ArrayKit bounded DTO and transformation contracts
 
 I: two independent lanes with native PHP reference membership/sort, adaptive input sizes, strict mixed sets and integer precision, group key rejection, immutable collection ownership, typed mapped nested DTO hydration, guarded cycle/depth/node rejection before mutation, shape validation, literal path control roundtrips and bounded wildcard/overlap operations. Remaining helper variants and configuration lifecycle stay open. 297 routine rows; hosted verification pending.
+
+## B87 — InterMix persistent definition cache and runtime attribute diagnostics
+
+I: independent real Redis and SQLite cache pools validate explicit singleton eligibility, bulk warmup, null/array persistence across builders, environment/generation isolation, non-persistence of objects and unrelated key retention. Another lane exercises custom property resolvers, explicit method arguments, dynamic/compiled dependency ownership and diagnostic graph/trace lifecycle. Actual startup preload, further attribute and cache outage variants remain open. 299 routine rows; hosted verification pending.

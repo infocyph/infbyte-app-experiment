@@ -63,6 +63,7 @@ require __DIR__ . '/ecosystem-utility-lifecycle.php';
 require __DIR__ . '/ecosystem-value-crypto.php';
 require __DIR__ . '/ecosystem-array-contracts.php';
 require __DIR__ . '/ecosystem-di-factories.php';
+require __DIR__ . '/ecosystem-di-runtime-contracts.php';
 require __DIR__ . '/ecosystem-grpc-inbound.php';
 require __DIR__ . '/ecosystem-validation-casts.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
@@ -100,6 +101,8 @@ match ($argv[1] ?? '') {
     'fence-remix' => fenceRemixWorkload(),
     'di-contextual' => diContextualWorkload(),
     'di-factories' => diFactoriesWorkload(),
+    'di-cache' => diCacheWorkload(),
+    'di-attributes' => diAttributesWorkload(),
     'file-index-retention' => fileIndexRetentionWorkload(),
     'archive-security' => archiveSecurityWorkload(),
     'file-watch' => fileWatchWorkload(),

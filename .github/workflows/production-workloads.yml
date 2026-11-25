@@ -136,6 +136,8 @@ jobs:
           - {scenario: ecosystem-fence-remix, backend: pgsql}
           - {scenario: ecosystem-di-contextual, backend: pgsql}
           - {scenario: ecosystem-di-factories, backend: pgsql}
+          - {scenario: ecosystem-di-cache, backend: pgsql}
+          - {scenario: ecosystem-di-attributes, backend: pgsql}
           - {scenario: ecosystem-file-index-retention, backend: pgsql}
           - {scenario: ecosystem-archive-security, backend: pgsql}
           - {scenario: ecosystem-file-watch, backend: pgsql}
