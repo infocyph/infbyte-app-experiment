@@ -274,9 +274,15 @@ require __DIR__ . '/database-sqlserver-tls.php';
 require __DIR__ . '/database-sqlserver-ag.php';
 require __DIR__ . '/database-cache-race.php';
 require __DIR__ . '/database-active-backup.php';
+require __DIR__ . '/database-contracts.php';
 
 $db = new Connection(config(($argv[1] ?? '') === 'mysql-physical-verify' ? ['port' => 3308] : []));
 match ($argv[1] ?? '') {
+    'predicate-contracts' => predicateContracts($db),
+    'pagination-contracts' => paginationContracts($db),
+    'chunk-checkpoint' => chunkCheckpoint($db),
+    'connection-reuse' => connectionReuseContracts($db),
+    'batch-boundaries' => batchBoundaries($db),
     'tls' => databaseTlsWorkload(),
     'sqlserver-tls' => sqlServerTlsWorkload(),
     'sqlserver-ag-seed' => sqlServerAgSeed($db),

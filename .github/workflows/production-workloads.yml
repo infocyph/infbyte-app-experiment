@@ -16,6 +16,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-predicate-contracts, backend: mysql}
+          - {scenario: db-predicate-contracts, backend: mariadb}
+          - {scenario: db-predicate-contracts, backend: pgsql}
+          - {scenario: db-predicate-contracts, backend: sqlite}
+          - {scenario: db-predicate-contracts, backend: mssql, php: '8.4'}
+          - {scenario: db-pagination-contracts, backend: mysql}
+          - {scenario: db-pagination-contracts, backend: mariadb}
+          - {scenario: db-pagination-contracts, backend: pgsql}
+          - {scenario: db-pagination-contracts, backend: sqlite}
+          - {scenario: db-pagination-contracts, backend: mssql, php: '8.4'}
+          - {scenario: db-chunk-checkpoint, backend: mysql}
+          - {scenario: db-chunk-checkpoint, backend: mariadb}
+          - {scenario: db-chunk-checkpoint, backend: pgsql}
+          - {scenario: db-chunk-checkpoint, backend: sqlite}
+          - {scenario: db-chunk-checkpoint, backend: mssql, php: '8.4'}
+          - {scenario: db-connection-reuse, backend: mysql}
+          - {scenario: db-connection-reuse, backend: mariadb}
+          - {scenario: db-connection-reuse, backend: pgsql}
+          - {scenario: db-connection-reuse, backend: sqlite}
+          - {scenario: db-connection-reuse, backend: mssql, php: '8.4'}
+          - {scenario: db-batch-boundaries, backend: mysql}
+          - {scenario: db-batch-boundaries, backend: mariadb}
+          - {scenario: db-batch-boundaries, backend: pgsql}
+          - {scenario: db-batch-boundaries, backend: sqlite}
+          - {scenario: db-batch-boundaries, backend: mssql, php: '8.4'}
           - {scenario: db-commit-uncertain, backend: pgsql}
           - {scenario: db-commit-uncertain, backend: mysql}
           - {scenario: db-commit-uncertain, backend: mariadb}
