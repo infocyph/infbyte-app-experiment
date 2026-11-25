@@ -489,3 +489,7 @@ I: real SQL Server/ODBC lane confirms encrypted transport using the connection D
 ## B119 — Omnibus middleware, routing and durable queued PSR events
 
 I: four independent MySQL/PostgreSQL jobs. Sync and durable SQL transport share ordered middleware, verify short circuit, exception unwinding, handled result, immutable redispatch identity, asynchronous context and exact effects. Event job verifies concrete/parent/interface precedence, propagation stop, missing queued bus and resolver rejection, explicit queued-event codec, fresh transport/handler resolution, and one durable listener effect per queued event. 379 routine rows; hosted qualification pending (DATA, TYPE, OPS, EXEC-03). No upstream changes.
+
+## B120 — TalkingBytes HTTP proxy and mutation retry safety
+
+I: two independent lanes reuse real TLS origin. Mutation lane requires unkeyed POST to stop on 503, keyed/generated-key/explicit opt-in attempts to preserve exact body and stable identity, and deadline/cancellation to prevent a second actual request. Proxy lane uses a fixed-target loopback authenticated CONNECT fixture, checks invalid credentials, origin TLS verification, proxy authorization not reaching origin, host allowlist and strict private-network policy before proxy contact. No general-purpose proxy or external target. 381 routine rows; hosted qualification pending (SEC, DATA, OPS, EXEC-03).

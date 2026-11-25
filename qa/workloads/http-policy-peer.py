@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 
 root = Path(sys.argv[1])
 counts = {}
+mutations = {}
 lock = threading.Lock()
 
 class Handler(BaseHTTPRequestHandler):
@@ -47,6 +48,20 @@ class Handler(BaseHTTPRequestHandler):
         if not 0 < length <= 2 * 1024 * 1024:
             self.reply(413, {})
             return
+        path = urlsplit(self.path).path
+        if path.startswith("/mutation/"):
+            payload = self.rfile.read(length)
+            digest = hashlib.sha256(payload).hexdigest()
+            key = self.headers.get("Idempotency-Key", "")
+            with lock:
+                counts[path] = counts.get(path, 0) + 1
+                attempt = counts[path]
+                first_digest, first_key = mutations.setdefault(path, (digest, key))
+            self.reply(503 if attempt < 3 else 200, {
+                "attempt": attempt, "same_body": digest == first_digest,
+                "same_key": key == first_key, "key_present": bool(key),
+            }, [("Retry-After", "0")])
+            return
         prefix = ("Content-Type: " + self.headers["Content-Type"] + "\r\nMIME-Version: 1.0\r\n\r\n").encode()
         message = BytesParser(policy=default).parsebytes(prefix + self.rfile.read(length))
         result = {}
@@ -75,6 +90,12 @@ class Handler(BaseHTTPRequestHandler):
                     self.wfile.write(payload[offset:offset + 8192])
             except (BrokenPipeError, ConnectionResetError, ssl.SSLError):
                 pass
+        elif path in ("/retry-deadline", "/retry-cancel"):
+            if path == "/retry-cancel":
+                (root / "retry-cancel").touch()
+            self.reply(503, {"attempt": attempt}, [("Retry-After", "3")])
+        elif path == "/proxy-inspect":
+            self.reply(200, {"authorization": bool(self.headers.get("Authorization")), "proxy_authorization": bool(self.headers.get("Proxy-Authorization"))})
         elif path == "/retry" and attempt < 3:
             self.reply(503, {"attempt": attempt}, [("Retry-After", "0")])
         elif path == "/missing":

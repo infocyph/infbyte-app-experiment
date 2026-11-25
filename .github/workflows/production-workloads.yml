@@ -172,6 +172,8 @@ jobs:
           - {scenario: ecosystem-validation-casts, backend: pgsql}
           - {scenario: ecosystem-validation-sanitizers, backend: pgsql}
           - {scenario: ecosystem-http-transfer, backend: pgsql}
+          - {scenario: ecosystem-http-retry-safety, backend: pgsql}
+          - {scenario: ecosystem-http-proxy, backend: pgsql}
           - {scenario: ecosystem-auth-lifecycle, backend: mysql}
           - {scenario: ecosystem-jwt-replay, backend: mysql}
           - {scenario: ecosystem-auth-lifecycle, backend: pgsql}

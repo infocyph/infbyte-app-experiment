@@ -72,3 +72,59 @@ function httpTransferWorkload(): void
     verify(!$failure->successful, 'Download exceeded configured byte limit.');
     echo "Real 1 MiB upload, multipart stream, two download modes and byte bound passed\n";
 }
+
+function httpRetrySafetyWorkload(): void
+{
+    $base = 'https://localhost:' . (int) getenv('LAB_HTTP_PORT');
+    $ca = (string) getenv('LAB_HTTP_CA');
+    $client = HttpClient::curl();
+    $policy = \Infocyph\TalkingBytes\Http\Retry\HttpRetryPolicy::standard(attempts: 3, baseDelayMs: 10);
+    $retry = $client->withHttpRetry($policy);
+    $payload = "fixture\0receipt";
+    $post = static fn(string $path): HttpRequest => HttpRequest::post($base . $path)->caBundle($ca)->raw($payload)->timeout(5);
+    verify($retry->send($post('/mutation/no-key'))->statusCode === 503, 'Unsafe POST was automatically replayed.');
+    $safe = $retry->send($post('/mutation/key')->header('Idempotency-Key', 'fixture-operation'));
+    verify($safe->successful && $safe->response->json()['attempt'] === 3 && $safe->response->json()['same_body'] && $safe->response->json()['same_key'], 'Keyed POST retry lost payload or identity.');
+    $generated = $client->withIdempotency()->withHttpRetry($policy)->send($post('/mutation/generated'));
+    verify($generated->successful && $generated->response->json()['attempt'] === 3 && $generated->response->json()['same_key'] && $generated->response->json()['key_present'], 'Generated idempotency identity changed on retry.');
+    $opted = $retry->send($post('/mutation/opt-in')->allowUnsafeMethodRetry());
+    verify($opted->successful && $opted->response->json()['attempt'] === 3 && $opted->response->json()['same_body'], 'Explicitly enabled POST retry failed.');
+    $request = static fn(string $path): HttpRequest => HttpRequest::get($base . $path)->caBundle($ca)->timeout(5);
+    $deadline = $retry->send($request('/retry-deadline')->withOperationDeadline(OperationDeadline::after(1.0)));
+    verify(!$deadline->successful && ($deadline->metadata['deadline_exceeded'] ?? false) === true && ($deadline->metadata['attempts'] ?? null) === 1, 'Retry delay exceeded operation deadline or replayed.');
+    $cancelPath = (string) getenv('LAB_HTTP_ROOT') . '/retry-cancel';
+    $signal = CancellationSignal::fromCallable(static fn(): bool => is_file($cancelPath));
+    $cancelled = $client->withHttpRetry($policy, cancellation: $signal)->send($request('/retry-cancel'));
+    verify(!$cancelled->successful && ($cancelled->metadata['cancelled'] ?? false) === true && ($cancelled->metadata['attempts'] ?? null) === 1, 'Cancellation after first peer response did not stop retry.');
+    $counts = $client->send($request('/counts'))->response->json();
+    foreach (['/mutation/no-key' => 1, '/mutation/key' => 3, '/mutation/generated' => 3, '/mutation/opt-in' => 3, '/retry-deadline' => 1, '/retry-cancel' => 1] as $path => $expected) {
+        verify(($counts[$path] ?? 0) === $expected, 'Unexpected wire attempt count: ' . $path);
+    }
+    verify($client->send($request('/health'))->successful, 'Client did not recover after cancelled retry.');
+    echo "Real POST retry safety, stable idempotency identity, operation deadline and cancellation passed\n";
+}
+
+function httpProxyWorkload(): void
+{
+    $port = (int) getenv('LAB_HTTP_PORT');
+    $proxy = 'http://127.0.0.1:' . (int) getenv('LAB_HTTP_PROXY');
+    $request = HttpRequest::get('https://localhost:' . $port . '/proxy-inspect')->caBundle((string) getenv('LAB_HTTP_CA'))->proxy($proxy)->timeout(5);
+    $client = HttpClient::curl();
+    $root = (string) getenv('LAB_HTTP_ROOT');
+    $snapshot = static fn(): array => json_decode((string) file_get_contents($root . '/proxy-counts.json'), true, flags: JSON_THROW_ON_ERROR);
+    $before = $snapshot();
+    verify(!$client->send($request->proxyAuth('fixture', 'wrong'))->successful, 'Proxy accepted invalid credentials.');
+    $good = $request->proxyAuth('fixture', 'fixture-only-password')->withBearerToken('origin-only-token');
+    $result = $client->send($good);
+    verify($result->successful && $result->response->json() === ['authorization' => true, 'proxy_authorization' => false], 'Origin credential or proxy credential boundary failed.');
+    $after = $snapshot();
+    verify($after['denied'] > $before['denied'] && $after['accepted'] === $before['accepted'] + 1, 'Expected authenticated CONNECT was not observed.');
+    verify(!$client->send($good->blockPrivateNetworks())->successful, 'Strict private-address policy allowed remote proxy.');
+    verify(!$client->send($good->allowHosts(['foreign.example.test']))->successful, 'Proxy bypassed explicit host allowlist.');
+    verify($snapshot() === $after, 'Blocked request reached proxy.');
+    $untrusted = HttpRequest::get('https://localhost:' . $port . '/proxy-untrusted')->proxy($proxy)->proxyAuth('fixture', 'fixture-only-password')->timeout(5);
+    verify(!$client->send($untrusted)->successful, 'Proxy bypassed origin TLS verification.');
+    $counts = $client->send(HttpRequest::get('https://localhost:' . $port . '/counts')->caBundle((string) getenv('LAB_HTTP_CA')))->response->json();
+    verify(($counts['/proxy-inspect'] ?? 0) === 1 && !isset($counts['/proxy-untrusted']), 'Origin request count violated proxy security boundary.');
+    echo "Authenticated CONNECT tunnel, origin TLS, credential isolation and preflight host policies passed\n";
+}

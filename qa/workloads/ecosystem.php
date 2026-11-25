@@ -100,6 +100,8 @@ match ($argv[1] ?? '') {
     'validation-casts' => validationCastsWorkload(),
     'validation-sanitizers' => validationSanitizersWorkload(),
     'http-transfer' => httpTransferWorkload(),
+    'http-retry-safety' => httpRetrySafetyWorkload(),
+    'http-proxy' => httpProxyWorkload(),
     'amqp-dlq' => amqpDlqWorkload(),
     'amqp-ack-uncertain' => brokerAcknowledgementWorkload('amqp'),
     'amqp-wire-ack' => brokerAcknowledgementWorkload('amqp-wire'),
