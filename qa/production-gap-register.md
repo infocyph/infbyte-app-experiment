@@ -1,4 +1,4 @@
-# Consolidated remaining implementation register (B72)
+# Consolidated remaining implementation register (B73)
 
 This is a conservative, current gap register, not an exhaustive certification. `I` means a scenario is committed, not passed. Historical open rows in the append-only expansion register are not automatically closed by later work. Phase 1 ends only when every applicable documented capability and public production contract has an independently executable scenario or a justified explicit exclusion. Hosted failures remain required and upstream repairs are deferred.
 
@@ -18,7 +18,7 @@ This is a conservative, current gap register, not an exhaustive certification. `
 | Pathwise | P01 | All official adapters, SFTP pinning, streams, chunks, range, scanner, transaction/atomic local operations, B55 index/retention/deduplication, ZIP bounds and watcher | Remote interruption and retries; adapter-specific semantics, queue/audit, further archive variants and rollback failure |
 | Omnibus | M01 | SQL/Redis workflows, AMQP/SQS boundaries, B59 actual RabbitMQ DLQ/reconnection and SQS FIFO, retry/dead letter, reservation loss, outbox | Broker TLS/outage and additional provider DLQ/FIFO variants, delayed redelivery and ambiguous acknowledgement, sync middleware/event variants |
 | TalkingBytes | T01+ | HTTP policy, B61 concurrent HTTP pool/stream transfer, SMTP/MIME, real IMAP/POP3 TLS/IDLE, native gRPC streaming | Inbound gRPC dispatcher, additional TLS/auth/proxy/retry/cancellation combinations |
-| PHPProbe | X01 | Independent engineering acceptance | Remaining diagnostic API/CLI capabilities; not a production no-dev dependency |
+| PHPProbe | X01 | B73 five independent CLI contract lanes: syntax/graph, references, duplicates, comments, configuration/doctor/combined check | Remaining diagnostic API, graph semantics, changed-only and option variants; not a production no-dev dependency |
 | Cross-library | X02 | Order/import/receipt/tenant workflows, scheduler, deployment, stress/soak/chaos and SQL restore | Combined cache/SQL/storage/broker restore under active writes; remote storage/SMTP uncertain effects; production infrastructure RPO/RTO and SLO require separate environment |
 
 ## Inventory and closure rules
