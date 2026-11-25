@@ -135,3 +135,5 @@ B45 maps every current ReqShield built-in enum token to representative executabl
 B46 adds actual Redis outage/fail-open/fail-closed and independent node process invalidation/cursor reconciliation.
 
 B47 adds actual trusted/untrusted mailbox TLS, STARTTLS/STLS and IMAP IDLE arrival.
+
+B48 adds real SSH host-pin verification and local journal/atomic publication coverage.

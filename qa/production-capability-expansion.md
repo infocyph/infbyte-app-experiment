@@ -199,3 +199,7 @@ I: real disposable Redis AOF stop/restart with existing fail-open/fail-closed cl
 ## B47 — inbound mail TLS and real IDLE
 
 I: independent Dovecot TLS/STARTTLS/STLS lane tests implicit and negotiated TLS for IMAP and POP3, rejection without private trust anchor, trusted message fetch; second lane observes actual new-mail arrival via IMAP IDLE and successful DONE/session reuse. Private keys remain outside artifacts and trust anchor supplied only to test PHP invocation. Hosted verification pending; broker HA/FIFO and other communication policies remain open.
+
+## B48 — storage trust and transactional file lifecycle
+
+I: real SFTP pinned host identity (fingerprints obtained from the disposable container, not trusted from network scan), wrong pin rejection, tenant-scoped I/O and reconnect; direct-local FileOperations transaction rollback/commit, invalid lifecycle, overwritten destination recovery, permission restoration, checksum and atomic writer publication. Hosted verification pending. Remote service interruption, adapter-specific guarantees and rollback-failure injection remain open.

@@ -53,9 +53,12 @@ require __DIR__ . '/ecosystem-otp-boundaries.php';
 require __DIR__ . '/ecosystem-validation-matrix.php';
 require __DIR__ . '/ecosystem-cache-faults.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
+require __DIR__ . '/ecosystem-storage-boundaries.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'sftp-trust' => sftpTrustWorkload(),
+    'file-transactions' => fileTransactionsWorkload(),
     'mailbox-tls' => mailboxTlsWorkload(),
     'mailbox-untrusted' => mailboxUntrustedWorkload(),
     'mailbox-idle' => mailboxIdleWorkload(),

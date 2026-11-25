@@ -52,7 +52,7 @@ case "$SCENARIO" in
     curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null
     if [[ "$SCENARIO" == ecosystem-s3 ]]; then composer require league/flysystem-aws-s3-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-async-aws-s3 --no-interaction --prefer-dist --no-progress; fi
     ;;
-  ecosystem-sftp|ecosystem-sftp2)
+  ecosystem-sftp|ecosystem-sftp2|ecosystem-sftp-trust)
     containers+=(lab-sftp)
     export LAB_SFTP_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
     docker run -d --name lab-sftp -p 127.0.0.1:12222:22 atmoz/sftp:latest "experiment:$LAB_SFTP_SECRET:1001::upload"
@@ -61,7 +61,8 @@ case "$SCENARIO" in
       sleep 1
     done
     test -s "$RUNNER_TEMP/lab-sftp-host.pub"
-    if [[ "$SCENARIO" == ecosystem-sftp ]]; then composer require league/flysystem-sftp-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-sftp-v2 --no-interaction --prefer-dist --no-progress; fi
+    export LAB_SFTP_HOST_KEYS="$(docker exec lab-sftp sh -c 'for f in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$f" -E sha256; done' | awk '{print $2}')"
+    if [[ "$SCENARIO" != ecosystem-sftp2 ]]; then composer require league/flysystem-sftp-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-sftp-v2 --no-interaction --prefer-dist --no-progress; fi
     ;;
   ecosystem-storage-local-modes)
     composer require league/flysystem-memory league/flysystem-read-only league/flysystem-path-prefixing league/flysystem-ziparchive --no-interaction --prefer-dist --no-progress

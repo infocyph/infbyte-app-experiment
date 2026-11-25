@@ -239,3 +239,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B47 — mailbox trust and IDLE
 - [x] Actual IMAP/POP3 implicit and negotiated TLS and new-message IDLE lane.
 - [ ] Hosted verification and remaining communication/broker variants.
+
+## B48 — storage trust and file transaction boundaries
+- [x] Independent SFTP trust/reconnect and direct-local file transaction scenarios.
+- [ ] Hosted verification and remaining remote failure variants.
