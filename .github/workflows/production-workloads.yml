@@ -15,6 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-uid-families, backend: pgsql}
+          - {scenario: ecosystem-array-transforms, backend: pgsql}
+          - {scenario: ecosystem-di-environment, backend: pgsql}
           - {scenario: ecosystem-sftp-trust, backend: pgsql}
           - {scenario: ecosystem-file-transactions, backend: pgsql}
           - {scenario: ecosystem-mailbox-tls, backend: pgsql}

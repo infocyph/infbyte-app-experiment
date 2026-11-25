@@ -54,9 +54,13 @@ require __DIR__ . '/ecosystem-validation-matrix.php';
 require __DIR__ . '/ecosystem-cache-faults.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
 require __DIR__ . '/ecosystem-storage-boundaries.php';
+require __DIR__ . '/ecosystem-utility-boundaries.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'uid-families' => uidFamiliesWorkload(),
+    'array-transforms' => arrayTransformsWorkload(),
+    'di-environment' => diEnvironmentWorkload(),
     'sftp-trust' => sftpTrustWorkload(),
     'file-transactions' => fileTransactionsWorkload(),
     'mailbox-tls' => mailboxTlsWorkload(),

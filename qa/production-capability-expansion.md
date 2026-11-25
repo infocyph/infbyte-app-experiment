@@ -203,3 +203,7 @@ I: independent Dovecot TLS/STARTTLS/STLS lane tests implicit and negotiated TLS 
 ## B48 — storage trust and transactional file lifecycle
 
 I: real SFTP pinned host identity (fingerprints obtained from the disposable container, not trusted from network scan), wrong pin rejection, tenant-scoped I/O and reconnect; direct-local FileOperations transaction rollback/commit, invalid lifecycle, overwritten destination recovery, permission restoration, checksum and atomic writer publication. Hosted verification pending. Remote service interruption, adapter-specific guarantees and rollback-failure injection remain open.
+
+## B49 — utility families and environment contracts
+
+I: identifier generation for remaining facade families, both Sonyflake/Randflake formats, binary/TypeID round trips and deterministic namespaces; ArrayKit escaped paths, wildcard removal, typed access and 1000-row transformation isolation; InterMix environment-specific bindings, literals and invocation in dynamic and compiled containers. Hosted verification pending; not all utility method options are covered.

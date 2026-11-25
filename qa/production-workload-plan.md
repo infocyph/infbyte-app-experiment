@@ -243,3 +243,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B48 — storage trust and file transaction boundaries
 - [x] Independent SFTP trust/reconnect and direct-local file transaction scenarios.
 - [ ] Hosted verification and remaining remote failure variants.
+
+## B49 — utility and DI boundaries
+- [x] Three independent UID, ArrayKit and InterMix workloads.
+- [ ] Hosted verification and method-option audit.
