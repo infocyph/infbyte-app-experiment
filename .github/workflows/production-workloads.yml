@@ -1089,6 +1089,30 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-http-redirect-301-post, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-301-put, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-301-head, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-302-post, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-302-put, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-302-head, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-303-post, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-303-put, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-303-head, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-307-post, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-307-put, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-307-head, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-post, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-put, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-308-head, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-query, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-downgrade, backend: pgsql}
+          - {scenario: ecosystem-http-redirect-multi, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-single-body, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-single-header-bytes, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-single-header-count, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-multi-body, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-multi-header-bytes, backend: pgsql}
+          - {scenario: ecosystem-http-response-limit-multi-header-count, backend: pgsql}
           - {scenario: ecosystem-di-attribute-property-defaults-dynamic, backend: pgsql}
           - {scenario: ecosystem-di-attribute-property-defaults-compiled, backend: pgsql}
           - {scenario: ecosystem-di-attribute-property-type-dynamic, backend: pgsql}

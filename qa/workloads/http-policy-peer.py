@@ -10,7 +10,7 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 root = Path(sys.argv[1])
 counts = {}
@@ -31,11 +31,45 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header(name, value)
         self.end_headers()
         try:
-            self.wfile.write(body)
+            if self.command != "HEAD":
+                self.wfile.write(body)
         except (BrokenPipeError, ConnectionResetError, ssl.SSLError):
             pass
 
+    def boundary_redirect(self):
+        path = urlsplit(self.path).path
+        if not (path.startswith("/redirect-contract/") or path.startswith("/redirect-target/")):
+            return False
+        length = int(self.headers.get("Content-Length", "0"))
+        assert 0 <= length <= 4096
+        body = self.rfile.read(length) if length else b""
+        with lock:
+            counts[path] = counts.get(path, 0) + 1
+        if path.startswith("/redirect-contract/"):
+            _, _, status, method = path.split("/")
+            assert self.command.lower() == method
+            assert status in ("301", "302", "303", "307", "308")
+            self.send_response(int(status))
+            self.send_header("Location", f"/redirect-target/{status}/{method}")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+        else:
+            self.reply(200, {}, [
+                ("X-Lab-Method", self.command),
+                ("X-Lab-Bytes", str(len(body))),
+                ("X-Lab-Digest", hashlib.sha256(body).hexdigest()),
+                ("X-Lab-Content-Type", self.headers.get("Content-Type", "absent")),
+                ("X-Lab-Authorization", "present" if self.headers.get("Authorization") else "absent"),
+            ])
+        return True
+
+    def do_HEAD(self):
+        if not self.boundary_redirect():
+            self.send_error(404)
+
     def do_PUT(self):
+        if self.boundary_redirect():
+            return
         length = int(self.headers.get("Content-Length", "0"))
         if not 0 < length <= 2 * 1024 * 1024:
             self.reply(413, {})
@@ -44,6 +78,8 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(200, {"bytes": len(payload), "digest": hashlib.sha256(payload).hexdigest()})
 
     def do_POST(self):
+        if self.boundary_redirect():
+            return
         length = int(self.headers.get("Content-Length", "0"))
         if not 0 < length <= 2 * 1024 * 1024:
             self.reply(413, {})
@@ -72,6 +108,8 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(200, result)
 
     def do_GET(self):
+        if self.boundary_redirect():
+            return
         path = urlsplit(self.path).path
         with lock:
             counts[path] = counts.get(path, 0) + 1
@@ -100,6 +138,32 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(503, {"attempt": attempt}, [("Retry-After", "0")])
         elif path == "/missing":
             self.reply(404, {"attempt": attempt})
+        elif path == "/redirect-query":
+            query = parse_qs(urlsplit(self.path).query)
+            if query.get("phase") == ["target"]:
+                self.reply(200, {"next": query["next"][0], "phase": "target"})
+            else:
+                self.reply(302, {}, [("Location", "?phase=target&next=https://example.test/continue")])
+        elif path == "/redirect-downgrade":
+            self.reply(302, {}, [("Location", f"http://127.0.0.1:{plaintext.server_port}/downgrade-target")])
+        elif path == "/downgrade-target":
+            self.reply(200, {"authorization": bool(self.headers.get("Authorization"))})
+        elif path == "/limit-header":
+            block = (b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\nContent-Type: text/plain\r\n"
+                     b"X-Lab-Field: a\r\nX-Lab-Field: b\r\n\r\nabcd")
+            try:
+                self.wfile.write(block)
+            except (BrokenPipeError, ConnectionResetError, ssl.SSLError):
+                pass
+        elif path == "/limit-body":
+            body = b"abcd" * 1024
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            try:
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError, ssl.SSLError):
+                pass
         elif path == "/redirect":
             self.reply(302, {}, [("Location", f"https://127.0.0.1:{other.server_port}/inspect")])
         elif path == "/loop":
@@ -122,6 +186,8 @@ context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 context.load_cert_chain(root / "cert.pem", root / "key.pem")
 primary = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 other = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+plaintext = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+threading.Thread(target=plaintext.serve_forever, daemon=True).start()
 for server in (primary, other):
     server.socket = context.wrap_socket(server.socket, server_side=True)
     threading.Thread(target=server.serve_forever, daemon=True).start()

@@ -89,6 +89,7 @@ require __DIR__ . '/ecosystem-remote-jwks.php';
 require __DIR__ . '/ecosystem-broker-boundaries.php';
 require __DIR__ . '/ecosystem-broker-recovery.php';
 require __DIR__ . '/ecosystem-http-transfer.php';
+require __DIR__ . '/ecosystem-http-boundaries.php';
 require __DIR__ . '/ecosystem-cache-tls.php';
 require __DIR__ . '/ecosystem-cache-cluster-tls.php';
 require __DIR__ . '/ecosystem-cache-scylla-tls.php';
@@ -615,6 +616,30 @@ match ($argv[1] ?? '') {
     'pki' => pkiWorkload(),
     'crypto-algorithms' => cryptoAlgorithmsWorkload(),
     'validation-registry' => validationRegistryWorkload(),
+    'http-redirect-301-post' => httpRedirectMethodContracts(301, 'post'),
+    'http-redirect-301-put' => httpRedirectMethodContracts(301, 'put'),
+    'http-redirect-301-head' => httpRedirectMethodContracts(301, 'head'),
+    'http-redirect-302-post' => httpRedirectMethodContracts(302, 'post'),
+    'http-redirect-302-put' => httpRedirectMethodContracts(302, 'put'),
+    'http-redirect-302-head' => httpRedirectMethodContracts(302, 'head'),
+    'http-redirect-303-post' => httpRedirectMethodContracts(303, 'post'),
+    'http-redirect-303-put' => httpRedirectMethodContracts(303, 'put'),
+    'http-redirect-303-head' => httpRedirectMethodContracts(303, 'head'),
+    'http-redirect-307-post' => httpRedirectMethodContracts(307, 'post'),
+    'http-redirect-307-put' => httpRedirectMethodContracts(307, 'put'),
+    'http-redirect-307-head' => httpRedirectMethodContracts(307, 'head'),
+    'http-redirect-308-post' => httpRedirectMethodContracts(308, 'post'),
+    'http-redirect-308-put' => httpRedirectMethodContracts(308, 'put'),
+    'http-redirect-308-head' => httpRedirectMethodContracts(308, 'head'),
+    'http-redirect-query' => httpQueryRedirectContract(),
+    'http-redirect-downgrade' => httpDowngradeRedirectContract(),
+    'http-redirect-multi' => httpMultiRedirectContract(),
+    'http-response-limit-single-body' => httpResponseLimitContracts('single', 'body'),
+    'http-response-limit-single-header-bytes' => httpResponseLimitContracts('single', 'header-bytes'),
+    'http-response-limit-single-header-count' => httpResponseLimitContracts('single', 'header-count'),
+    'http-response-limit-multi-body' => httpResponseLimitContracts('multi', 'body'),
+    'http-response-limit-multi-header-bytes' => httpResponseLimitContracts('multi', 'header-bytes'),
+    'http-response-limit-multi-header-count' => httpResponseLimitContracts('multi', 'header-count'),
     'http-policy' => httpPolicyWorkload(),
     'redis-cluster' => redisClusterWorkload(),
     'mongodb' => mongoWorkload(),
