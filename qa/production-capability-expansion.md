@@ -457,3 +457,7 @@ I: an additional SQLite job enables native WAL before creating the fixture. A co
 ## B111 — SQL Server row-versioned in-flight cache publication
 
 I: real SQL Server/ODBC lane enables READ_COMMITTED_SNAPSHOT and verifies the database option. A separate transaction holds an exclusive gate-row lock; the cached query reads the balance through row versioning and uses a correlated READCOMMITTEDLOCK gate lookup. Require DMV evidence of the reader blocked on a SQL lock, then commit an independent transfer, release the gate by rollback, and require the old snapshot and fresh/warm cache generations to reconcile. All five SQL drivers now have a deterministic overlap scenario, with native mechanism differences documented. 368 routine rows; hosted qualification pending (DATA, OPS, EXEC-03). No upstream changes.
+
+## B112 — ReqShield sanitizer contracts and nested pipeline composition
+
+I: independent sanitizer lane checks 40 direct/named/compiled cases with explicit expected values, optional currency/slug/tag/truncation parameters, malformed and recursive JSON, batch operation, 300 distinct named pipelines across bounded cache eviction, retained compiled pipeline after clear and unknown-name rejection. Mutable and compiled validation must agree on overlapping direct and nested wildcard transformations without mutating caller input or retaining state. Sanitizers are not security validators or HTML allow-list security boundaries. 369 routine rows; hosted qualification pending (TYPE, DATA, EXEC-03).

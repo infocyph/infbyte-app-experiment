@@ -97,6 +97,7 @@ match ($argv[1] ?? '') {
     'http-pool' => httpPoolWorkload(),
     'grpc-inbound' => grpcInboundWorkload(),
     'validation-casts' => validationCastsWorkload(),
+    'validation-sanitizers' => validationSanitizersWorkload(),
     'http-transfer' => httpTransferWorkload(),
     'amqp-dlq' => amqpDlqWorkload(),
     'amqp-ack-uncertain' => brokerAcknowledgementWorkload('amqp'),
