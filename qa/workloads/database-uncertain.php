@@ -12,7 +12,11 @@ function uncertainCommitWorkload(Connection $direct): void
     $port = (int) getenv('LAB_COMMIT_PROXY_PORT');
     check($port > 0, 'Proxy port missing.');
     // The protocol-aware fault proxy is an isolated plaintext loopback fixture.
-    $db = new Connection(config(['port' => $port, 'sslmode' => 'disable', 'timeout' => 3]));
+    $settings = ['port' => $port, 'timeout' => 3];
+    if ($direct->getDriverName() === 'pgsql') {
+        $settings['sslmode'] = 'disable';
+    }
+    $db = new Connection(config($settings));
     $attempts = 0;
     $effects = 0;
     $failure = false;
@@ -42,5 +46,5 @@ function uncertainCommitWorkload(Connection $direct): void
         throw new LogicException('Committed idempotency identity was lost.');
     });
     check($result === 'already-committed' && balance($direct, 1) + balance($direct, 2) === 200, 'Recovery did not preserve financial invariants.');
-    echo "Actual dropped PostgreSQL COMMIT acknowledgement, no automatic replay/callback and durable idempotency reconciliation passed\n";
+    echo "Actual dropped database COMMIT acknowledgement, no automatic replay/callback and durable idempotency reconciliation passed\n";
 }

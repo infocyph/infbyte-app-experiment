@@ -17,6 +17,8 @@ jobs:
       matrix:
         include:
           - {scenario: db-commit-uncertain, backend: pgsql}
+          - {scenario: db-commit-uncertain, backend: mysql}
+          - {scenario: db-commit-uncertain, backend: mariadb}
           - {scenario: db-tls, backend: pgsql}
           - {scenario: db-mysql-family-tls, backend: mysql}
           - {scenario: db-mysql-family-tls, backend: mariadb}

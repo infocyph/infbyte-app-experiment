@@ -2,7 +2,13 @@
 set -Eeuo pipefail
 export LAB_COMMIT_PROXY_ROOT="$(mktemp -d "$RUNNER_TEMP/commit-proxy.XXXXXXXX")"
 export PGGSSENCMODE=disable
-python3 "$GITHUB_WORKSPACE/qa/workloads/database-commit-proxy.py" "$LAB_COMMIT_PROXY_ROOT" > "$EVIDENCE/commit-proxy.log" 2>&1 &
+case "$DB_BACKEND" in
+  pgsql) proxy=database-commit-proxy.py; port=5432 ;;
+  mysql) proxy=database-mysql-commit-proxy.py; port=3306 ;;
+  mariadb) proxy=database-mysql-commit-proxy.py; port=3307 ;;
+  *) echo 'Unsupported commit fault backend' >&2; exit 1 ;;
+esac
+python3 "$GITHUB_WORKSPACE/qa/workloads/$proxy" "$LAB_COMMIT_PROXY_ROOT" "$port" > "$EVIDENCE/commit-proxy.log" 2>&1 &
 peer=$!
 trap 'kill "$peer" 2>/dev/null || :; wait "$peer" 2>/dev/null || :; rm -rf "$LAB_COMMIT_PROXY_ROOT"' EXIT
 for i in $(seq 1 100); do
