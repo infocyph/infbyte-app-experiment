@@ -469,3 +469,7 @@ I: independent DI lane checks missing aliases, cyclic aliases, invalid named con
 ## B114 — Pgpool-II physical streaming-replica routing and recovery
 
 I: isolated Pgpool-II built from Debian packages uses PostgreSQL streaming replication with a real standby, standby-only read weight, monitored node roles and bounded health checks. DBLayer transactions verify primary affinity after a write, nested savepoint rollback and callbacks, then reconcile durable balances. Stop the standby, require proxy down-state and primary fallback, commit another transfer, restart the standby and explicitly restart the proxy to reattach; require replica read and durable reconciliation. No automatic promotion or automatic reattachment claim. 371 routine rows; hosted qualification pending (DATA, OPS, EXEC-03). Configuration reference: https://www.pgpool.net/docs/4.6/en/html/example-cluster.html
+
+## B115 — SFTP interrupted staged publication and explicit recovery
+
+I: pinned-host real SFTP v3 upload with an 8 MiB disposable source, a stream-consumption barrier after 2 MiB and direct server file-size evidence proving partial staging before an abrupt container stop. Require transport failure, previous publication and foreign tenant preservation, explicit partial staging cleanup, streamed retry, exact byte/digest reconciliation and subsequent publication to a new identity. No atomic overwrite or rename acknowledgement guarantee is inferred. 372 routine rows; hosted qualification pending (SEC, DATA, OPS, EXEC-03).

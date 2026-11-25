@@ -120,3 +120,131 @@ function s3PublicationFaultWorkload(): void
     }
     echo "Real S3 interrupted body and lost successful response, exact bytes and tenant isolation passed\n";
 }
+
+/**
+ * Fixture-only stream wrapper: pause source consumption during a real SFTP upload.
+ */
+final class LabSftpGatedStream
+{
+    public mixed $context = null;
+
+    /** @var resource|null */
+    private $source = null;
+
+    private bool $paused = false;
+
+    public function stream_open(string $path, string $mode, int $options, ?string &$openedPath): bool
+    {
+        $this->source = fopen((string) getenv('LAB_SFTP_FAULT_ROOT') . '/payload.bin', 'rb');
+        return is_resource($this->source);
+    }
+
+    public function stream_read(int $count): string|false
+    {
+        if (!$this->paused && ftell($this->source) >= 2 * 1024 * 1024) {
+            $this->paused = true;
+            $root = (string) getenv('LAB_SFTP_FAULT_ROOT');
+            verify(touch($root . '/source-paused'), 'SFTP source barrier marker failed.');
+            $deadline = hrtime(true) + 45_000_000_000;
+            while (!is_file($root . '/source-release')) {
+                verify(hrtime(true) < $deadline, 'SFTP source barrier timed out.');
+                usleep(20_000);
+            }
+        }
+        return fread($this->source, $count);
+    }
+
+    public function stream_eof(): bool
+    {
+        return feof($this->source);
+    }
+
+    public function stream_tell(): int|false
+    {
+        return ftell($this->source);
+    }
+
+    public function stream_seek(int $offset, int $whence = SEEK_SET): bool
+    {
+        return fseek($this->source, $offset, $whence) === 0;
+    }
+
+    public function stream_stat(): array|false
+    {
+        return fstat($this->source);
+    }
+
+    public function stream_close(): void
+    {
+        if (is_resource($this->source)) {
+            fclose($this->source);
+        }
+    }
+}
+
+function sftpPublicationFaultWorkload(string $phase): void
+{
+    putenv('LAB_STORAGE_BACKEND=sftp');
+    $context = storageOutageContext(false);
+    $disk = $context->filesystem();
+    $foreign = $context->filesystem('foreign');
+    $root = (string) getenv('LAB_SFTP_FAULT_ROOT');
+    $final = 'receipts/stable.bin';
+    $stage = 'receipts/staging.bin';
+
+    if ($phase === 'seed') {
+        $disk->write($final, 'previous');
+        $foreign->write($final, 'foreign');
+        verify(!$disk->fileExists($stage), 'Unexpected existing staging object.');
+        return;
+    }
+
+    if ($phase === 'interrupt') {
+        verify(stream_wrapper_register('labsftpgate', LabSftpGatedStream::class), 'Stream wrapper registration failed.');
+        $stream = fopen('labsftpgate://payload', 'rb');
+        verify(is_resource($stream), 'Gated source unavailable.');
+        try {
+            expectFailure(static fn() => $disk->writeStream($stage, $stream), FilesystemException::class, 'Interrupted SFTP upload reported success.');
+            verify(is_file($root . '/source-paused') && is_file($root . '/source-release'), 'Upload failed before the intended fault.');
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+            stream_wrapper_unregister('labsftpgate');
+        }
+        return;
+    }
+
+    verify($phase === 'recover', 'Unknown SFTP publication phase.');
+    verify($disk->read($final) === 'previous' && $foreign->read($final) === 'foreign', 'Partial upload altered published or foreign data.');
+    if ($disk->fileExists($stage)) {
+        verify($disk->fileSize($stage) < filesize($root . '/payload.bin'), 'Interrupted staging unexpectedly contains the complete upload.');
+        $disk->delete($stage);
+    }
+    verify(!$disk->fileExists($stage), 'Staging cleanup failed.');
+    $stream = fopen($root . '/payload.bin', 'rb');
+    verify(is_resource($stream), 'Retry source unavailable.');
+    try {
+        $disk->writeStream($stage, $stream);
+    } finally {
+        fclose($stream);
+    }
+    $read = $disk->readStream($stage);
+    try {
+        $hash = hash_init('sha256');
+        verify(hash_update_stream($hash, $read) === filesize($root . '/payload.bin') && hash_final($hash) === hash_file('sha256', $root . '/payload.bin'), 'Retried staged upload did not reconcile.');
+    } finally {
+        fclose($read);
+    }
+    $disk->move($stage, 'receipts/recovered.bin');
+    verify(!$disk->fileExists($stage) && $disk->fileSize('receipts/recovered.bin') === filesize($root . '/payload.bin'), 'Recovered publication identity failed.');
+    $published = $disk->readStream('receipts/recovered.bin');
+    try {
+        $hash = hash_init('sha256');
+        verify(hash_update_stream($hash, $published) === filesize($root . '/payload.bin') && hash_final($hash) === hash_file('sha256', $root . '/payload.bin'), 'Published digest mismatch.');
+    } finally {
+        fclose($published);
+    }
+    verify($disk->read($final) === 'previous' && $foreign->read($final) === 'foreign', 'Recovery crossed publication or tenant boundary.');
+    echo "Real interrupted staged SFTP upload, explicit cleanup, retry and publication reconciled\n";
+}

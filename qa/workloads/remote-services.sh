@@ -52,7 +52,7 @@ case "$SCENARIO" in
     curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null
     if [[ "$SCENARIO" != ecosystem-async-s3 ]]; then composer require league/flysystem-aws-s3-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-async-aws-s3 --no-interaction --prefer-dist --no-progress; fi
     ;;
-  ecosystem-sftp|ecosystem-sftp2|ecosystem-sftp-trust|ecosystem-sftp-outage)
+  ecosystem-sftp|ecosystem-sftp2|ecosystem-sftp-trust|ecosystem-sftp-outage|ecosystem-sftp-publication-fault)
     containers+=(lab-sftp)
     export LAB_SFTP_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
     docker run -d --name lab-sftp -p 127.0.0.1:12222:22 atmoz/sftp:latest "experiment:$LAB_SFTP_SECRET:1001::upload"
@@ -116,6 +116,44 @@ if [[ "$SCENARIO" == ecosystem-s3-publication-fault ]]; then
   done
   test -f "$EVIDENCE/s3-peer-ready"
   timeout 90s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" s3-publication-fault | tee "$EVIDENCE/ecosystem.log"
+elif [[ "$SCENARIO" == ecosystem-sftp-publication-fault ]]; then
+  probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
+  export LAB_SFTP_FAULT_ROOT="$(mktemp -d "$RUNNER_TEMP/sftp-fault.XXXXXXXX")"
+  dd if=/dev/urandom of="$LAB_SFTP_FAULT_ROOT/payload.bin" bs=1M count=8 status=none
+  timeout 60s php "$probe" sftp-publication-seed
+  timeout 90s php "$probe" sftp-publication-interrupt > "$EVIDENCE/sftp-interrupt.log" 2>&1 &
+  worker=$!
+  trap 'kill "$worker" 2>/dev/null || :; wait "$worker" 2>/dev/null || :; rm -rf "$LAB_SFTP_FAULT_ROOT"; cleanup' EXIT
+  for attempt in {1..300}; do
+    [[ -f "$LAB_SFTP_FAULT_ROOT/source-paused" ]] && break
+    kill -0 "$worker"
+    sleep 0.1
+  done
+  test -f "$LAB_SFTP_FAULT_ROOT/source-paused"
+  observed=0
+  for attempt in {1..100}; do
+    size="$(docker exec lab-sftp stat -c %s /home/experiment/upload/tenant-a/receipts/staging.bin 2>/dev/null || true)"
+    if [[ "$size" =~ ^[0-9]+$ ]] && (( size > 0 && size < 8388608 )); then
+      printf 'Origin staging bytes before disconnect: %s/8388608\n' "$size" > "$EVIDENCE/sftp-partial.txt"
+      observed=1
+      break
+    fi
+    kill -0 "$worker"
+    sleep 0.1
+  done
+  test "$observed" = 1
+  docker kill lab-sftp >/dev/null
+  touch "$LAB_SFTP_FAULT_ROOT/source-release"
+  wait "$worker"
+  cat "$EVIDENCE/sftp-interrupt.log"
+  docker start lab-sftp >/dev/null
+  ready=0
+  for attempt in {1..60}; do
+    if ssh-keyscan -T 2 -p 12222 127.0.0.1 >/dev/null 2>&1; then ready=1; break; fi
+    sleep 1
+  done
+  test "$ready" = 1
+  timeout 90s php "$probe" sftp-publication-recover | tee "$EVIDENCE/sftp-recovery.log"
 elif [[ "$SCENARIO" == ecosystem-s3-outage || "$SCENARIO" == ecosystem-sftp-outage ]]; then
   probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
   if [[ "$SCENARIO" == ecosystem-s3-outage ]]; then
