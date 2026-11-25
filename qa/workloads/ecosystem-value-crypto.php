@@ -8,6 +8,12 @@ use Infocyph\Epicrypt\Exception\ConfigurationException;
 use Infocyph\Epicrypt\Exception\Crypto\InvalidKeyException;
 use Infocyph\Epicrypt\Exception\Crypto\SignatureException;
 use Infocyph\Epicrypt\Token\Opaque\OpaqueToken;
+use Infocyph\Epicrypt\Security\KeyRing;
+use Infocyph\Epicrypt\Security\KeyRingEntry;
+use Infocyph\Epicrypt\Security\KeyPurpose;
+use Infocyph\Epicrypt\Security\KeyStatus;
+use Infocyph\Epicrypt\Security\KeyRotationHelper;
+use Infocyph\Epicrypt\Exception\Token\KeyResolutionException;
 use Infocyph\UID\Configuration\SnowflakeConfig;
 use Infocyph\UID\Configuration\SonyflakeConfig;
 use Infocyph\UID\Configuration\TBSLConfig;
@@ -144,4 +150,80 @@ function detachedCryptoWorkload(): void
     }
     expectFailure(static fn() => $tokens->hash('invalid'), ConfigurationException::class, 'Invalid opaque token hashed.');
     echo "Ed25519 RFC vector, native detached signature/MAC interoperability, malformed proofs and opaque token boundaries passed\n";
+}
+
+function cryptoKeyLifecycleWorkload(): void
+{
+    $clock = new LabJwksClock(1_800_000_000);
+    $start = $clock->timestamp;
+    $material = random_bytes(32);
+    $entry = static fn(string $id, KeyStatus $status, KeyPurpose $purpose, string $algorithm = 'sha256', ?int $from = null, ?int $to = null, ?string $issuer = null): KeyRingEntry
+        => new KeyRingEntry($id, $material, $status, $purpose, $algorithm, $from, $to, $issuer);
+    foreach (KeyPurpose::cases() as $purpose) {
+        $clock->timestamp = $start;
+        $active = $entry('active', KeyStatus::ACTIVE, $purpose, from: $start, to: $start + 10, issuer: 'issuer-a');
+        $fallback = $entry('fallback', KeyStatus::FALLBACK, $purpose, to: $start + 5, issuer: 'issuer-a');
+        $ring = new KeyRing([
+            $fallback,
+            $entry('disabled', KeyStatus::DISABLED, $purpose, issuer: 'issuer-a'),
+            $entry('retired', KeyStatus::RETIRED, $purpose, issuer: 'issuer-a'),
+            $entry('future', KeyStatus::ACTIVE, $purpose, from: $start + 10, issuer: 'issuer-a'),
+            $entry('foreign', KeyStatus::ACTIVE, $purpose, issuer: 'issuer-b'),
+            $entry('unscoped', KeyStatus::ACTIVE, $purpose),
+            $entry('algorithm', KeyStatus::ACTIVE, $purpose, algorithm: 'sha512', issuer: 'issuer-a'),
+            $active,
+        ], $clock);
+        verify($ring->activeForWrite($purpose, 'sha256', 'issuer-a') === $active && $ring->readCandidates($purpose, 'sha256', 'issuer-a') === [$active, $fallback], 'Write/read key selection failed: ' . $purpose->name);
+        verify($ring->resolveForRead('fallback', $purpose, 'sha256', 'issuer-a') === $fallback && $ring->resolveForVerification('active', $purpose, 'sha256', 'issuer-a') === $active, 'Eligible read/verification key missing.');
+        foreach (['disabled', 'retired', 'future', 'foreign', 'unscoped', 'algorithm', 'missing'] as $id) {
+            verify($ring->resolveForRead($id, $purpose, 'sha256', 'issuer-a') === null && $ring->resolveForVerification($id, $purpose, 'sha256', 'issuer-a') === null, 'Ineligible key accepted: ' . $id);
+        }
+        verify($ring->activeForWrite($purpose, 'sha256')->id === 'unscoped' && $ring->activeForWrite($purpose, 'sha256', 'issuer-b')->id === 'foreign', 'Issuer domains were merged.');
+        $wrongPurpose = $purpose === KeyPurpose::JWT_SIGNING ? KeyPurpose::SIGNED_URL : KeyPurpose::JWT_SIGNING;
+        verify($ring->resolveForRead('active', $wrongPurpose, 'sha256', 'issuer-a') === null, 'Cross-purpose key accepted.');
+        $metadata = $ring->metadataFor('active');
+        verify($metadata !== null && $metadata->id === 'active' && $metadata->notBefore === $start && !property_exists($metadata, 'key') && count($ring->metadata()) === 8 && $ring->metadataFor('missing') === null, 'Metadata leaked material or omitted identity.');
+        $clock->timestamp = $start + 5;
+        verify($ring->readCandidates($purpose, 'sha256', 'issuer-a') === [$active] && $ring->resolveForRead('fallback', $purpose, 'sha256', 'issuer-a') === null, 'Exclusive expiry boundary failed.');
+        $clock->timestamp = $start + 10;
+        verify($ring->activeForWrite($purpose, 'sha256', 'issuer-a')->id === 'future' && $ring->resolveForRead('active', $purpose, 'sha256', 'issuer-a') === null, 'Activation/expiry transition failed.');
+        $clock->timestamp = $start - 1;
+        expectFailure(static fn() => $ring->activeForWrite($purpose, 'sha256', 'issuer-a'), ConfigurationException::class, 'Fallback selected for new write.');
+    }
+    $clock->timestamp = $start;
+    $purpose = KeyPurpose::KEY_ROTATION;
+    $oldKey = random_bytes(32);
+    $newKey = random_bytes(32);
+    $old = new KeyRingEntry('old', $oldKey, KeyStatus::ACTIVE, $purpose, 'sha256');
+    $helper = new KeyRotationHelper();
+    $payload = "tenant-a\0receipt-42";
+    $original = new KeyRing([$old], $clock);
+    $signature = $helper->signWithKeyRing($payload, $original);
+    $expected = rtrim(strtr(base64_encode(hash_hmac('sha256', $payload, $oldKey, true)), '+/', '-_'), '=');
+    verify($signature === $expected, 'Native HMAC interoperability failed.');
+    $rotated = new KeyRing([
+        new KeyRingEntry('old', $oldKey, KeyStatus::FALLBACK, $purpose, 'sha256', notAfter: $start + 10),
+        new KeyRingEntry('new', $newKey, KeyStatus::ACTIVE, $purpose, 'sha256', notBefore: $start),
+    ], $clock);
+    $newSignature = $helper->signWithKeyRing($payload, $rotated);
+    verify($newSignature !== $signature, 'Rotation did not change active signing key.');
+    foreach ([null, 'old'] as $kid) {
+        $result = $helper->verifyResult($payload, $signature, $rotated, $kid);
+        verify($result->verified && $result->matchedKeyId === 'old' && $result->usedFallbackKey, 'Fallback signature provenance lost.');
+    }
+    $result = $helper->verifyResult($payload, $newSignature, $rotated);
+    verify($result->verified && $result->matchedKeyId === 'new' && !$result->usedFallbackKey, 'Active signature provenance lost.');
+    verify(!$helper->verify($payload . 'x', $newSignature, $rotated), 'Tampered payload verified.');
+    $clock->timestamp = $start + 10;
+    verify(!$helper->verify($payload, $signature, $rotated) && $helper->verify($payload, $newSignature, $rotated), 'Expired fallback remained eligible.');
+    expectFailure(static fn() => $helper->resolve('old', $rotated), KeyResolutionException::class, 'Explicit expired key resolved.');
+    expectFailure(static fn() => new KeyRing([], $clock), ConfigurationException::class, 'Empty ring accepted.');
+    expectFailure(static fn() => new KeyRing([$old, $old], $clock), ConfigurationException::class, 'Duplicate key identity accepted.');
+    expectFailure(static fn() => new KeyRingEntry('invalid id', $oldKey, KeyStatus::ACTIVE, $purpose, 'sha256'), ConfigurationException::class, 'Invalid key ID accepted.');
+    expectFailure(static fn() => new KeyRingEntry('bad-window', $oldKey, KeyStatus::ACTIVE, $purpose, 'sha256', $start, $start), ConfigurationException::class, 'Invalid validity window accepted.');
+    $ambiguous = new KeyRing([$old, new KeyRingEntry('also-active', $newKey, KeyStatus::ACTIVE, $purpose, 'sha256')], $clock);
+    expectFailure(static fn() => $helper->signWithKeyRing($payload, $ambiguous), ConfigurationException::class, 'Ambiguous write key accepted.');
+    $short = new KeyRing([new KeyRingEntry('short', 'short', KeyStatus::ACTIVE, $purpose, 'sha256')], $clock);
+    expectFailure(static fn() => $helper->signWithKeyRing($payload, $short), ConfigurationException::class, 'Weak HMAC key accepted.');
+    echo "All key purposes, issuer/algorithm isolation, activation/expiry, rotation provenance and HMAC boundaries passed\n";
 }

@@ -497,3 +497,7 @@ I: two independent lanes reuse real TLS origin. Mutation lane requires unkeyed P
 ## B121 — ArrayKit helper boundaries and configuration mutation lifecycle
 
 I: independent helper lane verifies native reference key-preserving operations, early callback exit, pagination/offset bounds, falsey semantics, finite overflow-safe statistics, seeded shuffle, random/range bounds, guarded nested budgets and cycle termination, associative transpose and distinct config-list semantics. Configuration lane exercises typed cached reads, fill/append/prepend/forget, snapshot restore, read-only rejection, compiled artifact roundtrip, failed reload preserving active generation and replacement without stale lazy namespace resurrection. 383 routine rows; hosted qualification pending (TYPE, CONFIG, DATA, EXEC-03).
+
+## B122 — Epicrypt key eligibility and timed rotation lifecycle
+
+I: independent lane enumerates every published KeyPurpose with deterministic clock, active/fallback/disabled/retired/future and exact expiry, algorithm/issuer separation, wrong-purpose rejection and metadata without material. Actual HMAC signing and verification across old/new generations uses native reference bytes, matched key/fallback provenance, tamper rejection, expiry, explicit key rejection and invalid/ambiguous/weak ring configurations. No secret or proof output; application-specific key deployment and production DNS peer binding remain open. 384 routine rows; hosted qualification pending (SEC, DATA, TYPE, EXEC-03).

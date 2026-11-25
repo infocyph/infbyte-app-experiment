@@ -192,6 +192,7 @@ jobs:
           - {scenario: ecosystem-uid-values, backend: pgsql}
           - {scenario: ecosystem-randflake-conversions, backend: pgsql}
           - {scenario: ecosystem-detached-crypto, backend: pgsql}
+          - {scenario: ecosystem-crypto-key-lifecycle, backend: pgsql}
           - {scenario: ecosystem-config-reference, backend: pgsql}
           - {scenario: ecosystem-fence-remix, backend: pgsql}
           - {scenario: ecosystem-di-contextual, backend: pgsql}

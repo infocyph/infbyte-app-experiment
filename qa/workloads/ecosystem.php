@@ -117,6 +117,7 @@ match ($argv[1] ?? '') {
     'uid-values' => uidValuesWorkload(),
     'randflake-conversions' => randflakeConversionsWorkload(),
     'detached-crypto' => detachedCryptoWorkload(),
+    'crypto-key-lifecycle' => cryptoKeyLifecycleWorkload(),
     'config-reference' => configReferenceWorkload(),
     'fence-remix' => fenceRemixWorkload(),
     'di-contextual' => diContextualWorkload(),
