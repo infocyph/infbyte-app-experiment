@@ -69,3 +69,33 @@ function fileTransactionsWorkload(): void
     verify(trim((string) file_get_contents($original)) === 'replacement', 'Atomic publication failed.');
     echo "Local transaction lifecycle, overwritten destination rollback, mode restoration, checksum and atomic publication passed\n";
 }
+
+function fileRollbackFailureWorkload(): void
+{
+    $root = evidenceDirectory() . '/rollback-failure';
+    foreach ([$root, $root . '/owned', $root . '/foreign'] as $directory) {
+        verify(mkdir($directory, 0700), 'Rollback fixture directory failed.');
+    }
+    $original = $root . '/owned/receipt.txt';
+    $foreign = $root . '/foreign/receipt.txt';
+    $independent = $root . '/independent.txt';
+    $file = new FileOperations($original);
+    $file->create('original');
+    verify(file_put_contents($foreign, 'foreign') === 7 && file_put_contents($independent, 'independent') === 11, 'Rollback data fixture failed.');
+    $failure = new DomainException('Deliberate rollback boundary failure.');
+    try {
+        $file->transaction(static function (FileOperations $active) use ($root, $independent, $failure): never {
+            $active->update('modified')->copy($independent);
+            verify(rename($root . '/owned', $root . '/moved') && symlink($root . '/foreign', $root . '/owned'), 'Controlled path ownership change failed.');
+            throw $failure;
+        });
+        throw new LogicException('Incomplete rollback was reported as successful.');
+    } catch (\Infocyph\Pathwise\Exceptions\TransactionRollbackException $caught) {
+        verify($caught->originalFailure === $failure && $caught->getPrevious() === $failure && count($caught->rollbackFailures) >= 1, 'Incomplete rollback lost original or rollback cause.');
+    }
+    verify(file_get_contents($foreign) === 'foreign', 'Rollback followed changed symbolic link.');
+    verify(file_get_contents($root . '/moved/receipt.txt') === 'modified', 'Fixture did not demonstrate incomplete rollback.');
+    verify(file_get_contents($independent) === 'independent', 'Rollback failure prevented unrelated journal entry recovery.');
+    verify(unlink($root . '/owned') && rename($root . '/moved', $root . '/owned'), 'Fixture ownership restoration failed.');
+    echo "Incomplete rollback explicitly reported, original cause retained, independent restoration and foreign path protection passed\n";
+}

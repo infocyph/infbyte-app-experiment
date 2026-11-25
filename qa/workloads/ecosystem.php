@@ -62,6 +62,7 @@ require __DIR__ . '/ecosystem-storage-outage.php';
 require __DIR__ . '/ecosystem-utility-boundaries.php';
 require __DIR__ . '/ecosystem-http-semantics.php';
 require __DIR__ . '/ecosystem-file-lifecycle.php';
+require __DIR__ . '/ecosystem-file-queue-audit.php';
 require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-utility-lifecycle.php';
 require __DIR__ . '/ecosystem-value-crypto.php';
@@ -132,6 +133,9 @@ match ($argv[1] ?? '') {
     'file-index-retention' => fileIndexRetentionWorkload(),
     'archive-security' => archiveSecurityWorkload(),
     'archive-contracts' => archiveContractsWorkload(),
+    'archive-late-rollback' => archiveLateRollbackWorkload(),
+    'file-rollback-failure' => fileRollbackFailureWorkload(),
+    'file-queue-audit' => fileQueueAuditWorkload(),
     'file-watch' => fileWatchWorkload(),
     'http-representations' => httpRepresentationsWorkload(),
     'http-signatures' => httpSignaturesWorkload(),

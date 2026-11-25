@@ -218,6 +218,9 @@ jobs:
           - {scenario: ecosystem-file-index-retention, backend: pgsql}
           - {scenario: ecosystem-archive-security, backend: pgsql}
           - {scenario: ecosystem-archive-contracts, backend: pgsql}
+          - {scenario: ecosystem-archive-late-rollback, backend: pgsql}
+          - {scenario: ecosystem-file-rollback-failure, backend: pgsql}
+          - {scenario: ecosystem-file-queue-audit, backend: pgsql}
           - {scenario: ecosystem-file-watch, backend: pgsql}
           - {scenario: ecosystem-api-inventory, backend: pgsql}
           - {scenario: ecosystem-recovery, backend: pgsql, matcher: fused}

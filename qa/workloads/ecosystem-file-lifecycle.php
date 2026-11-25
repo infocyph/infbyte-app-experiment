@@ -184,3 +184,34 @@ function archiveContractsWorkload(): void
     }
     echo "Filtered archive membership, selected extraction, progress, encrypted native interop and resource limits passed\n";
 }
+
+function archiveLateRollbackWorkload(): void
+{
+    $root = evidenceDirectory() . '/archive-late-rollback';
+    $destination = $root . '/extract';
+    verify(mkdir($destination, 0700, true), 'Extraction fixture directory failed.');
+    verify(file_put_contents($destination . '/existing.txt', 'original') === 8 && chmod($destination . '/existing.txt', 0640), 'Original fixture write failed.');
+    verify(file_put_contents($destination . '/conflict', 'owned') === 5, 'Conflict fixture write failed.');
+    $archive = $root . '/late.zip';
+    $zip = new ZipArchive();
+    verify($zip->open($archive, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true, 'ZIP fixture unavailable.');
+    foreach (['existing.txt' => 'replacement', 'created/first.txt' => 'new', 'conflict/late.txt' => 'blocked'] as $name => $payload) {
+        verify($zip->addFromString($name, $payload), 'ZIP entry creation failed.');
+    }
+    verify($zip->close(), 'ZIP fixture close failed.');
+    verify($zip->open($archive) === true, 'ZIP manifest unavailable.');
+    $entries = \Infocyph\Pathwise\Security\ZipEntryValidator::validateArchive($zip, $destination);
+    verify(count($entries) === 3 && $zip->close(), 'Valid manifest was rejected before extraction.');
+    $compression = new FileCompression($archive)->setExecutionStrategy(\Infocyph\Pathwise\Core\ExecutionStrategy::PHP);
+    expectFailure(static fn() => $compression->decompress($destination), UnsafeArchiveEntryException::class, 'Late file/directory conflict was accepted.');
+    clearstatcache(true);
+    verify(file_get_contents($destination . '/existing.txt') === 'original' && (fileperms($destination . '/existing.txt') & 0777) === 0640, 'Rollback did not restore original bytes or permissions.');
+    verify(file_get_contents($destination . '/conflict') === 'owned' && !file_exists($destination . '/created'), 'Rollback did not remove created files/directories or preserve conflict.');
+    $visible = array_values(array_diff(scandir($destination), ['.', '..']));
+    sort($visible);
+    verify($visible === ['conflict', 'existing.txt'], 'Extraction left staging files.');
+    verify(unlink($destination . '/conflict'), 'Conflict removal failed.');
+    $compression->decompress($destination);
+    verify(file_get_contents($destination . '/existing.txt') === 'replacement' && file_get_contents($destination . '/created/first.txt') === 'new' && file_get_contents($destination . '/conflict/late.txt') === 'blocked', 'Same archive failed after conflict repair.');
+    echo "Validated manifest, late extraction conflict, rollback of overwrites/new paths and successful retry passed\n";
+}
