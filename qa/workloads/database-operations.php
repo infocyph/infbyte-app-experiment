@@ -196,3 +196,48 @@ function replicaRecover(): void
     waitFor(static fn(): bool => balance($routed, 1) === 112, 'Restarted standby data mismatch.', 40);
     echo "Restarted physical standby selected and reconciled\n";
 }
+
+
+function promotionSeed(Connection $primary): void
+{
+    setup($primary);
+    $primary->statement('CREATE TABLE lab_promotion_ledger (id VARCHAR(40) PRIMARY KEY, amount INTEGER NOT NULL)');
+    $primary->transaction(static function (Connection $active): void {
+        $active->table('lab_promotion_ledger')->insert(['id' => 'before-promotion', 'amount' => 10]);
+        $active->table('lab_balances')->where('id', '=', 1)->update(['balance' => 90]);
+        $active->table('lab_balances')->where('id', '=', 2)->update(['balance' => 110]);
+    });
+    $lsn = (string) $primary->scalar('SELECT pg_current_wal_flush_lsn()::text');
+    $standby = new Connection(config(['port' => 5433]));
+    check((int) $standby->scalar('SELECT CASE WHEN pg_is_in_recovery() THEN 1 ELSE 0 END') === 1, 'Promotion candidate was not a standby.');
+    waitFor(static fn(): bool => (int) $standby->scalar('SELECT CASE WHEN pg_last_wal_replay_lsn() >= CAST(? AS pg_lsn) THEN 1 ELSE 0 END', [$lsn]) === 1, 'Standby failed to replay committed WAL.', 45);
+    check(balance($standby, 1) === 90 && balance($standby, 2) === 110 && $standby->table('lab_promotion_ledger')->count() === 1, 'Promotion candidate has not reconciled durable effects.');
+    echo "Standby replay confirmed through durable commit boundary\n";
+}
+
+function promotionVerify(): void
+{
+    $replacement = new Connection(config(['port' => 5433]));
+    check((int) $replacement->scalar('SELECT CASE WHEN pg_is_in_recovery() THEN 1 ELSE 0 END') === 0, 'Replacement endpoint is not writable primary.');
+    check(balance($replacement, 1) === 90 && balance($replacement, 2) === 110, 'Promoted primary lost confirmed commit.');
+    $callbacks = 0;
+    $result = $replacement->transaction(static function (Connection $active) use (&$callbacks): string {
+        $active->table('lab_balances')->where('id', '=', 1)->lockForUpdate()->first();
+        if ($active->table('lab_promotion_ledger')->where('id', '=', 'before-promotion')->exists()) {
+            return 'already-committed';
+        }
+        throw new LogicException('Idempotency identity disappeared after promotion.');
+    });
+    check($result === 'already-committed' && $callbacks === 0, 'Existing operation was replayed.');
+    $replacement->transaction(static function (Connection $active) use (&$callbacks): void {
+        $active->table('lab_promotion_ledger')->insert(['id' => 'after-promotion', 'amount' => 5]);
+        $active->table('lab_balances')->where('id', '=', 1)->update(['balance' => 85]);
+        $active->table('lab_balances')->where('id', '=', 2)->update(['balance' => 115]);
+        $active->afterCommit(static function () use (&$callbacks): void { ++$callbacks; });
+    });
+    $fresh = new Connection(config(['port' => 5433]));
+    check($callbacks === 1 && $replacement->transactionLevel() === 0
+        && balance($fresh, 1) === 85 && balance($fresh, 2) === 115
+        && $fresh->table('lab_promotion_ledger')->count() === 2, 'New primary write or independent reconciliation failed.');
+    echo "Actual primary stop, physical standby promotion and explicit write-endpoint replacement passed\n";
+}

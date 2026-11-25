@@ -310,6 +310,8 @@ match ($argv[1] ?? '') {
     'isolation' => isolation($db),
     'wal' => wal($db),
     'replica-lag' => replicaLag($db),
+    'promotion-seed' => promotionSeed($db),
+    'promotion-verify' => promotionVerify(),
     'replica-partial' => replicaPartial(),
     'replica-recover' => replicaRecover(),
     'schema' => schemaWorkload($db),

@@ -299,3 +299,7 @@ I: two additional actual RabbitMQ/SQS-compatible lanes inject a failure immediat
 ## B95 — S3 interrupted transfer and uncertain publication
 
 I: isolated MinIO lane routes two specific signed fixture PUTs through a bounded loopback peer. One forwards only 64 KiB then closes the upstream; the other forwards the entire body and observes a successful upstream response before withholding it. Pathwise must surface both failures; independent direct reads reconcile previous versus committed exact bytes, retry only the proven incomplete operation, and preserve another tenant. No external service or production credentials used. 347 routine rows; hosted verification pending (CORE-01, DATA, OPS).
+
+## B96 — Physical PostgreSQL write-primary replacement
+
+I: independent lane reuses the physical standby fixture, verifies replay through the primary's committed WAL flush LSN, stops the original primary, promotes the standby and opens a replacement DBLayer write connection. It reconciles prior idempotency identity, committed balances, new write/callback and fresh connection state. No claim of automatic DBLayer write discovery or zero-loss unplanned asynchronous failover. 348 routine rows; hosted qualification pending. DATA/OPS: explicit ownership and bounded readiness, original primary remains stopped on the disposable runner.

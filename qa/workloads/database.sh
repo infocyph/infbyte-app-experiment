@@ -55,7 +55,7 @@ case "$SCENARIO" in
     if (( failed )); then exit 1; fi
     php "$probe" verify-deadlock | tee "$EVIDENCE/database.log"
     ;;
-  db-replicas|db-replica-fault)
+  db-replicas|db-replica-fault|db-primary-promotion)
     cleanup() {
       for port in 5433 5434; do
         docker logs "lab-standby-$port" > "$EVIDENCE/standby-$port.log" 2>&1 || :
@@ -86,6 +86,11 @@ case "$SCENARIO" in
     done
     if [[ "$SCENARIO" == db-replicas ]]; then
       php "$probe" replicas | tee "$EVIDENCE/database.log"
+    elif [[ "$SCENARIO" == db-primary-promotion ]]; then
+      php "$probe" promotion-seed | tee "$EVIDENCE/promotion-seed.log"
+      docker stop -t 10 "$POSTGRES_SERVICE" >/dev/null
+      docker exec -u postgres lab-standby-5433 pg_ctl promote -D /tmp/standby -w -t 30
+      php "$probe" promotion-verify | tee "$EVIDENCE/promotion-verify.log"
     else
       php "$probe" replica-lag | tee "$EVIDENCE/replica-lag.log"
       docker stop lab-standby-5433
