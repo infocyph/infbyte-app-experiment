@@ -178,3 +178,153 @@ function foundationRiskOutageContracts(string $backend): void
     verify($replacement->recordFailure($context, $now, 'account') && $replacement->observe($context, $now, 'account')['failedSignatureAttempts'] === 1 + (int) $durable, 'Post-restart accounting did not recover.');
     echo "Actual $backend outage, unavailable telemetry and durable/volatile recovery passed\n";
 }
+
+/** Build through Foundation's registered service providers, not manually wired specialist objects. */
+function foundationWebhookApplication(string $backend, string $root, array $secrets, string $namespace): \Infocyph\Foundation\Application\Application
+{
+    require_once __DIR__ . '/bootstrap.php';
+    putenv('AUTH_TOKEN_SECRET=' . $secrets[0]);
+    $config = \Experiment\configuration();
+    $config['app']['capabilities'] = ['cache', 'communication', 'database'];
+    $store = [
+        'driver' => $backend === 'phpfiles' ? 'php_files' : $backend,
+        'namespace' => 'foundation-webhook',
+        'fail_open' => false,
+    ];
+    $store += match ($backend) {
+        'redis' => ['dsn' => 'redis://127.0.0.1:6379'],
+        'valkey' => ['dsn' => 'valkey://127.0.0.1:6380'],
+        'memcached' => ['servers' => [['127.0.0.1', 11211, 0]]],
+        'file', 'phpfiles' => ['directory' => $root . '/records'],
+        'sqlite' => ['sqlite_file' => $root . '/records.sqlite'],
+        'pdo' => ['connection' => 'main'],
+        default => throw new InvalidArgumentException('Unknown replay backend.'),
+    };
+    $config['cache']['stores']['lab-replay'] = $store;
+    $config['communication']['webhooks']['default_inbound'] = 'lab';
+    $config['communication']['webhooks']['inbound']['lab'] = [
+        'secret' => $secrets,
+        'max_age_seconds' => 300,
+        'max_payload_bytes' => 2048,
+        'replay' => ['enabled' => true, 'store' => 'lab-replay', 'ttl_seconds' => 600, 'namespace' => $namespace],
+    ];
+    return \Infocyph\Foundation\Foundation::worker($config)->boot();
+}
+
+function foundationWebhookHeaders(string $secret, string $body, string $id, int $timestamp, string $event = 'orders.created'): array
+{
+    $signature = new \Infocyph\TalkingBytes\Webhook\Model\WebhookSignature($secret);
+    return [
+        'X-TB-Event' => $event,
+        'X-TB-Delivery' => $id,
+        'X-TB-Timestamp' => (string) $timestamp,
+        'X-TB-Signature' => $signature->buildHeader($body, $timestamp, $event, $id),
+    ];
+}
+
+function rejectFoundationWebhook(callable $operation, string $message): void
+{
+    try {
+        $operation();
+    } catch (RuntimeException $failure) {
+        verify(str_contains($failure->getMessage(), $message), 'Unexpected webhook rejection: ' . $failure::class);
+        return;
+    }
+    throw new LogicException('Expected webhook rejection missing: ' . $message);
+}
+
+function foundationWebhookReplayContracts(string $backend): void
+{
+    $root = evidenceDirectory() . '/foundation-webhook';
+    verify(mkdir($root, 0700), 'Webhook fixture directory unavailable.');
+    $secret = bin2hex(random_bytes(32));
+    $body = '{"order":"A","amount":42}';
+    $at = time();
+    $headers = foundationWebhookHeaders($secret, $body, 'delivery-race', $at);
+    $results = parallelRace(static function () use ($backend, $root, $secret, $body, $headers): int {
+        $app = foundationWebhookApplication($backend, $root, [$secret], 'orders');
+        return $app->execution()->run(static function () use ($app, $body, $headers): int {
+            $receiver = $app->make(\Infocyph\TalkingBytes\Webhook\WebhookReceiver::class);
+            try {
+                $event = $receiver->receive($body, $headers);
+                verify($event->payload === ['order' => 'A', 'amount' => 42], 'Verified webhook payload differs.');
+                return 1;
+            } catch (RuntimeException $failure) {
+                if (!str_contains($failure->getMessage(), 'already been processed')) {
+                    throw $failure;
+                }
+                return 0;
+            }
+        });
+    }, 'foundation-webhook-replay', 12);
+    verify(count($results) === 12 && array_sum($results) === 1, 'Configured replay provider did not admit exactly one worker.');
+    $replacement = foundationWebhookApplication($backend, $root, [$secret], 'orders');
+    $receiver = $replacement->make(\Infocyph\TalkingBytes\Webhook\WebhookReceiver::class);
+    rejectFoundationWebhook(static fn() => $receiver->receive($body, $headers), 'already been processed');
+    $fresh = foundationWebhookHeaders($secret, $body, 'delivery-fresh', $at);
+    rejectFoundationWebhook(static fn() => $receiver->receive($body, array_replace($fresh, ['X-TB-Event' => 'orders.deleted'])), 'Webhook verification failed:');
+    rejectFoundationWebhook(static fn() => $receiver->receive('{"order":"foreign"}', $fresh), 'Webhook verification failed:');
+    verify($receiver->receive($body, $fresh)->deliveryId === 'delivery-fresh', 'Invalid proof consumed valid delivery.');
+    echo "Foundation configured $backend protected webhook, 12-process claim and authenticated envelope passed\n";
+}
+
+function foundationWebhookRotationContracts(string $backend): void
+{
+    $root = evidenceDirectory() . '/foundation-webhook-rotation';
+    verify(mkdir($root, 0700), 'Webhook rotation fixture directory unavailable.');
+    $old = bin2hex(random_bytes(32));
+    $new = bin2hex(random_bytes(32));
+    $body = '{"order":"B"}';
+    $at = time();
+    $app = foundationWebhookApplication($backend, $root, [$old], 'orders');
+    $receiver = $app->make(\Infocyph\TalkingBytes\Webhook\WebhookReceiver::class);
+    $prior = foundationWebhookHeaders($old, $body, 'prior', $at);
+    verify($receiver->receive($body, $prior)->payload === ['order' => 'B'], 'Old delivery failed.');
+    $overlap = foundationWebhookApplication($backend, $root, [$new, $old], 'orders')->make(\Infocyph\TalkingBytes\Webhook\WebhookReceiver::class);
+    rejectFoundationWebhook(static fn() => $overlap->receive($body, $prior), 'already been processed');
+    $oldOverlap = foundationWebhookHeaders($old, $body, 'old-overlap', $at);
+    $newOverlap = foundationWebhookHeaders($new, $body, 'new-overlap', $at);
+    verify($overlap->receive($body, $oldOverlap)->deliveryId === 'old-overlap' && $overlap->receive($body, $newOverlap)->deliveryId === 'new-overlap', 'Configured secret overlap failed.');
+    $cutover = foundationWebhookApplication($backend, $root, [$new], 'orders')->make(\Infocyph\TalkingBytes\Webhook\WebhookReceiver::class);
+    $oldOnly = foundationWebhookHeaders($old, $body, 'new-delivery', $at);
+    rejectFoundationWebhook(static fn() => $cutover->receive($body, $oldOnly), 'Webhook verification failed:');
+    $newOnly = foundationWebhookHeaders($new, $body, 'new-delivery', $at);
+    verify($cutover->receive($body, $newOnly)->deliveryId === 'new-delivery', 'Invalid retired secret consumed valid delivery.');
+    rejectFoundationWebhook(static fn() => $cutover->receive($body, $newOverlap), 'already been processed');
+    $foreign = foundationWebhookApplication($backend, $root, [$new], 'foreign')->make(\Infocyph\TalkingBytes\Webhook\WebhookReceiver::class);
+    verify($foreign->receive($body, $newOverlap)->deliveryId === 'new-overlap', 'Replay namespace crossed configured profile.');
+    $expired = foundationWebhookHeaders($new, $body, 'expired', $at - 301);
+    rejectFoundationWebhook(static fn() => $cutover->receive($body, $expired), 'Webhook verification failed:');
+    echo "Foundation configured $backend webhook secret rotation, retained replay and namespace isolation passed\n";
+}
+
+function foundationValidatorProfileContracts(): void
+{
+    require_once __DIR__ . '/bootstrap.php';
+    putenv('AUTH_TOKEN_SECRET=' . bin2hex(random_bytes(32)));
+    $config = \Experiment\configuration();
+    $config['app']['capabilities'] = ['database', 'validation'];
+    $config['validation']['schemas']['lab.stock'] = [
+        'sku' => 'required|integer|exists:lab_provider_stock,id',
+        'quantity' => 'required|integer|min:1|max:5',
+    ];
+    $config['validation']['defaults'] = ['fail_fast' => false, 'strip_unknown' => true, 'casts' => ['quantity' => 'integer']];
+    $config['validation']['overrides']['lab.stock'] = ['messages' => ['quantity.min' => 'Quantity below minimum.']];
+    $app = \Infocyph\Foundation\Foundation::worker($config)->boot();
+    $app->execution()->run(static function () use ($app): void {
+        $db = $app->make(\Infocyph\Foundation\Database\DBLayerFactory::class)->connection();
+        $db->statement('CREATE TABLE lab_provider_stock (id INTEGER PRIMARY KEY)');
+        $db->table('lab_provider_stock')->insert(['id' => 1]);
+        $factory = $app->make(\Infocyph\Foundation\Validation\ValidatorFactory::class);
+        foreach ([$factory->make('lab.stock'), $factory->compile('lab.stock')] as $validator) {
+            $result = $validator->validate(['sku' => 1, 'quantity' => '2', 'foreign' => 'discard']);
+            verify($result->passes() && $result->typed()['quantity'] === 2 && !array_key_exists('foreign', $result->typed()), 'Configured cast or strip policy lost.');
+            $invalid = $validator->validate(['sku' => 999, 'quantity' => 0]);
+            verify($invalid->hasError('sku') && $invalid->first('quantity') === 'Quantity below minimum.', 'Configured database rule or message failed.');
+            verify($validator->validate(['sku' => 1, 'quantity' => 3])->passes(), 'Previous failure contaminated reused profile.');
+        }
+        $db->table('lab_provider_stock')->delete();
+        verify($factory->compile('lab.stock')->validate(['sku' => 1, 'quantity' => 1])->hasError('sku'), 'Database provider returned stale existence.');
+    });
+    echo "Foundation named validation defaults, overrides, compiled parity and live database dependency passed\n";
+}

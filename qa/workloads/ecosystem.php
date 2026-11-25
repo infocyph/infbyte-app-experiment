@@ -78,7 +78,6 @@ require __DIR__ . '/ecosystem-value-crypto.php';
 require __DIR__ . '/ecosystem-array-contracts.php';
 require __DIR__ . '/ecosystem-di-factories.php';
 require __DIR__ . '/ecosystem-di-runtime-contracts.php';
-require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-grpc-inbound.php';
 require __DIR__ . '/ecosystem-validation-casts.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
@@ -286,6 +285,21 @@ match ($argv[1] ?? '') {
     'foundation-risk-outage-redis' => foundationRiskOutageContracts('redis'),
     'foundation-risk-outage-valkey' => foundationRiskOutageContracts('valkey'),
     'foundation-risk-outage-memcached' => foundationRiskOutageContracts('memcached'),
+    'foundation-webhook-replay-redis' => foundationWebhookReplayContracts('redis'),
+    'foundation-webhook-replay-valkey' => foundationWebhookReplayContracts('valkey'),
+    'foundation-webhook-replay-memcached' => foundationWebhookReplayContracts('memcached'),
+    'foundation-webhook-replay-file' => foundationWebhookReplayContracts('file'),
+    'foundation-webhook-replay-phpfiles' => foundationWebhookReplayContracts('phpfiles'),
+    'foundation-webhook-replay-sqlite' => foundationWebhookReplayContracts('sqlite'),
+    'foundation-webhook-replay-pdo' => foundationWebhookReplayContracts('pdo'),
+    'foundation-webhook-rotation-redis' => foundationWebhookRotationContracts('redis'),
+    'foundation-webhook-rotation-valkey' => foundationWebhookRotationContracts('valkey'),
+    'foundation-webhook-rotation-memcached' => foundationWebhookRotationContracts('memcached'),
+    'foundation-webhook-rotation-file' => foundationWebhookRotationContracts('file'),
+    'foundation-webhook-rotation-phpfiles' => foundationWebhookRotationContracts('phpfiles'),
+    'foundation-webhook-rotation-sqlite' => foundationWebhookRotationContracts('sqlite'),
+    'foundation-webhook-rotation-pdo' => foundationWebhookRotationContracts('pdo'),
+    'foundation-validator-profile' => foundationValidatorProfileContracts(),
     'foundation-resource-contracts' => foundationResourceContracts(),
     'cache-redis-cluster-bulk' => cacheBulkWorkload('redis-cluster'),
     'cache-redis-cluster-tags' => cacheTagsWorkload('redis-cluster'),

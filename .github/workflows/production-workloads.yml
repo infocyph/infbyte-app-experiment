@@ -762,6 +762,27 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-foundation-webhook-replay-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-replay-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-webhook-replay-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-webhook-rotation-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-webhook-rotation-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-webhook-rotation-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-validator-profile, backend: pgsql}
+          - {scenario: ecosystem-foundation-validator-profile, backend: mysql}
+          - {scenario: ecosystem-foundation-validator-profile, backend: mariadb}
           - {scenario: ecosystem-validation-related-wildcard, backend: pgsql}
           - {scenario: ecosystem-validation-conditional-wildcard, backend: pgsql}
           - {scenario: ecosystem-validation-upload-metadata, backend: pgsql}
