@@ -153,3 +153,5 @@ B54 adds executable matrix/public declaration inventory and the [current residua
 B55 adds exact local indexing, retention, hard-link deduplication, ZIP safety and live watcher coverage.
 
 B56 adds actual Redis sequence state fault cases and dynamic/compiled contextual DI/tag resolution.
+
+B57 adds remote JWKS integration with real TLS fixture and Redis cache; explicitly controlled DNS and transport boundaries.

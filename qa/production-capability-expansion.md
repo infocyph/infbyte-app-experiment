@@ -235,3 +235,7 @@ I: three independent lanes: 120-file exact checksum index, stream iteration, pre
 ## B56 — utility provider and contextual resolution boundaries
 
 I: two lanes cover UID in-memory domain capacity, shared real Redis PSR-16 sequence replacement, lost/regressed/malformed/exhausted state and callback boundaries; InterMix contextual class/reference/literal selection and tagged iteration in dynamic and strict compiled graphs, invalid binding configuration. No internal state reflection or clock sleeps. FLOW-02/COMPAT: public contracts remain mandatory. Hosted verification pending.
+
+## B57 — remote JWKS trust, cache and rotation
+
+I: actual isolated TLS issuer, PSR-18 test transport restricted to one exact logical origin and explicit loopback mapping, real Redis cache, forced kid refresh, replacement cache reuse, bounded stale/no-store and response limits, discovery issuer binding, and unsafe DNS answers rejected before transport. Resolver supplies controlled public-address answers for positive cases; this is an integration boundary test, not production DNS/peer-pinning certification. No private key material in evidence. SEC/DATA: bounded responses and explicit trust; hosted verification pending.

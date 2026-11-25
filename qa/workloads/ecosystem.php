@@ -58,9 +58,11 @@ require __DIR__ . '/ecosystem-utility-boundaries.php';
 require __DIR__ . '/ecosystem-http-semantics.php';
 require __DIR__ . '/ecosystem-file-lifecycle.php';
 require __DIR__ . '/ecosystem-utility-contracts.php';
+require __DIR__ . '/ecosystem-remote-jwks.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'remote-jwks' => remoteJwksWorkload(),
     'uid-provider-boundaries' => uidProviderBoundariesWorkload(),
     'di-contextual' => diContextualWorkload(),
     'file-index-retention' => fileIndexRetentionWorkload(),

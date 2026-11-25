@@ -275,3 +275,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B56 — sequence and contextual contracts
 - [x] UID provider boundary and InterMix contextual/tagged scenarios.
 - [ ] Hosted qualification and remaining utility variants.
+
+## B57 — remote JWKS
+- [x] TLS fixture, shared cache, rotation, stale/response limits, DNS rejection and discovery scenario.
+- [ ] Hosted verification; production transport DNS/peer binding and distributed replay still open.
