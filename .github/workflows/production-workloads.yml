@@ -15,6 +15,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-migration-fault, backend: mysql}
+          - {scenario: db-migration-fault, backend: pgsql}
+          - {scenario: db-migration-fault, backend: sqlite}
+          - {scenario: db-proxy-mysql, backend: mysql}
+          - {scenario: db-connection-loss, backend: mysql}
+          - {scenario: db-connection-loss, backend: pgsql}
           - {scenario: ecosystem-wire-http3, backend: pgsql}
           - {scenario: ecosystem-wire-mtls, backend: pgsql}
           - {scenario: browser, backend: pgsql, host: roadrunner, matcher: fused}

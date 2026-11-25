@@ -265,9 +265,13 @@ require __DIR__ . '/database-relations.php';
 require __DIR__ . '/database-advanced.php';
 require __DIR__ . '/database-binlog.php';
 require __DIR__ . '/database-proxy.php';
+require __DIR__ . '/database-faults.php';
 
 $db = new Connection(config());
 match ($argv[1] ?? '') {
+    'migration-fault' => migrationFault($db),
+    'connection-loss' => connectionLoss($db),
+    'mysql-proxy-worker' => mysqlProxyWorker((int) ($argv[2] ?? 0)),
     'proxy-seed' => proxySeed($db),
     'proxy-worker' => proxyWorker((int) ($argv[2] ?? 0)),
     'proxy-verify' => proxyVerify($db),

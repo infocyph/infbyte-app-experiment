@@ -215,3 +215,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B41 — secure wire protocols
 - [x] Add actual HTTP/3 multiplexing and required-client-certificate acceptance.
 - [ ] Hosted qualification, outbound QUIC and remaining protocol variants.
+
+## B42 — database failure and proxy contracts
+- [x] Six real migration failure, connection termination and ProxySQL jobs.
+- [ ] Hosted qualification and remaining HA/ambiguous acknowledgement cases.

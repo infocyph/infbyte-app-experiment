@@ -123,3 +123,5 @@ B39 adds native Scylla and six-node Redis Cluster actual failover; Cassandra dri
 B40 adds real RoadRunner and FrankenPHP workers through Foundation's trusted compiled release factory, both compiled matchers. Hosted evidence pending.
 
 B41 adds native HTTP/3 and mTLS scenarios; ext-quic availability and hosted results pending.
+
+B42 adds real migration recovery, lost transactions and ProxySQL concurrency. Hosted evidence pending.

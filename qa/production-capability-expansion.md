@@ -175,3 +175,7 @@ I: four browser lanes on actual RoadRunner and FrankenPHP worker processes with 
 ## B41 — HTTP/3 and mutual TLS
 
 I: two independent wire lanes: real native ext-quic HTTP/3 with aioquic independent client, eight connections × five batches × sixteen streams; actual TLS client certificates with missing/foreign certificate rejection and 160 authenticated HTTP/1.1 requests. No protocol fallback or extension bypass. Native ext-quic installation on hosted runner is a mandatory prerequisite; verification pending. Outbound QUIC and full network fault/flow-control coverage remain open.
+
+## B42 — database migration, proxy and connection faults
+
+I: six independent lanes: real migration failure and driver-specific transactional/nontransactional DDL recovery (MySQL/PostgreSQL/SQLite), actual MySQL/PostgreSQL connection termination mid-transaction with no replay or commit callback and explicit reconnect, real ProxySQL with eight workers and a three-connection backend ceiling (400 exact commits/savepoint effects). Pgpool-II, MaxScale, SQL Server HA and lost commit acknowledgement remain open. Hosted verification pending.
