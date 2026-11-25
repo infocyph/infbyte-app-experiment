@@ -33,3 +33,10 @@ Goal: independently qualify real published Infbyte/Foundation applications, not 
 The B1 workers use application composition and native services, not a compiled HTTP host. Disposable backend credentials, loopback only. No production secrets or real email recipients. Schema/records reset by fresh hosted service containers. No production-equivalent throughput claim or arbitrary latency gate. CI cannot establish every library capability by mere package installation; every untested capability remains open in the tracker.
 
 B1a: initial workflow run 45544003087 was rejected before workers registered. Move runner.temp-based path initialization out of job-level env and into a step using RUNNER_TEMP/GITHUB_ENV. Runtime evidence still pending; do not count the rejected run as workload execution.
+
+## B2 — security and durable delivery
+- [x] FLOW-02: run 45544050115 failed all five at shared auth cache configuration; explicitly configure native Redis atomic counter. Retain the guard and shared state, no fallback to memory.
+- [x] Add security workloads on both databases: persisted RBAC, scoped delegation/revocation, actual OTP enrollment/replay and signed native passkey authentication with one-time challenge. Software authenticator seeded credential; registration ceremony and other OTP factor types remain open.
+- [x] Add Omnibus SQL queue workloads on both databases: after-commit dispatch, rollback exclusion, duplicate messages, transient retries, permanent failure records, four separate drain processes, exact effect and attempt reconciliation.
+- [x] CONFIG-01: Composer-optimized autoload for application fixtures instead of manual class loading; joined SQL reconciliation.
+- [ ] Hosted runtime results for B1/B2; verify before claiming acceptance. Queue crash/reclaim, HTTP and operations remain open.

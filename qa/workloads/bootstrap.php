@@ -45,14 +45,23 @@ function application(): Application
         ],
         'cache' => [
             'default' => 'shared',
+            'default_counter' => 'shared',
+            'counters' => ['shared' => ['driver' => 'redis', 'connection' => 'redis', 'namespace' => 'experiment-counter']],
             'connections' => ['redis' => ['driver' => 'redis', 'dsn' => 'redis://127.0.0.1:6379']],
             'stores' => ['shared' => [
                 'driver' => 'redis', 'connection' => 'redis', 'namespace' => 'experiment-stress', 'fail_open' => false,
+                'security' => ['integrity_key' => getenv('AUTH_TOKEN_SECRET')],
             ]],
         ],
         'auth' => [
-            'drivers' => ['storage' => 'database', 'cache' => 'cache', 'passwords' => 'security', 'tokens' => 'simple', 'notifications' => 'collect'],
+            'drivers' => ['storage' => 'database', 'cache' => 'cache', 'passwords' => 'security', 'tokens' => 'simple', 'notifications' => 'collect',
+                'mfa' => getenv('SCENARIO') === 'security' ? 'otp' : 'simple',
+                'passkey' => getenv('SCENARIO') === 'security' ? 'webauthn' : 'memory'],
             'token_secret_environment' => 'AUTH_TOKEN_SECRET',
+            'otp' => ['replay' => ['store' => 'shared'], 'totp' => ['algorithm' => 'sha256', 'digits' => 6, 'period' => 30, 'secret_bytes' => 32, 'window' => 1],
+                'secret_protection' => ['keys' => [['id' => 'experiment', 'environment' => 'AUTH_OTP_PROTECTION_KEY', 'status' => 'active']]]],
+            'passkey' => ['state' => ['store' => 'shared']],
+            'webauthn' => ['rp_id' => 'experiment.test', 'origin' => 'https://experiment.test', 'challenge_ttl' => 300],
         ],
         'validation' => [
             'database_connection' => 'main',
@@ -60,6 +69,15 @@ function application(): Application
                 'sku' => 'required|integer|exists:experiment_stock,id',
                 'quantity' => 'required|integer|min:1|max:5',
             ]],
+        ],
+        'messaging' => [
+            'durable' => ['enabled' => true, 'connection' => 'main', 'failure_store' => 'database', 'tables' => []],
+            'serialization' => ['message_codecs' => [ReceiptCodec::class]],
+            'default_route' => ['transport' => 'database', 'queue' => 'receipts'],
+            'routes' => [Receipt::class => ['transport' => 'database', 'queue' => 'receipts']],
+            'handlers' => [Receipt::class => ReceiptHandler::class],
+            'consumer' => ['transport' => 'database'],
+            'retry' => ['maximum_attempts' => 2, 'initial_delay_seconds' => 0.0, 'multiplier' => 1.0, 'maximum_delay_seconds' => 0.0, 'jitter_ratio' => 0.0],
         ],
         'notifications' => ['email' => [
             'default_sender' => 'mailpit',

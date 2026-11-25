@@ -71,6 +71,7 @@ final readonly class Orders
         ensure(countValue($db->scalar('SELECT COUNT(*) FROM experiment_orders')) === $expected, 'Order count mismatch.');
         ensure(countValue($db->scalar('SELECT COUNT(*) FROM experiment_lines')) === $expected * 2, 'Missing order lines.');
         ensure(countValue($db->scalar('SELECT COUNT(*) FROM experiment_audit')) === $expected, 'Missing audit records.');
+        ensure(countValue($db->scalar('SELECT COUNT(*) FROM experiment_orders o JOIN experiment_lines l ON l.order_id = o.id JOIN experiment_audit a ON a.order_id = o.id')) === $expected * 2, 'Joined order history mismatch.');
         ensure(countValue($db->scalar('SELECT SUM(amount) FROM experiment_orders')) === $expected * 300, 'Ledger total mismatch.');
         ensure(countValue($db->scalar('SELECT SUM(quantity) FROM experiment_stock')) === 400000 - $expected * 4, 'Inventory conservation failed.');
         ensure(countValue($db->scalar("SELECT COUNT(*) FROM experiment_orders WHERE id LIKE '%-rollback'")) === 0, 'Rollback leaked.');

@@ -20,6 +20,10 @@ jobs:
           - {scenario: accounts, backend: pgsql}
           - {scenario: accounts, backend: mysql}
           - {scenario: mail, backend: pgsql}
+          - {scenario: security, backend: pgsql}
+          - {scenario: security, backend: mysql}
+          - {scenario: queue, backend: pgsql}
+          - {scenario: queue, backend: mysql}
     services:
       postgres:
         image: postgres:17
@@ -78,6 +82,15 @@ jobs:
           done
           test ! -d vendor/infocyph/phpforge
           test ! -e vendor/bin/pest
+          mkdir -p lab
+          cp "$GITHUB_WORKSPACE"/qa/workloads/*.php lab/
+          php -r '
+            $path="composer.json";
+            $config=json_decode(file_get_contents($path),true,flags:JSON_THROW_ON_ERROR);
+            $config["autoload"]["psr-4"]["Experiment\\"]="lab/";
+            file_put_contents($path,json_encode($config,JSON_THROW_ON_ERROR|JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES).PHP_EOL);
+          '
+          composer dump-autoload --no-dev --optimize --no-interaction
           composer check-platform-reqs --no-dev
           composer show --format=json > "$EVIDENCE/packages.json"
           php -v > "$EVIDENCE/php.txt"

@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace Experiment;
 
 require __DIR__ . '/bootstrap.php';
-require __DIR__ . '/Orders.php';
-require __DIR__ . '/Accounts.php';
-require __DIR__ . '/Mail.php';
 
 $app = application();
 $scenario = match (getenv('SCENARIO')) {
     'orders' => new Orders($app),
     'accounts' => new Accounts($app),
     'mail' => new Mail($app),
+    'security' => new Security($app),
+    'queue' => new Queues($app),
     default => throw new \InvalidArgumentException('Unknown workload.'),
 };
 $mode = $argv[1] ?? '';
@@ -21,6 +20,8 @@ if ($mode === 'setup') {
     $app->execution()->run($scenario->setup(...));
 } elseif ($mode === 'verify') {
     $app->execution()->run(static fn() => $scenario->verify((int) ($argv[2] ?? 0)));
+} elseif ($mode === 'drain' && $scenario instanceof Queues) {
+    $scenario->drain();
 } elseif ($mode === 'worker') {
     $worker = $argv[2] ?? '';
     $iterations = (int) ($argv[3] ?? 0);
