@@ -8,7 +8,11 @@ use League\Flysystem\PhpseclibV3\SftpConnectionProvider;
 
 function storageOutageContext(bool $seed): StorageContext
 {
-    if (getenv('LAB_STORAGE_BACKEND') === 's3') {
+    $backend = (string) getenv('LAB_STORAGE_BACKEND');
+    if (!in_array($backend, ['s3', 'sftp'], true)) {
+        return additionalStorageContext($backend, $seed);
+    }
+    if ($backend === 's3') {
         $client = new Aws\S3\S3Client([
             'version' => 'latest', 'region' => 'us-east-1',
             'endpoint' => 'http://127.0.0.1:19000', 'use_path_style_endpoint' => true,

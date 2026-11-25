@@ -47,74 +47,164 @@ function storageLocalModesWorkload(): void
     echo "Memory, prefix, read-only, ZIP and context boundaries passed\n";
 }
 
+function additionalStorageContext(string $backend, bool $seed = false): StorageContext
+{
+    $bucket = 'lab-documents';
+    $config = match ($backend) {
+        'ftp' => static fn(string $prefix): array => ['driver' => 'ftp', 'constructor' => [
+            new \League\Flysystem\Ftp\FtpConnectionOptions('127.0.0.1', '/' . $prefix, 'experiment', 'fixture-only-password', port: 12121, timeout: 3),
+        ]],
+        'webdav' => static fn(string $prefix): array => ['driver' => 'webdav', 'constructor' => [
+            new \Sabre\DAV\Client(['baseUri' => 'http://127.0.0.1:18085/', 'userName' => 'experiment', 'password' => 'fixture-only-password']), $prefix,
+        ]],
+        'gridfs' => (static function () use ($bucket): Closure {
+            $client = new \MongoDB\Client('mongodb://127.0.0.1:27017/?serverSelectionTimeoutMS=3000&connectTimeoutMS=2000&socketTimeoutMS=4000');
+            $storage = $client->selectDatabase('experiment')->selectGridFSBucket(['bucketName' => 'documents']);
+            return static fn(string $prefix): array => ['driver' => 'mongodb-gridfs', 'constructor' => [$storage, $prefix]];
+        })(),
+        'sftp2' => (static function (): Closure {
+            $provider = new \League\Flysystem\PhpseclibV2\SftpConnectionProvider('127.0.0.1', 'experiment', (string) getenv('LAB_SFTP_SECRET'), port: 12222, timeout: 3);
+            return static fn(string $prefix): array => ['driver' => 'sftp-v2', 'constructor' => [$provider, '/upload/' . $prefix]];
+        })(),
+        'async-s3' => (static function () use ($seed, $bucket): Closure {
+            $client = new \AsyncAws\S3\S3Client([
+                'endpoint' => 'http://127.0.0.1:19000', 'region' => 'us-east-1',
+                'accessKeyId' => 'experiment', 'accessKeySecret' => getenv('LAB_S3_SECRET'), 'pathStyleEndpoint' => true,
+            ]);
+            if ($seed) {
+                $client->createBucket(['Bucket' => $bucket])->resolve();
+            }
+            return static fn(string $prefix): array => ['driver' => 'async-aws-s3', 'constructor' => [$client, $bucket, $prefix]];
+        })(),
+        'azure' => (static function () use ($seed, $bucket): Closure {
+            $connection = 'DefaultEndpointsProtocol=http;AccountName=experiment;AccountKey=' . getenv('LAB_AZURE_KEY') . ';BlobEndpoint=http://127.0.0.1:11000/experiment;';
+            $client = \MicrosoftAzure\Storage\Blob\BlobRestProxy::createBlobService($connection);
+            if ($seed) {
+                $client->createContainer($bucket);
+            }
+            return static fn(string $prefix): array => ['driver' => 'azure-blob-storage', 'constructor' => [$client, $bucket, $prefix]];
+        })(),
+        'gcs' => (static function () use ($seed, $bucket): Closure {
+            putenv('STORAGE_EMULATOR_HOST=http://127.0.0.1:14443');
+            $client = new \Google\Cloud\Storage\StorageClient(['projectId' => 'experiment', 'apiEndpoint' => 'http://127.0.0.1:14443', 'retries' => 0, 'requestTimeout' => 4]);
+            $storage = $seed ? $client->createBucket($bucket) : $client->bucket($bucket);
+            return static fn(string $prefix): array => ['driver' => 'google-cloud-storage', 'constructor' => [$storage, $prefix]];
+        })(),
+        default => throw new InvalidArgumentException('Unknown additional storage backend.'),
+    };
+    return new StorageContext(['files' => $config('tenant-a'), 'foreign' => $config('tenant-b')], 'files');
+}
+
 function ftpWorkload(): void
 {
-    $configuration = static fn(string $root): array => ['driver' => 'ftp', 'constructor' => [new League\Flysystem\Ftp\FtpConnectionOptions('127.0.0.1', $root, 'experiment', 'fixture-only-password', port: 12121, timeout: 10)]];
-    remoteStorageWorkload(new StorageContext(['files' => $configuration('/tenant-a'), 'foreign' => $configuration('/tenant-b')], 'files'));
+    remoteStorageWorkload(additionalStorageContext('ftp', true));
 }
 
 function webdavWorkload(): void
 {
-    $client = new Sabre\DAV\Client(['baseUri' => 'http://127.0.0.1:18085/', 'userName' => 'experiment', 'password' => 'fixture-only-password']);
-    remoteStorageWorkload(new StorageContext([
-        'files' => ['driver' => 'webdav', 'constructor' => [$client, 'tenant-a']],
-        'foreign' => ['driver' => 'webdav', 'constructor' => [$client, 'tenant-b']],
-    ], 'files'));
+    remoteStorageWorkload(additionalStorageContext('webdav', true));
 }
 
 function gridfsWorkload(): void
 {
-    $client = new MongoDB\Client('mongodb://127.0.0.1:27017');
-    $bucket = $client->selectDatabase('experiment')->selectGridFSBucket(['bucketName' => 'documents']);
-    remoteStorageWorkload(new StorageContext([
-        'files' => ['driver' => 'mongodb-gridfs', 'constructor' => [$bucket, 'tenant-a']],
-        'foreign' => ['driver' => 'mongodb-gridfs', 'constructor' => [$bucket, 'tenant-b']],
-    ], 'files'));
+    remoteStorageWorkload(additionalStorageContext('gridfs', true));
 }
 
 function sftp2Workload(): void
 {
-    $provider = new League\Flysystem\PhpseclibV2\SftpConnectionProvider('127.0.0.1', 'experiment', (string) getenv('LAB_SFTP_SECRET'), port: 12222, timeout: 10);
-    remoteStorageWorkload(new StorageContext([
-        'files' => ['driver' => 'sftp-v2', 'constructor' => [$provider, '/upload/tenant-a']],
-        'foreign' => ['driver' => 'sftp-v2', 'constructor' => [$provider, '/upload/tenant-b']],
-    ], 'files'));
+    remoteStorageWorkload(additionalStorageContext('sftp2', true));
 }
 
 function asyncS3Workload(): void
 {
-    $client = new AsyncAws\S3\S3Client([
-        'endpoint' => 'http://127.0.0.1:19000',
-        'region' => 'us-east-1',
-        'accessKeyId' => 'experiment',
-        'accessKeySecret' => getenv('LAB_S3_SECRET'),
-        'pathStyleEndpoint' => true,
-    ]);
-    $client->createBucket(['Bucket' => 'lab-documents'])->resolve();
-    remoteStorageWorkload(new StorageContext([
-        'files' => ['driver' => 'async-aws-s3', 'constructor' => [$client, 'lab-documents', 'tenant-a']],
-        'foreign' => ['driver' => 'async-aws-s3', 'constructor' => [$client, 'lab-documents', 'tenant-b']],
-    ], 'files'));
+    remoteStorageWorkload(additionalStorageContext('async-s3', true));
 }
 
 function azureWorkload(): void
 {
-    $connection = 'DefaultEndpointsProtocol=http;AccountName=experiment;AccountKey=' . getenv('LAB_AZURE_KEY') . ';BlobEndpoint=http://127.0.0.1:11000/experiment;';
-    $client = MicrosoftAzure\Storage\Blob\BlobRestProxy::createBlobService($connection);
-    $client->createContainer('lab-documents');
-    remoteStorageWorkload(new StorageContext([
-        'files' => ['driver' => 'azure-blob-storage', 'constructor' => [$client, 'lab-documents', 'tenant-a']],
-        'foreign' => ['driver' => 'azure-blob-storage', 'constructor' => [$client, 'lab-documents', 'tenant-b']],
-    ], 'files'));
+    remoteStorageWorkload(additionalStorageContext('azure', true));
 }
 
 function gcsWorkload(): void
 {
-    putenv('STORAGE_EMULATOR_HOST=http://127.0.0.1:14443');
-    $client = new Google\Cloud\Storage\StorageClient(['projectId' => 'experiment', 'apiEndpoint' => 'http://127.0.0.1:14443']);
-    $bucket = $client->createBucket('lab-documents');
-    remoteStorageWorkload(new StorageContext([
-        'files' => ['driver' => 'google-cloud-storage', 'constructor' => [$bucket, 'tenant-a']],
-        'foreign' => ['driver' => 'google-cloud-storage', 'constructor' => [$bucket, 'tenant-b']],
-    ], 'files'));
+    remoteStorageWorkload(additionalStorageContext('gcs', true));
+}
+
+function additionalStorageCopyContracts(string $backend): void
+{
+    $context = additionalStorageContext($backend, true);
+    $disk = $context->filesystem();
+    $foreign = $context->filesystem('foreign');
+    $prefix = 'orders/';
+    $payloads = ['a.bin' => str_repeat("a\0\xff", 2048), 'nested/b.bin' => str_repeat('b', 3000)];
+    foreach ($payloads as $path => $payload) {
+        $disk->write($prefix . $path, $payload);
+        $foreign->write($prefix . $path, 'foreign:' . $path);
+    }
+    $disk->write($prefix . 'copy.bin', 'previous');
+    $disk->copy($prefix . 'a.bin', $prefix . 'copy.bin');
+    $peer = additionalStorageContext($backend)->filesystem();
+    verify($peer->read($prefix . 'a.bin') === $payloads['a.bin'] && $peer->read($prefix . 'copy.bin') === $payloads['a.bin'], 'Copy overwrote source or did not replace target.');
+    $disk->move($prefix . 'copy.bin', $prefix . 'moved.bin');
+    $expected = [
+        $prefix . 'a.bin' => strlen($payloads['a.bin']),
+        $prefix . 'nested/b.bin' => strlen($payloads['nested/b.bin']),
+        $prefix . 'moved.bin' => strlen($payloads['a.bin']),
+    ];
+    $actual = [];
+    foreach ($peer->listContents('orders', true) as $entry) {
+        if ($entry->isFile()) {
+            $actual[$entry->path()] = $peer->fileSize($entry->path());
+        }
+    }
+    ksort($actual);
+    ksort($expected);
+    verify($actual === $expected && !$peer->fileExists($prefix . 'copy.bin'), 'Recursive listing/metadata did not reconcile exact files.');
+    $disk->delete($prefix . 'moved.bin');
+    verify(!$peer->fileExists($prefix . 'moved.bin') && $foreign->read($prefix . 'a.bin') === 'foreign:a.bin' && $foreign->read($prefix . 'nested/b.bin') === 'foreign:nested/b.bin', 'Copy/move/delete crossed prefix.');
+    echo "$backend independent recursive listing, copy replacement, move and exact file sizes passed\n";
+}
+
+function additionalStorageStagedContracts(string $backend): void
+{
+    $context = additionalStorageContext($backend, true);
+    $disk = $context->filesystem();
+    $foreign = $context->filesystem('foreign');
+    $final = 'orders/final.bin';
+    $stage = 'orders/staging.bin';
+    $payload = str_repeat("receipt\0\xff", 32768);
+    $expected = hash('sha256', $payload);
+    $disk->write($final, 'previous');
+    $foreign->write($final, 'foreign');
+    // Application-owned staged publication: a short, actually persisted upload
+    // is rejected by independent digest/length checks, not assumed atomic.
+    $disk->write($stage, substr($payload, 0, 65536));
+    $peer = additionalStorageContext($backend)->filesystem();
+    verify($peer->fileSize($stage) === 65536 && hash('sha256', $peer->read($stage)) !== $expected, 'Short persisted stage did not demonstrate corruption.');
+    verify($peer->read($final) === 'previous', 'Incomplete staging changed final object.');
+    $disk->delete($stage);
+    verify(!$peer->fileExists($stage), 'Short staged object could not be cleaned.');
+    $source = fopen('php://temp', 'w+b');
+    verify(is_resource($source), 'Staged transfer source unavailable.');
+    try {
+        verify(fwrite($source, $payload) === strlen($payload) && rewind($source), 'Staged source preparation failed.');
+        $disk->writeStream($stage, $source);
+    } finally {
+        if (is_resource($source)) {
+            fclose($source);
+        }
+    }
+    $read = $peer->readStream($stage);
+    try {
+        $digest = hash_init('sha256');
+        verify(hash_update_stream($digest, $read) === strlen($payload) && hash_final($digest) === $expected, 'Independent stage digest mismatch.');
+    } finally {
+        if (is_resource($read)) {
+            fclose($read);
+        }
+    }
+    verify($peer->read($final) === 'previous', 'Verified stage changed final object before publication.');
+    $disk->move($stage, $final);
+    verify(!$peer->fileExists($stage) && hash('sha256', $peer->read($final)) === $expected && $foreign->read($final) === 'foreign', 'Publication or prefix reconciliation failed.');
+    echo "$backend actual short stage, explicit digest validation, cleanup and recovered publication passed\n";
 }

@@ -738,6 +738,27 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-ftp-outage, backend: pgsql}
+          - {scenario: ecosystem-ftp-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-ftp-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-webdav-outage, backend: pgsql}
+          - {scenario: ecosystem-webdav-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-webdav-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-gridfs-outage, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-copy-contracts, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-staged-contracts, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-sftp2-outage, backend: pgsql}
+          - {scenario: ecosystem-sftp2-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-sftp2-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-async-s3-outage, backend: pgsql}
+          - {scenario: ecosystem-async-s3-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-async-s3-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-azure-outage, backend: pgsql}
+          - {scenario: ecosystem-azure-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-azure-staged-contracts, backend: pgsql}
+          - {scenario: ecosystem-gcs-outage, backend: pgsql}
+          - {scenario: ecosystem-gcs-copy-contracts, backend: pgsql}
+          - {scenario: ecosystem-gcs-staged-contracts, backend: pgsql}
           - {scenario: ecosystem-otp-rotation-hotp-redis, backend: pgsql}
           - {scenario: ecosystem-otp-rotation-hotp-valkey, backend: pgsql}
           - {scenario: ecosystem-otp-rotation-hotp-file, backend: pgsql}

@@ -9,7 +9,15 @@ cleanup() {
   done
 }
 trap cleanup EXIT
+provision="$SCENARIO"
 case "$SCENARIO" in
+  ecosystem-ftp-outage|ecosystem-ftp-copy-contracts|ecosystem-ftp-staged-contracts|ecosystem-webdav-outage|ecosystem-webdav-copy-contracts|ecosystem-webdav-staged-contracts|ecosystem-gridfs-outage|ecosystem-gridfs-copy-contracts|ecosystem-gridfs-staged-contracts|ecosystem-sftp2-outage|ecosystem-sftp2-copy-contracts|ecosystem-sftp2-staged-contracts|ecosystem-async-s3-outage|ecosystem-async-s3-copy-contracts|ecosystem-async-s3-staged-contracts|ecosystem-azure-outage|ecosystem-azure-copy-contracts|ecosystem-azure-staged-contracts|ecosystem-gcs-outage|ecosystem-gcs-copy-contracts|ecosystem-gcs-staged-contracts)
+    provision="${SCENARIO%-outage}"
+    provision="${provision%-copy-contracts}"
+    provision="${provision%-staged-contracts}"
+    ;;
+esac
+case "$provision" in
   ecosystem-redis-cluster)
     for port in 17379 17380 17381; do
       name="lab-cluster-$port"
@@ -39,7 +47,7 @@ case "$SCENARIO" in
     done
     docker exec lab-mongo mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' | grep -qx 1
     composer require mongodb/mongodb --no-interaction --prefer-dist --no-progress
-    if [[ "$SCENARIO" == ecosystem-gridfs ]]; then composer require league/flysystem-gridfs --no-interaction --prefer-dist --no-progress; fi
+    if [[ "$provision" == ecosystem-gridfs ]]; then composer require league/flysystem-gridfs --no-interaction --prefer-dist --no-progress; fi
     ;;
   ecosystem-s3|ecosystem-async-s3|ecosystem-s3-outage|ecosystem-s3-publication-fault)
     containers+=(lab-s3)
@@ -50,7 +58,7 @@ case "$SCENARIO" in
       sleep 1
     done
     curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null
-    if [[ "$SCENARIO" != ecosystem-async-s3 ]]; then composer require league/flysystem-aws-s3-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-async-aws-s3 --no-interaction --prefer-dist --no-progress; fi
+    if [[ "$provision" != ecosystem-async-s3 ]]; then composer require league/flysystem-aws-s3-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-async-aws-s3 --no-interaction --prefer-dist --no-progress; fi
     ;;
   ecosystem-sftp|ecosystem-sftp2|ecosystem-sftp-trust|ecosystem-sftp-outage|ecosystem-sftp-publication-fault)
     containers+=(lab-sftp)
@@ -62,7 +70,7 @@ case "$SCENARIO" in
     done
     test -s "$RUNNER_TEMP/lab-sftp-host.pub"
     export LAB_SFTP_HOST_KEYS="$(docker exec lab-sftp sh -c 'for f in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$f" -E sha256; done' | awk '{print $2}')"
-    if [[ "$SCENARIO" != ecosystem-sftp2 ]]; then composer require league/flysystem-sftp-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-sftp-v2 --no-interaction --prefer-dist --no-progress; fi
+    if [[ "$provision" != ecosystem-sftp2 ]]; then composer require league/flysystem-sftp-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-sftp-v2 --no-interaction --prefer-dist --no-progress; fi
     ;;
   ecosystem-storage-local-modes)
     composer require league/flysystem-memory league/flysystem-read-only league/flysystem-path-prefixing league/flysystem-ziparchive --no-interaction --prefer-dist --no-progress
@@ -72,10 +80,10 @@ case "$SCENARIO" in
     python="$RUNNER_TEMP/storage-peer-venv/bin/python"
     "$python" -m pip install 'pyftpdlib>=2,<3' 'wsgidav>=4,<5' 'cheroot>=10,<12'
     mkdir -p "$RUNNER_TEMP/storage-peer/tenant-a" "$RUNNER_TEMP/storage-peer/tenant-b"
-    "$python" "$GITHUB_WORKSPACE/qa/workloads/storage-peer.py" "${SCENARIO#ecosystem-}" "$RUNNER_TEMP/storage-peer" > "$EVIDENCE/storage-peer.log" 2>&1 &
+    "$python" "$GITHUB_WORKSPACE/qa/workloads/storage-peer.py" "${provision#ecosystem-}" "$RUNNER_TEMP/storage-peer" > "$EVIDENCE/storage-peer.log" 2>&1 &
     storage_peer=$!
     trap 'kill "$storage_peer" 2>/dev/null || :; wait "$storage_peer" 2>/dev/null || :; cleanup' EXIT
-    if [[ "$SCENARIO" == ecosystem-ftp ]]; then
+    if [[ "$provision" == ecosystem-ftp ]]; then
       composer require league/flysystem-ftp --no-interaction --prefer-dist --no-progress
     else
       composer require league/flysystem-webdav --no-interaction --prefer-dist --no-progress
@@ -154,6 +162,71 @@ elif [[ "$SCENARIO" == ecosystem-sftp-publication-fault ]]; then
   done
   test "$ready" = 1
   timeout 90s php "$probe" sftp-publication-recover | tee "$EVIDENCE/sftp-recovery.log"
+elif [[ "$SCENARIO" == *-outage && "$provision" != "$SCENARIO" ]]; then
+  probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
+  export LAB_STORAGE_BACKEND="${provision#ecosystem-}"
+  service=""
+  case "$LAB_STORAGE_BACKEND" in
+    ftp) port=12121 ;;
+    webdav) port=18085 ;;
+    gridfs) service=lab-mongo; port=27017 ;;
+    sftp2) service=lab-sftp; port=12222 ;;
+    async-s3) service=lab-s3; port=19000 ;;
+    azure) service=lab-azure; port=11000 ;;
+    gcs) service=lab-gcs; port=14443 ;;
+    *) exit 1 ;;
+  esac
+  ready_port() {
+    for attempt in {1..60}; do
+      if timeout 2 bash -c "exec 3<>/dev/tcp/127.0.0.1/$port" 2>/dev/null; then return; fi
+      sleep 1
+    done
+    return 1
+  }
+  ready_port
+  timeout 90s php "$probe" storage-outage-seed | tee "$EVIDENCE/storage-seed.log"
+  if [[ -n "$service" ]]; then
+    docker stop -t 10 "$service" >/dev/null
+  else
+    kill "$storage_peer"
+    wait "$storage_peer" || :
+  fi
+  if timeout 2 bash -c "exec 3<>/dev/tcp/127.0.0.1/$port" 2>/dev/null; then exit 1; fi
+  timeout 120s php "$probe" storage-outage-denied | tee "$EVIDENCE/storage-denied.log"
+  if [[ -n "$service" ]]; then
+    docker start "$service" >/dev/null
+  else
+    "$python" "$GITHUB_WORKSPACE/qa/workloads/storage-peer.py" "$LAB_STORAGE_BACKEND" "$RUNNER_TEMP/storage-peer" >> "$EVIDENCE/storage-peer.log" 2>&1 &
+    storage_peer=$!
+  fi
+  ready_port
+  case "$LAB_STORAGE_BACKEND" in
+    gridfs)
+      for attempt in {1..60}; do
+        if docker exec lab-mongo mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' | grep -qx 1; then break; fi
+        sleep 1
+      done
+      docker exec lab-mongo mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' | grep -qx 1 ;;
+    async-s3)
+      for attempt in {1..60}; do
+        if curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null; then break; fi
+        sleep 1
+      done
+      curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null ;;
+    sftp2)
+      for attempt in {1..60}; do
+        if ssh-keyscan -T 2 -p 12222 127.0.0.1 >/dev/null 2>&1; then break; fi
+        sleep 1
+      done
+      ssh-keyscan -T 2 -p 12222 127.0.0.1 >/dev/null 2>&1 ;;
+    gcs)
+      for attempt in {1..60}; do
+        if curl -fsS --max-time 2 'http://127.0.0.1:14443/storage/v1/b?project=experiment' >/dev/null; then break; fi
+        sleep 1
+      done
+      curl -fsS --max-time 2 'http://127.0.0.1:14443/storage/v1/b?project=experiment' >/dev/null ;;
+  esac
+  timeout 90s php "$probe" storage-outage-recover | tee "$EVIDENCE/storage-recovery.log"
 elif [[ "$SCENARIO" == ecosystem-s3-outage || "$SCENARIO" == ecosystem-sftp-outage ]]; then
   probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
   if [[ "$SCENARIO" == ecosystem-s3-outage ]]; then
