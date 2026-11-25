@@ -8,6 +8,7 @@ case "$SCENARIO" in
     php "$probe" generate
     php -d opcache.enable_cli=1 -d "opcache.preload=$EVIDENCE/di-preload.php" -d "opcache.preload_user=$(id -un)" "$probe" verify | tee "$EVIDENCE/preload.log" ;;
   ecosystem-api-inventory) php "$GITHUB_WORKSPACE/qa/workloads/coverage-audit.php" | tee "$EVIDENCE/inventory.log" ;;
+  ecosystem-risk-edge) bash "$GITHUB_WORKSPACE/qa/workloads/risk-edge.sh" ;;
   ecosystem-release-cutover) bash "$GITHUB_WORKSPACE/qa/workloads/release-cutover.sh" ;;
   ecosystem-tenants) bash "$GITHUB_WORKSPACE/qa/workloads/tenants.sh" ;;
   ecosystem-smtp-uncertain|ecosystem-smtp-tls-auth) bash "$GITHUB_WORKSPACE/qa/workloads/smtp-faults.sh" ;;

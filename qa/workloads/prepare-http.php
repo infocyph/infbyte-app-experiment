@@ -33,6 +33,7 @@ $route = $root . '/routes/api.php';
 $original = file_get_contents($route);
 $addition = file_get_contents(__DIR__ . match (getenv('SCENARIO')) {
     'ecosystem-release-cutover' => '/release-routes.php',
+    'ecosystem-risk-edge' => '/risk-edge-routes.php',
     'ecosystem-tenants' => '/tenant-routes.php',
     'browser' => '/browser-routes.php',
     'transfer' => '/transfer-routes.php',

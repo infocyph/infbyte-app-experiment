@@ -89,13 +89,13 @@ function configuration(): array
             ]],
         ]],
     ];
-    if (in_array(getenv('SCENARIO'), ['http', 'browser', 'transfer', 'oauth-http', 'ecosystem-connected', 'ecosystem-recovery', 'ecosystem-active-recovery', 'ecosystem-endurance', 'ecosystem-tenants', 'ecosystem-release-cutover'], true)) {
+    if (in_array(getenv('SCENARIO'), ['http', 'browser', 'transfer', 'oauth-http', 'ecosystem-connected', 'ecosystem-recovery', 'ecosystem-active-recovery', 'ecosystem-endurance', 'ecosystem-tenants', 'ecosystem-release-cutover', 'ecosystem-risk-edge'], true)) {
         $matcher = getenv('LAB_MATCHER') ?: 'fused';
         ensure(in_array($matcher, ['fused', 'sharded'], true), 'Unsupported laboratory matcher.');
         $config['router'] = ['matcher' => $matcher];
     }
 
-    if (in_array(getenv('SCENARIO'), ['http', 'oauth-http', 'ecosystem-tenants'], true)) {
+    if (in_array(getenv('SCENARIO'), ['http', 'oauth-http', 'ecosystem-tenants', 'ecosystem-risk-edge'], true)) {
         $config['app']['env'] = 'production';
         $config['app']['debug'] = false;
         $config['app']['capabilities'] = ['auth', 'cache', 'database', 'filesystem', 'validation', 'security', 'otp', 'passkeys', 'notifications', 'communication', 'runwire'];

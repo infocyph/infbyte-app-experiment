@@ -473,3 +473,7 @@ I: independent bounded RESP2 relay drops one EVAL before forwarding and withhold
 ## B105 — Browser OIDC interaction and signed ID-token/UserInfo transport
 
 I: extend the four existing native/FPM fused/sharded OAuth HTTP lanes with separate public OIDC registration, silent-before-consent, login/account selection, zero-age/ACR mismatch, valid-CSRF POST reauthentication, explicit consent and silent issuance. Redeem after host replacement, verify signed ID token using the separate fixture public key, nonce/hash bindings, UserInfo subject and email, ID-token rejection at resource endpoint and code replay. No additional routine rows (360); hosted verification pending. The existing route requires authentication; anonymous OIDC interaction is not certified. SEC/REQUEST/DATA/EXEC-03.
+
+## B106 — Actual TLS edge and isolated authentication pool
+
+I: fused/sharded FPM lanes compile the application, run real Nginx TLS reverse proxy with source-bound private origin access, enforce protected location ingress ACL, overwrite actual client IP and remove unmeasured JA4/ASN, separate ordinary versus dedicated protected FPM pool, and exercise login success/failure/challenge with shared risk state. No JA4 fabrication, third-party challenge provider or production network isolation certification. Also registers the Valkey service for B104's independent response-loss lane. 362 routine rows; hosted verification pending (SEC, REQUEST, OPS, EXEC-03).
