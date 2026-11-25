@@ -98,3 +98,8 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 - [x] Add independent MySQL/PostgreSQL transaction/savepoint/callback, real cross-process deadlock retry, and pool ownership lanes; add PostgreSQL physical standby routing and weighted selection lane.
 - [x] Add detailed [production capability expansion register](production-capability-expansion.md) with granular DBLayer acceptance work and remaining ecosystem tracks. Preserve existing failures; no upstream library fixes.
 - [ ] Hosted verification of all new lanes; implement every open DBLayer and ecosystem scenario before library remediation.
+
+## B13 — database data plane and SQLite lanes
+- [x] Add six independent scenarios (schema/migrations, query builder, repositories, cache consistency, streaming/keyset, security) across MySQL/PostgreSQL/SQLite, 18 jobs.
+- [x] Follow direct-main workflow; remove PR-only trigger introduced in B12. Keep previous mandatory scenarios.
+- [ ] Hosted evidence and remaining detailed DBLayer cases. No upstream fixes.

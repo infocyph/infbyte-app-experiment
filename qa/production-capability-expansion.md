@@ -48,3 +48,18 @@ Each row must be decomposed into independently executable public-capability scen
 | Cross-library | interconnected tenant/order/import/document/notification workloads; stress, chaos, restore and endurance | O |
 
 B12 does not certify DBLayer exhaustively. The physical standbys are local isolated containers on a hosted runner; no production HA election, network-partition or throughput certification. Keep every previously failing lane required.
+
+## B13 — data plane implementation detail
+
+All items below are I (hosted verification pending), not closure of their broader DB IDs. Each runs independently on MySQL, PostgreSQL and SQLite.
+
+| Lane | Implemented coverage | Still open |
+|---|---|---|
+| db-schema / DB-09 | Migration ledger, idempotent rerun, rollback/reapply, DDL defaults, unique and foreign keys, cascade, ALTER | Failed migrations, all column types, named/schema/prefix isolation, migration ownership, seeders |
+| db-query / DB-10 | Nested filters, branch isolation, aggregates, derived joins, CTE, union, upsert, insert-ignore and bindings | Windows, recursive CTE, returning, parameter ceilings, remaining clauses and dialects |
+| db-repository / DB-11 | Tenant read/write isolation, native casts, optimistic version CAS, soft-delete, restore, force delete | Relationship matrix, hooks, repository APIs and concurrent CAS |
+| db-query-cache / DB-13 | Shared file cache hit, transaction bypass, rollback preservation, commit invalidation | Tag scopes, shared stampede, external transaction ownership, remote backend outage |
+| db-stream / DB-12 | 10k row unbuffered traversal, 5k composite cursor rows, early close, memory and elapsed diagnostics | Bounded memory thresholds, concurrent modifications, cancellation, chunk and lazy variants |
+| db-security / DB-14 | Bound hostile string, raw policy, identifier rejection, cursor signature/tamper/filter binding | TLS, rate budgets, hooks, monitoring, query cancellation and statement cache |
+
+SQLite file storage now exercised in these six lanes; WAL and competing writer behavior remain open. No upstream changes.

@@ -65,3 +65,5 @@ Status: **V** = verified by latest applicable hosted execution; **I** = implemen
 
 ## Detailed expansion
 See [production-capability-expansion.md](production-capability-expansion.md) for B12 granular DBLayer mechanics and remaining ecosystem tracks. New DBLayer scenarios are I (implemented, not verified) until exact-head hosted evidence is available. Existing mandatory failures are retained.
+
+B13 adds 18 independent DBLayer data-plane jobs across MySQL/PostgreSQL/SQLite. See detailed expansion register for scenario-level I/O boundaries; no upstream remediation.

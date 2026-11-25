@@ -3,8 +3,6 @@ on:
   push:
     branches: [main]
     paths: ['qa/**', '.github/workflows/production-workloads.yml']
-  pull_request:
-    paths: ['qa/**', '.github/workflows/production-workloads.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,6 +15,24 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: db-schema, backend: mysql}
+          - {scenario: db-schema, backend: pgsql}
+          - {scenario: db-schema, backend: sqlite}
+          - {scenario: db-query, backend: mysql}
+          - {scenario: db-query, backend: pgsql}
+          - {scenario: db-query, backend: sqlite}
+          - {scenario: db-repository, backend: mysql}
+          - {scenario: db-repository, backend: pgsql}
+          - {scenario: db-repository, backend: sqlite}
+          - {scenario: db-query-cache, backend: mysql}
+          - {scenario: db-query-cache, backend: pgsql}
+          - {scenario: db-query-cache, backend: sqlite}
+          - {scenario: db-stream, backend: mysql}
+          - {scenario: db-stream, backend: pgsql}
+          - {scenario: db-stream, backend: sqlite}
+          - {scenario: db-security, backend: mysql}
+          - {scenario: db-security, backend: pgsql}
+          - {scenario: db-security, backend: sqlite}
           - {scenario: db-transactions, backend: mysql}
           - {scenario: db-transactions, backend: pgsql}
           - {scenario: db-locking, backend: mysql}

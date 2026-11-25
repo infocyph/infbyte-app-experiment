@@ -23,6 +23,12 @@ function config(array $overrides = []): ConnectionConfig
 {
     $driver = (string) getenv('DB_BACKEND');
 
+    if ($driver === 'sqlite') {
+        return ConnectionConfig::fromArray(array_replace([
+            'driver' => 'sqlite', 'database' => getenv('EVIDENCE') . '/db.sqlite',
+        ], $overrides));
+    }
+
     return ConnectionConfig::fromArray(array_replace([
         'driver' => $driver,
         'host' => '127.0.0.1',
@@ -245,8 +251,16 @@ function replicas(Connection $primary): void
     echo json_encode(['round_robin' => $ports, 'weighted' => $counts, 'least_latency' => $winner], JSON_THROW_ON_ERROR), PHP_EOL;
 }
 
+require __DIR__ . '/database-data.php';
+
 $db = new Connection(config());
 match ($argv[1] ?? '') {
+    'schema' => schemaWorkload($db),
+    'query' => queryWorkload($db),
+    'repository' => repositoryWorkload($db),
+    'query-cache' => cacheWorkload($db),
+    'stream' => streamWorkload($db),
+    'security' => securityWorkload($db),
     'transactions' => transactions($db),
     'setup-locking' => setup($db),
     'deadlock' => deadlock($db, (int) ($argv[2] ?? 0)),

@@ -2,6 +2,8 @@
 set -euo pipefail
 probe="$GITHUB_WORKSPACE/qa/workloads/database.php"
 case "$SCENARIO" in
+  db-schema|db-query|db-repository|db-query-cache|db-stream|db-security)
+    php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-transactions) php "$probe" transactions | tee "$EVIDENCE/database.log" ;;
   db-pool) php "$probe" pool | tee "$EVIDENCE/database.log" ;;
   db-locking)
