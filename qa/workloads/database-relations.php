@@ -94,7 +94,7 @@ function driverWorkload(Connection $db): void
     check($db->supportsUpsert() && $db->supportsSavepoints() && $db->supportsJson() && $db->supportsWindowFunctions(), 'Documented driver capability absent.');
     check($db->supportsSchemas() === ($driver !== 'sqlite'), 'Schema capability mismatch.');
     seedRows($db, 20);
-    $ranked = $db->table('lab_records')->select('id', 'tenant_id')->selectWindow('row_number()', 'row_rank', ['tenant_id'], ['id' => 'asc'])->orderBy('id')->get();
+    $ranked = $db->table('lab_records')->select('id', 'tenant_id')->selectWindow('row_number()', 'row_rank', ['tenant_id'], ['id asc'])->orderBy('id')->get();
     check(count($ranked) === 20, 'Window row count mismatch.');
     foreach ($ranked as $row) {
         check((int) $row['row_rank'] === intdiv((int) $row['id'] + 1, 2), 'Partitioned rank mismatch.');

@@ -53,6 +53,9 @@ case "$SCENARIO" in
     }
     trap cleanup EXIT
     docker exec "$POSTGRES_SERVICE" bash -e -c 'printf "\nhost replication experiment 0.0.0.0/0 scram-sha-256\n" >> "$PGDATA/pg_hba.conf"; gosu postgres pg_ctl reload -D "$PGDATA"'
+    # Retain WAL between each base backup and the standby connection, including restart.
+    docker exec "$POSTGRES_SERVICE" psql -v ON_ERROR_STOP=1 -U experiment -d experiment -c "ALTER SYSTEM SET wal_keep_size = '256MB'"
+    docker exec "$POSTGRES_SERVICE" psql -v ON_ERROR_STOP=1 -U experiment -d experiment -c 'SELECT pg_reload_conf()'
     for port in 5433 5434; do
       docker run -d --name "lab-standby-$port" --network host \
         -e PGPASSWORD=experiment -e STANDBY_PORT="$port" \

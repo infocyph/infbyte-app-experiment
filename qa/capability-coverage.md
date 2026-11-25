@@ -99,3 +99,5 @@ B27 adds actual MySQL and MariaDB binlog source/reader routing, lag, outage and 
 B28 adds native Webrick gateway/CORS/limits, Redis response cache, atomic throttle and protected cookie scenarios; fixes HTTPS negative evidence and binlog fixture isolation. Wire-level coverage remains separate.
 
 B29 adds full published JWT/JWS algorithm enumeration and JWE key-management enumeration with JWK and serialization checks. This does not close all JOSE, key lifecycle or remote trust capabilities.
+
+B30 records historical 70/88 hosted evidence (run 45551568675) and repairs three fixture failure groups. Latest B29 run 45554179175 (152 production jobs) and consumer 45554179122 (20 jobs) were queued; exact-head verification and remaining scenario implementation are open. See detailed expansion register for failure attribution.

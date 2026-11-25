@@ -167,3 +167,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B29 — JOSE cryptographic algorithm matrix
 - [x] Two native jobs for all published JWT/JWS and JWE algorithms, JWK and serialization/recipient/threshold contracts.
 - [ ] Hosted qualification and remaining key lifecycle and remote trust capabilities.
+
+## B30 — historical CI evidence and fixture repair
+- [x] Record historical 70/88 results (run 45551568675); correct window ordering, provision SQL Server ODBC and retain primary WAL for replica fixtures.
+- [ ] Qualify exact-head run; 152 routine production jobs, 20 consumer jobs, four scheduled/manual endurance jobs and one engineering job configured. Remaining open capability families and mandatory red reproductions retained.

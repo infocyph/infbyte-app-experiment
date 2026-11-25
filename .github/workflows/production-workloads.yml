@@ -232,6 +232,20 @@ jobs:
           tools: composer:v2
           ini-values: apc.enable_cli=1
           coverage: none
+      - name: Provision Microsoft ODBC driver for SQL Server
+        if: matrix.backend == 'mssql'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! odbcinst -q -d -n 'ODBC Driver 18 for SQL Server' >/dev/null 2>&1; then
+            . /etc/os-release
+            test "$ID" = ubuntu
+            curl -fsSL "https://packages.microsoft.com/config/ubuntu/$VERSION_ID/packages-microsoft-prod.deb" -o "$RUNNER_TEMP/packages-microsoft-prod.deb"
+            sudo dpkg -i "$RUNNER_TEMP/packages-microsoft-prod.deb"
+            sudo apt-get update
+            sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18
+          fi
+          odbcinst -q -d -n 'ODBC Driver 18 for SQL Server'
       - name: Install MongoDB extension for the optional driver
         if: matrix.scenario == 'ecosystem-mongodb'
         uses: shivammathur/setup-php@v2
