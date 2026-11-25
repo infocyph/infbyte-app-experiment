@@ -125,3 +125,5 @@ B40 adds real RoadRunner and FrankenPHP workers through Foundation's trusted com
 B41 adds native HTTP/3 and mTLS scenarios; ext-quic availability and hosted results pending.
 
 B42 adds real migration recovery, lost transactions and ProxySQL concurrency. Hosted evidence pending.
+
+B43 adds native runtime control/recycling/reload and HTTP wire framing/limits/recovery.

@@ -179,3 +179,7 @@ I: two independent wire lanes: real native ext-quic HTTP/3 with aioquic independ
 ## B42 — database migration, proxy and connection faults
 
 I: six independent lanes: real migration failure and driver-specific transactional/nontransactional DDL recovery (MySQL/PostgreSQL/SQLite), actual MySQL/PostgreSQL connection termination mid-transaction with no replay or commit callback and explicit reconnect, real ProxySQL with eight workers and a three-connection backend ceiling (400 exact commits/savepoint effects). Pgpool-II, MaxScale, SQL Server HA and lost commit acknowledgement remain open. Hosted verification pending.
+
+## B43 — runtime control, worker lifecycle and HTTP framing
+
+I: two actual native-server lanes. Supervisor uses protected Unix control, oversized/stale requests, automatic request-limit recycling, explicit slot recycle, generation reload, graceful stop and socket cleanup while serving 120 requests; HTTP framing uses actual chunked/large-body digest reconciliation, conflicting lengths/transfer encodings, oversized headers/body/request line and slow-header timeout plus 40 concurrent recovery operations. These are isolated wire tests, not exhaustive resource saturation. Hosted evidence pending.

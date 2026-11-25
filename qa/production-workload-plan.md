@@ -219,3 +219,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B42 — database failure and proxy contracts
 - [x] Six real migration failure, connection termination and ProxySQL jobs.
 - [ ] Hosted qualification and remaining HA/ambiguous acknowledgement cases.
+
+## B43 — native runtime lifecycle and HTTP framing
+- [x] Actual supervisor lifecycle/control and wire-level parser/resource boundary tests.
+- [ ] Hosted verification, remaining cancellation/backpressure and resource policies.
