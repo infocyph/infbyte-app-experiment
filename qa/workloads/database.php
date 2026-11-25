@@ -262,6 +262,7 @@ function replicas(Connection $primary): void
 require __DIR__ . '/database-data.php';
 require __DIR__ . '/database-operations.php';
 require __DIR__ . '/database-relations.php';
+require __DIR__ . '/database-relations-advanced.php';
 require __DIR__ . '/database-advanced.php';
 require __DIR__ . '/database-binlog.php';
 require __DIR__ . '/database-proxy.php';
@@ -296,6 +297,7 @@ match ($argv[1] ?? '') {
     'callback-failure' => callbackFailure($db),
     'driver' => driverWorkload($db),
     'relations' => relationsWorkload($db),
+    'relations-advanced' => advancedRelationsWorkload($db),
     'lock-wait' => lockWait($db),
     'pool-lifecycle' => poolLifecycle($db),
     'budgets' => budgets($db),

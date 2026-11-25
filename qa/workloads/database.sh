@@ -10,7 +10,7 @@ case "$SCENARIO" in
   db-migration-fault|db-connection-loss) php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-proxy-*) bash "$GITHUB_WORKSPACE/qa/workloads/database-proxy.sh" ;;
   db-binlog-replica) bash "$GITHUB_WORKSPACE/qa/workloads/database-binlog.sh" ;;
-  db-driver)
+  db-driver|db-relations-advanced)
     if [[ "$DB_BACKEND" == mssql ]]; then
       ready=0
       for attempt in $(seq 1 60); do
@@ -19,7 +19,7 @@ case "$SCENARIO" in
       done
       test "$ready" = 1
     fi
-    php "$probe" driver | tee "$EVIDENCE/database.log" ;;
+    php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-relations) php "$probe" relations | tee "$EVIDENCE/database.log" ;;
   db-schema|db-query|db-repository|db-query-cache|db-stream|db-security|db-lock-wait|db-pool-lifecycle|db-budgets|db-isolation|db-wal|db-lock-modes|db-native-owner|db-callback-failure)
     php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;

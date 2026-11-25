@@ -293,3 +293,7 @@ I: two compiled attribute/resource registration jobs (fused/sharded), checking e
 ## B70 — real MySQL-family ambiguous commit acknowledgement
 
 I: two independent MySQL/MariaDB jobs extend the B58 durable ledger and financial reconciliation. Protocol-aware loopback fixture forwards native MySQL frames, recognizes a real COM_QUERY COMMIT and withholds exactly one successful backend OK packet, without logging authentication or SQL. Require one attempted execution, no confirmed-commit callbacks, durable ledger and balances, fresh connection recovery and no duplicate idempotent operation. PostgreSQL lane retained. Total routine rows 264. SQL Server ambiguity and HA remain open. No upstream modifications; exact-head hosted evidence pending.
+
+## B71 — advanced repository graphs on all five SQL drivers
+
+I: five independent jobs for through many/one, nested eager loading, aggregates/existence, one-of-many with deterministic ties, explicit candidate scope versus winner filter, narrow projection, morph one/many/to and forward/inverse polymorphic pivot with type collision isolation. SQL Server uses the existing real ODBC/DB provisioning path. No ORM/lazy behavior inferred; remaining repository policy/driver-specific cases stay open. Total routine rows 269. Hosted verification pending, no upstream modifications.

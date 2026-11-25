@@ -49,6 +49,11 @@ jobs:
           - {scenario: db-relations, backend: mysql}
           - {scenario: db-relations, backend: pgsql}
           - {scenario: db-relations, backend: sqlite}
+          - {scenario: db-relations-advanced, backend: mysql}
+          - {scenario: db-relations-advanced, backend: pgsql}
+          - {scenario: db-relations-advanced, backend: sqlite}
+          - {scenario: db-relations-advanced, backend: mariadb}
+          - {scenario: db-relations-advanced, backend: mssql, php: '8.4'}
           - {scenario: db-lock-wait, backend: mysql}
           - {scenario: db-lock-wait, backend: pgsql}
           - {scenario: db-pool-lifecycle, backend: mysql}
