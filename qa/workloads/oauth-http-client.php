@@ -67,6 +67,7 @@ if (($argv[1] ?? '') === 'seed') {
     ensure(is_string($token['access_token']) && !isset($token['refresh_token']), 'Client credentials token shape invalid.');
     $fixture['token'] = $token['access_token'];
     $fixture['authorization'] = oauthBrowserConsent($fixture, $metadata);
+    $fixture['oidc'] = oidcBrowserInteraction($fixture, $oidc);
     ensure(file_put_contents($path, json_encode($fixture, JSON_THROW_ON_ERROR), LOCK_EX) !== false, 'Private token fixture write failed.');
     [$active, $headers] = oauthHttp('/oauth/introspect', 200, http_build_query(['token' => $fixture['token']]), $form);
     oauthNoStore($headers);
@@ -84,6 +85,7 @@ if (($argv[1] ?? '') === 'seed') {
     [$next] = oauthHttp('/oauth/token', 200, $grant, $form);
     ensure($next['access_token'] !== $fixture['token'], 'New issuance reused revoked token.');
     oauthBrowserRedeem($fixture);
+    oidcBrowserRecover($fixture);
     echo "Host replacement, authoritative introspection, idempotent revocation and fresh issuance passed\n";
 }
 
@@ -169,4 +171,90 @@ function oauthBrowserRedeem(array $fixture): void
     oauthNoStore($received);
     ensure($error['error'] === 'invalid_grant', 'Authorization code replay was not rejected.');
     echo "Durable consent code, PKCE exchange and replay rejection across host replacement passed\n";
+}
+
+
+function oidcBrowserInteraction(array $fixture, array $metadata): array
+{
+    $route = parse_url($metadata['authorization_endpoint'], PHP_URL_PATH);
+    ensure(is_string($route) && str_starts_with($route, '/'), 'OIDC authorization route missing.');
+    $verifier = bin2hex(random_bytes(32));
+    $base = [
+        'response_type' => 'code', 'client_id' => $fixture['oidc_id'], 'redirect_uri' => $fixture['redirect'],
+        'scope' => 'openid email profile', 'audience' => 'https://identity.example.test/oidc/userinfo',
+        'code_challenge' => rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '='),
+        'code_challenge_method' => 'S256', 'nonce' => bin2hex(random_bytes(16)),
+    ];
+    $url = static fn(array $extra): string => $route . '?' . http_build_query($base + $extra, '', '&', PHP_QUERY_RFC3986);
+    $session = ['Cookie: foundation_session=' . $fixture['session']];
+    foreach ([
+        ['prompt' => 'none', 'state' => 'silent-before', 'error' => 'consent_required'],
+        ['prompt' => 'login', 'state' => 'force-login', 'error' => 'login_required'],
+        ['prompt' => 'select_account', 'state' => 'select-account', 'error' => 'account_selection_required'],
+        ['prompt' => 'none', 'max_age' => '0', 'state' => 'zero-age', 'error' => 'login_required'],
+        ['prompt' => 'none', 'acr_values' => 'urn:lab:unavailable', 'state' => 'acr-mismatch', 'error' => 'login_required'],
+    ] as $case) {
+        $error = $case['error'];
+        unset($case['error']);
+        [, $headers] = oauthHttp($url($case), 302, headers: $session, raw: true);
+        $redirect = oauthConsentRedirect($headers, $fixture['redirect'], $case['state']);
+        ensure(($redirect['error'] ?? null) === $error && !isset($redirect['code']), 'Unexpected OIDC interaction decision.');
+    }
+    $path = $url(['prompt' => 'consent', 'state' => 'oidc-approved']);
+    [$html, $headers] = oauthHttp($path, 200, headers: $session, raw: true);
+    oauthNoStore($headers);
+    ensure(str_contains($html, 'openid') && str_contains($html, 'email'), 'OIDC scope display missing.');
+    ensure(preg_match('/name="_token" value="([a-f0-9]{64})"/', $html, $match) === 1, 'OIDC CSRF token absent.');
+    $cookie = null;
+    foreach ($headers['set-cookie'] ?? [] as $value) {
+        if (str_starts_with($value, 'lab_session=')) {
+            $cookie = explode(';', $value, 2)[0];
+        }
+    }
+    ensure(is_string($cookie), 'OIDC browser cookie missing.');
+    $form = http_build_query(['decision' => 'approve', '_token' => $match[1]]);
+    $postHeaders = ['Content-Type: application/x-www-form-urlencoded', 'Origin: https://identity.example.test',
+        $session[0] . '; ' . $cookie];
+    // A valid CSRF proof must not override a new interaction requirement.
+    [, $blocked] = oauthHttp($url(['prompt' => 'login', 'state' => 'post-login']), 302, $form, $postHeaders, raw: true);
+    $failure = oauthConsentRedirect($blocked, $fixture['redirect'], 'post-login');
+    ensure(($failure['error'] ?? null) === 'login_required' && !isset($failure['code']), 'Approval POST bypassed reauthentication.');
+    [, $approved] = oauthHttp($path, 302, $form, $postHeaders, raw: true);
+    $result = oauthConsentRedirect($approved, $fixture['redirect'], 'oidc-approved');
+    ensure(is_string($result['code'] ?? null) && !isset($result['error']), 'OIDC explicit consent failed.');
+    [, $silent] = oauthHttp($url(['prompt' => 'none', 'state' => 'silent-after']), 302, headers: $session, raw: true);
+    $next = oauthConsentRedirect($silent, $fixture['redirect'], 'silent-after');
+    ensure(is_string($next['code'] ?? null) && $next['code'] !== $result['code'], 'Existing consent did not permit silent issuance.');
+    echo "OIDC consent-required, login/account selection, max-age, ACR, valid-CSRF recheck and silent consent passed\n";
+    return ['code' => $result['code'], 'verifier' => $verifier, 'nonce' => $base['nonce']];
+}
+
+function oidcBrowserRecover(array $fixture): void
+{
+    $form = http_build_query([
+        'grant_type' => 'authorization_code', 'client_id' => $fixture['oidc_id'], 'redirect_uri' => $fixture['redirect'],
+        'code' => $fixture['oidc']['code'], 'code_verifier' => $fixture['oidc']['verifier'],
+    ]);
+    $headers = ['Content-Type: application/x-www-form-urlencoded'];
+    [$token, $received] = oauthHttp('/oauth/token', 200, $form, $headers);
+    oauthNoStore($received);
+    ensure(is_string($token['id_token'] ?? null) && is_string($token['access_token'] ?? null), 'OIDC token response missing.');
+    $policy = \Infocyph\Epicrypt\Token\Jwt\JwtPolicy::openIdIdToken('https://identity.example.test', $fixture['oidc_id']);
+    $public = file_get_contents(getenv('PROJECT') . '/storage/lab-oidc-keys/public.pem');
+    ensure(is_string($public), 'OIDC public verification fixture missing.');
+    $verifier = \Infocyph\Epicrypt\Token\Jwt\AsymmetricJwt::verifier($public, $policy);
+    ensure($verifier->verify($token['id_token']), 'OIDC signature or issuer/audience/time validation failed.');
+    [, , , $jwtHeader, $claims] = \Infocyph\Epicrypt\Token\Jwt\Support\JwtToken::parse($token['id_token']);
+    ensure(($jwtHeader['kid'] ?? null) === 'oidc-key' && ($jwtHeader['alg'] ?? null) === 'ES256', 'OIDC signing key identity mismatch.');
+    new \Infocyph\Epicrypt\Token\Jwt\OpenIdIdTokenValidator()->validate(
+        $claims, \Infocyph\Epicrypt\Token\Jwt\Enum\AsymmetricJwtAlgorithm::ES256, $fixture['oidc_id'],
+        nonce: $fixture['oidc']['nonce'], accessToken: $token['access_token'], authorizationCode: $fixture['oidc']['code'],
+    );
+    [$info] = oauthHttp('/oidc/userinfo', 200, headers: ['Authorization: Bearer ' . $token['access_token']]);
+    ensure(is_string($claims['sub'] ?? null) && $info['sub'] === $claims['sub'] && $info['email'] === 'oauth-browser@example.test', 'UserInfo subject or claims mismatch.');
+    oauthHttp('/oidc/userinfo', 401, headers: ['Authorization: Bearer ' . $token['id_token']]);
+    oauthHttp('/oidc/userinfo', 401);
+    [$error] = oauthHttp('/oauth/token', 400, $form, $headers);
+    ensure($error['error'] === 'invalid_grant', 'OIDC authorization code replay accepted.');
+    echo "OIDC token signature, nonce, hash claims, UserInfo projection, token separation and code replay after replacement passed\n";
 }

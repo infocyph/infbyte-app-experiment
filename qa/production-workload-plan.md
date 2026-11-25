@@ -469,3 +469,7 @@ I: two independent loopback SMTP lanes exercise full DATA acceptance with lost f
 ## B104 — Actual Redis/Valkey atomic counter settlement ambiguity
 
 I: independent bounded RESP2 relay drops one EVAL before forwarding and withholds one real successful EVAL response. Direct observer reconciles 10 versus 17, rejects automatic replay, verifies fixed TTL and explicitly retries only the proven uncommitted operation. Two hosted lanes; fixture is loopback and plaintext, not a provider exactly-once guarantee. 360 routine rows; hosted qualification pending (DATA, OPS, EXEC-03).
+
+## B105 — Browser OIDC interaction and signed ID-token/UserInfo transport
+
+I: extend the four existing native/FPM fused/sharded OAuth HTTP lanes with separate public OIDC registration, silent-before-consent, login/account selection, zero-age/ACR mismatch, valid-CSRF POST reauthentication, explicit consent and silent issuance. Redeem after host replacement, verify signed ID token using the separate fixture public key, nonce/hash bindings, UserInfo subject and email, ID-token rejection at resource endpoint and code replay. No additional routine rows (360); hosted verification pending. The existing route requires authentication; anonymous OIDC interaction is not certified. SEC/REQUEST/DATA/EXEC-03.
