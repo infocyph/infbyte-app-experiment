@@ -115,3 +115,7 @@ I: two mandatory smoke jobs and four separate scheduled/manual native-host jobs 
 ## B26 — advanced data, sequence and trust contracts
 
 I: six independent lanes: UID 12-process filesystem reservation/fork/replacement, 12k Snowflake uniqueness and fixed timestamp regression; InterMix signed optional closure serializer tamper, wrong signer and bounds; ArrayKit layering and snapshot restore; Epicrypt CA/CSR/leaf, portable inspection, key/purpose/expiry/trust, PFX export/import and wrong password; both published string-protection algorithms; ReqShield frozen named schema, conditional/custom rules, compiled reuse and wildcard limits. No keys, closures or certificate private material written to evidence. Hosted qualification pending; remaining generator/provider, JOSE, rule and utility matrix gaps remain open.
+
+## B27 — MySQL and MariaDB binary-log replication
+
+I: two additional hosted jobs with real isolated source/reader servers, unique server IDs, row binlogs, replica SQL-thread pause/resume, read-only reader, actual stale reads and sticky primary writes, stopped reader fallback and restart/catchup. This is single-replica binary-log replication, not physical storage replication or automatic primary election. Disposable credentials are not included in artifacts. Hosted verification pending; proxies, HA, per-driver and API gaps remain open.

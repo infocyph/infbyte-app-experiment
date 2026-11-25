@@ -2,6 +2,7 @@
 set -euo pipefail
 probe="$GITHUB_WORKSPACE/qa/workloads/database.php"
 case "$SCENARIO" in
+  db-binlog-replica) bash "$GITHUB_WORKSPACE/qa/workloads/database-binlog.sh" ;;
   db-driver)
     if [[ "$DB_BACKEND" == mssql ]]; then
       ready=0

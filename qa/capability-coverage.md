@@ -93,3 +93,5 @@ B24 adds real HTTPS trust, retries, redirect credential boundaries, cookie path 
 B25 adds sustained workload profiles, controlled host crash/replay and exact durable/cache reconciliation, with weekly soak and manual endurance. Hosted evidence pending.
 
 B26 expands shared UID sequence, signed closure, configuration precedence, PKI/AEAD and schema registry acceptance. Remaining detailed gaps are not closed.
+
+B27 adds actual MySQL and MariaDB binlog source/reader routing, lag, outage and restart; not automatic HA election.
