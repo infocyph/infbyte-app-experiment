@@ -20,7 +20,7 @@ case "$SCENARIO" in
   ecosystem-tenants) bash "$GITHUB_WORKSPACE/qa/workloads/tenants.sh" ;;
   ecosystem-smtp-uncertain|ecosystem-smtp-tls-auth) bash "$GITHUB_WORKSPACE/qa/workloads/smtp-faults.sh" ;;
   ecosystem-mailbox-tls|ecosystem-mailbox-idle) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox-tls.sh" ;;
-  ecosystem-cache-tls|ecosystem-valkey-tls|ecosystem-counter-restart|ecosystem-valkey-counter-restart) bash "$GITHUB_WORKSPACE/qa/workloads/cache-tls.sh" ;;
+  ecosystem-otp-redis-tls-*|ecosystem-otp-valkey-tls-*|ecosystem-cache-tls|ecosystem-valkey-tls|ecosystem-counter-restart|ecosystem-valkey-counter-restart) bash "$GITHUB_WORKSPACE/qa/workloads/cache-tls.sh" ;;
   ecosystem-counter-uncertain|ecosystem-valkey-counter-uncertain) bash "$GITHUB_WORKSPACE/qa/workloads/counter-uncertain.sh" ;;
   ecosystem-counter-election|ecosystem-valkey-counter-election|ecosystem-otp-election-redis|ecosystem-otp-election-valkey) bash "$GITHUB_WORKSPACE/qa/workloads/counter-election.sh" ;;
   ecosystem-cache-outage|ecosystem-cache-valkey-outage|ecosystem-cache-memcached-outage|ecosystem-di-cache-outage|ecosystem-foundation-risk-outage-redis|ecosystem-foundation-risk-outage-valkey|ecosystem-foundation-risk-outage-memcached) bash "$GITHUB_WORKSPACE/qa/workloads/cache-outage.sh" ;;

@@ -235,14 +235,17 @@ function otpMovingRotationContracts(string $backend, string $kind): void
     echo "OTP $kind/$backend generation overlap, cutover, replay and moving-factor semantics passed\n";
 }
 
-function otpElectionContracts(bool $seed): void
+function otpElectionContracts(bool $seed, bool $tls = false): void
 {
-    $backend = (string) getenv('LAB_COUNTER_BACKEND');
+    $backend = (string) getenv($tls ? 'LAB_TLS_BACKEND' : 'LAB_COUNTER_BACKEND');
     $port = $seed ? 17389 : 17390;
     $options = new CacheOptions(integrityKey: str_repeat('i', 32), failOpen: false);
     $factory = static fn() => $backend === 'redis'
         ? \Infocyph\CacheLayer\Cache\Cache::redis('otp-election', "redis://127.0.0.1:$port", options: $options)
         : \Infocyph\CacheLayer\Cache\Cache::valkey('otp-election', "valkey://127.0.0.1:$port", options: $options);
+    if ($tls) {
+        $factory = static fn() => labOtpTlsCache('otp-election', $options);
+    }
     $path = (string) getenv('LAB_OTP_ELECTION_STATE');
     if ($seed) {
         $state = ['secret' => TOTP::generateSecret(32), 'challengeKey' => bin2hex(random_bytes(32)), 'ocra' => bin2hex(random_bytes(32))];

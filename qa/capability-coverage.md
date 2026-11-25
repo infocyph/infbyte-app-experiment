@@ -698,3 +698,7 @@ I: six independent engineering-only lanes (17 total engineering modes): real CLI
 ## B193 — Remote archive publication and extraction boundaries
 
 I: 36 independently executable real remote-storage lanes (four ZIP contracts on nine existing protocol/provider fixtures): native independent archive inspection and selective extraction, pre-existing target rejection without partial publication and explicit retry, AES-256/password rejection and valid recovery, and malicious traversal preflight with exact independent target manifest. Actual remote archive staging, separate client observations, source and tenant namespace invariants; no provider certification for emulators. CORE-01, SEC, DATA, OPS, EXEC-03: source, matrix and dispatch reviewed; hosted execution pending. No upstream changes. 1283 routine rows.
+
+## B194 — OTP native TLS durable restart and live outage
+
+I: four real Redis/Valkey TLS-only AOF lanes: six-factor consumed/exhausted/pending/replay preservation with fresh-client restart and 12-process claim race on each backend, plus already-connected GenericOTP/TOTP clients that must fail closed during actual service stop and reconcile with fresh verified TLS connections after restart. Private proof/key material and host barriers stay outside uploaded evidence; no unsupported cluster auth-state adapter invented. CORE-01, SEC, DATA, OPS, EXEC-03: source and dispatch reviewed; hosted execution pending. 1287 routine rows.

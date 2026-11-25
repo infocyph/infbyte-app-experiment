@@ -1138,6 +1138,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-otp-redis-tls-restart, backend: pgsql}
+          - {scenario: ecosystem-otp-redis-tls-live, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-restart, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-live, backend: pgsql}
           - {scenario: ecosystem-s3-archive-selection, backend: pgsql}
           - {scenario: ecosystem-s3-archive-collision, backend: pgsql}
           - {scenario: ecosystem-s3-archive-encrypted, backend: pgsql}

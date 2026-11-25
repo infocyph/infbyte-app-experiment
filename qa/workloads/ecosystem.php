@@ -60,6 +60,7 @@ require __DIR__ . '/ecosystem-remote-archive.php';
 require __DIR__ . '/ecosystem-cache-ha.php';
 require __DIR__ . '/ecosystem-otp-boundaries.php';
 require __DIR__ . '/ecosystem-security-lifecycle.php';
+require __DIR__ . '/ecosystem-otp-tls.php';
 require __DIR__ . '/ecosystem-validation-matrix.php';
 require __DIR__ . '/ecosystem-cache-faults.php';
 require __DIR__ . '/ecosystem-cache-atomic.php';
@@ -587,6 +588,10 @@ match ($argv[1] ?? '') {
     'otp-rotation-ocra-challenge-phpfiles' => otpMovingRotationContracts('phpfiles', 'ocra-challenge'),
     'otp-rotation-ocra-challenge-sqlite' => otpMovingRotationContracts('sqlite', 'ocra-challenge'),
     'otp-rotation-ocra-challenge-pdo' => otpMovingRotationContracts('pdo', 'ocra-challenge'),
+    'otp-tls-seed' => otpElectionContracts(true, true),
+    'otp-tls-offline' => otpTlsOfflineAdmission(),
+    'otp-tls-verify' => otpElectionContracts(false, true),
+    'otp-tls-live' => otpTlsLiveContracts(),
     'otp-election-seed' => otpElectionContracts(true),
     'otp-election-verify' => otpElectionContracts(false),
     'otp-rotation-orchestration-redis' => otpRotationOrchestrationContracts('redis'),
