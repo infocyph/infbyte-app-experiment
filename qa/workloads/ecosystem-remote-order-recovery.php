@@ -102,10 +102,16 @@ function remoteOrderRecovery(string $phase, int $worker = -1): void
                 verify($job instanceof LabJob && $delivery->messageId === $job->id, 'Broker identity differs.');
                 verify($disk->read('receipts/' . $job->id . '.txt') === $job->id . ':' . ($job->step * 10), 'Consumer observed missing or incorrect storage effect.');
                 $db->transaction(static function (Connection $active) use ($job): void {
-                    $order = $active->table('lab_remote_orders')->where('id', '=', $job->id)->lockForUpdate()->first();
+                    $query = $active->table('lab_remote_orders')->where('id', '=', $job->id);
+                    // SQLite serializes writes at the database boundary; it has no row-level FOR UPDATE.
+                    // This recovery phase has one consumer and all offline writers have already exited.
+                    $order = ($active->getDriverName() === 'sqlite' ? $query : $query->lockForUpdate())->first();
                     verify($order !== null && (int) $order['amount'] === $job->step * 10, 'Unknown business operation.');
-                    if (!$active->table('lab_job_effects')->where('id', '=', $job->id)->exists()) {
-                        $active->table('lab_job_effects')->insert(['id' => $job->id, 'step' => $job->step]);
+                    $effect = $active->table('lab_job_effects')->find($job->id);
+                    if ($effect === null) {
+                        verify($active->table('lab_job_effects')->insert(['id' => $job->id, 'step' => $job->step]), 'Durable effect insert failed.');
+                    } else {
+                        verify((int) $effect['step'] === $job->step, 'Duplicate receipt changed durable effect.');
                     }
                 });
                 $transport->acknowledge($delivery);

@@ -1707,6 +1707,41 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
       php: ${{ matrix.php || '8.6' }}
 
+  ecosystem-final:
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-sftp2-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: pgsql}
+          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mysql}
+          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mariadb}
+          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-async-s3-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mysql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mariadb, php: '8.4'}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: sqlite, php: '8.4'}
+          - {scenario: ecosystem-gridfs-remote-order-recovery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-s3-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-sftp-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-ftp-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-webdav-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-azure-remote-order-recovery, backend: sqlite}
+          - {scenario: ecosystem-gcs-remote-order-recovery, backend: sqlite}
+    uses: ./.github/workflows/production-worker.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+      php: ${{ matrix.php || '8.6' }}
+
   application:
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
