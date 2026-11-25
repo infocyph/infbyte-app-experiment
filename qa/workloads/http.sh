@@ -19,6 +19,12 @@ export INFOCYPH_FOUNDATION_RELEASE_ROOT="$release_root" INFOCYPH_FOUNDATION_RELE
 host=""
 nginx_pid=""
 stop_host() {
+  if [[ "$HOST_MODE" == fpm ]]; then
+    docker logs infbyte-lab-fpm >> "$EVIDENCE/fpm.log" 2>&1 || :
+    docker logs infbyte-lab-nginx >> "$EVIDENCE/nginx.log" 2>&1 || :
+    docker rm -f infbyte-lab-nginx infbyte-lab-fpm >/dev/null 2>&1 || :
+    return
+  fi
   if [[ -n "$nginx_pid" ]]; then kill "$nginx_pid" 2>/dev/null || :; wait "$nginx_pid" 2>/dev/null || :; nginx_pid=""; fi
   if [[ -n "$host" ]]; then kill "$host" 2>/dev/null || :; wait "$host" 2>/dev/null || :; host=""; fi
 }
@@ -31,7 +37,7 @@ start_host() {
     cat > "$RUNNER_TEMP/lab-fpm.conf" <<CONF
 [global]
 daemonize = no
-error_log = $EVIDENCE/fpm.log
+error_log = /proc/self/fd/2
 [lab]
 listen = 127.0.0.1:19000
 pm = static
@@ -39,40 +45,42 @@ pm.max_children = 4
 clear_env = no
 catch_workers_output = yes
 CONF
-    php-fpm${PHP_SERIES} -F -y "$RUNNER_TEMP/lab-fpm.conf" >> "$EVIDENCE/host.log" 2>&1 &
-    host=$!
-    mkdir -p "$RUNNER_TEMP/lab-nginx"
     cat > "$RUNNER_TEMP/lab-nginx.conf" <<CONF
-daemon off;
-pid $RUNNER_TEMP/lab-nginx/nginx.pid;
-error_log $EVIDENCE/nginx.log;
 events { worker_connections 1024; }
 http {
   access_log off;
-  client_body_temp_path $RUNNER_TEMP/lab-nginx/body;
-  proxy_temp_path $RUNNER_TEMP/lab-nginx/proxy;
-  fastcgi_temp_path $RUNNER_TEMP/lab-nginx/fastcgi;
-  uwsgi_temp_path $RUNNER_TEMP/lab-nginx/uwsgi;
-  scgi_temp_path $RUNNER_TEMP/lab-nginx/scgi;
   server {
     listen 127.0.0.1:18781;
-    root $PROJECT/public;
     location / {
       include /etc/nginx/fastcgi_params;
       fastcgi_param SCRIPT_FILENAME $PROJECT/public/index.php;
+      fastcgi_param SCRIPT_NAME /index.php;
+      fastcgi_param HTTP_AUTHORIZATION \$http_authorization;
+      fastcgi_param INFOCYPH_FOUNDATION_RELEASE_ROOT $release_root;
+      fastcgi_param INFOCYPH_FOUNDATION_RELEASE_MANIFEST_SHA256 $trusted;
       fastcgi_pass 127.0.0.1:19000;
     }
   }
 }
 CONF
-    nginx -p "$RUNNER_TEMP/lab-nginx" -c "$RUNNER_TEMP/lab-nginx.conf" >> "$EVIDENCE/host.log" 2>&1 &
-    nginx_pid=$!
+    docker run -d --name infbyte-lab-fpm --network host --user "$(id -u):$(id -g)" \
+      -v "$PROJECT:$PROJECT" -v "$RUNNER_TEMP/lab-fpm.conf:/tmp/lab-fpm.conf:ro" -w "$PROJECT" \
+      -e APP_ENV -e APP_DEBUG -e AUTH_TOKEN_SECRET -e AUTH_OTP_RECOVERY_HMAC_KEY -e AUTH_OTP_PROTECTION_KEY \
+      -e INFOCYPH_FOUNDATION_RELEASE_ROOT -e INFOCYPH_FOUNDATION_RELEASE_MANIFEST_SHA256 \
+      infbyte-lab-fpm php-fpm -F -y /tmp/lab-fpm.conf
+    docker run -d --name infbyte-lab-nginx --network host \
+      -v "$RUNNER_TEMP/lab-nginx.conf:/etc/nginx/nginx.conf:ro" nginx:alpine
   fi
   for attempt in $(seq 1 40); do
     if [[ "$(curl --silent --fail --max-time 2 "$LAB_HTTP_URL/api/health" || :)" == '{"status":"ok"}' ]]; then return; fi
     sleep 1
   done
-  cat "$EVIDENCE/host.log" >&2
+  if [[ "$HOST_MODE" == fpm ]]; then
+    docker logs infbyte-lab-fpm >&2 || :
+    docker logs infbyte-lab-nginx >&2 || :
+  else
+    cat "$EVIDENCE/host.log" >&2
+  fi
   return 1
 }
 start_host

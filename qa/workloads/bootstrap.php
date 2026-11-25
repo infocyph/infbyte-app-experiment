@@ -66,7 +66,7 @@ function configuration(): array
             'durable' => ['enabled' => true, 'connection' => 'main', 'failure_store' => 'database', 'tables' => []],
             'serialization' => ['message_codecs' => [ReceiptCodec::class]],
             'default_route' => ['transport' => 'database', 'queue' => 'receipts'],
-            'routes' => [Receipt::class => ['transport' => 'database', 'queue' => 'receipts']],
+            'routes' => [Receipt::class => ['transport' => 'database', 'queue' => 'receipts', 'delay_seconds' => 0.0]],
             'handlers' => [Receipt::class => ReceiptHandler::class],
             'consumer' => ['transport' => 'database'],
             'retry' => ['maximum_attempts' => 2, 'initial_delay_seconds' => 0.0, 'multiplier' => 1.0, 'maximum_delay_seconds' => 0.0, 'jitter_ratio' => 0.0],

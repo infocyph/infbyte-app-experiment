@@ -118,10 +118,10 @@ jobs:
       - name: Provision PHP-FPM and Nginx for the FPM workload
         if: matrix.host == 'fpm'
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends php${PHP_SERIES}-fpm nginx
-          php-fpm${PHP_SERIES} -v
-          nginx -v
+          docker build -t infbyte-lab-fpm - < qa/workloads/Fpm.Dockerfile
+          docker run --rm infbyte-lab-fpm php -v
+          docker run --rm infbyte-lab-fpm php -m
+          docker pull nginx:alpine
       - name: Execute independent concurrent business workers and reconcile state
         if: matrix.scenario != 'http' && matrix.scenario != 'operations'
         shell: bash

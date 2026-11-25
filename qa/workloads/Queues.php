@@ -101,7 +101,7 @@ final readonly class Queues
     {
         $db = $this->app->make(DBLayerFactory::class)->connection();
         ensure($this->app->make(DBLayerTransport::class)->size('receipts') === 0, 'Undelivered messages.');
-        $failures = $this->app->make(DBLayerFailureStore::class)->all();
+        $failures = $this->app->make(DBLayerFailureStore::class)->all(1000);
         foreach ($failures as $failure) {
             $message = $failure->envelope?->message;
             echo json_encode(['failure_id' => $failure->id, 'attempt' => $failure->attempt, 'class' => $failure->failureClass, 'reason' => $failure->reason, 'message_id' => $message instanceof Receipt ? $message->id : null, 'kind' => $message instanceof Receipt ? $message->kind : null], JSON_THROW_ON_ERROR), PHP_EOL;

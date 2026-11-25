@@ -22,7 +22,7 @@ foreach (array_slice($argv, 4) as $path) {
     }
 }
 if (count($times) !== $expected || $elapsed <= 0 || $expected <= 0) {
-    throw new RuntimeException('Incomplete operation evidence.');
+    throw new RuntimeException(sprintf('Incomplete operation evidence: expected=%d, received=%d, elapsed_ms=%d.', $expected, count($times), $elapsed));
 }
 sort($times, SORT_NUMERIC);
 $percentile = static fn(float $p): float => $times[(int) ceil(count($times) * $p) - 1];
