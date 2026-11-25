@@ -80,27 +80,44 @@ function databaseCacheRaceAdvance(Connection $db): void
 function databaseCacheOverlapHold(Connection $db): void
 {
     $pdo = $db->getPdo();
-    $pdo->query('SELECT pg_advisory_lock(712921)')->closeCursor();
+    $postgres = getenv('DB_BACKEND') === 'pgsql';
+    if ($postgres) {
+        $pdo->query('SELECT pg_advisory_lock(712921)')->closeCursor();
+    } else {
+        check((int) $pdo->query("SELECT GET_LOCK('lab-cache-overlap-100', 5)")->fetchColumn() === 1, 'Named lock acquisition failed.');
+    }
     try {
         check(touch(getenv('EVIDENCE') . '/overlap-held'), 'Gate marker failed.');
         waitFor(static fn(): bool => is_file(getenv('EVIDENCE') . '/overlap-release'), 'Gate release missing.', 45);
     } finally {
-        $pdo->query('SELECT pg_advisory_unlock(712921)')->closeCursor();
+        if ($postgres) {
+            $pdo->query('SELECT pg_advisory_unlock(712921)')->closeCursor();
+        } else {
+            check((int) $pdo->query("SELECT RELEASE_LOCK('lab-cache-overlap-100')")->fetchColumn() === 1, 'Named lock release failed.');
+        }
     }
 }
 
 function databaseCacheOverlapRead(Connection $db, bool $verify): void
 {
     configureRaceCache($db);
+    $postgres = getenv('DB_BACKEND') === 'pgsql';
+    // Depend on the actual row value, so the old result has been read before blocking.
+    $gate = $postgres
+        ? 'pg_advisory_xact_lock(712821 + balance) AS gate'
+        : "GET_LOCK(CONCAT('lab-cache-overlap-', balance), 45) AS gate";
     $query = $db->table('lab_balances')->select('balance')
-        ->selectRaw('pg_advisory_xact_lock(712921) AS gate')
+        ->selectRaw($gate)
         ->where('id', '=', 1)->cacheTags('overlap-test')->cacheFor(120);
     $db->resetStats();
     $rows = $query->get();
     check(count($rows) === 1, 'Overlap result row count differs.');
+    if (!$postgres) {
+        check((int) $rows[0]['gate'] === 1, 'Reader did not acquire the named lock.');
+    }
     $value = (int) $rows[0]['balance'];
     if (!$verify) {
-        check(in_array($value, [100, 125], true) && $db->getStats()['queries'] >= 1, 'In-flight reader did not execute SQL.');
+        check($value === 100 && $db->getStats()['queries'] >= 1, 'In-flight reader did not return the old SQL snapshot.');
         echo "In-flight snapshot: $value\n";
         return;
     }
@@ -113,10 +130,16 @@ function databaseCacheOverlapRead(Connection $db, bool $verify): void
 function databaseCacheOverlapCommit(Connection $db): void
 {
     configureRaceCache($db);
-    waitFor(static fn(): bool => (int) $db->scalar(
-        "SELECT COUNT(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND wait_event = 'advisory' AND query LIKE ? AND pid <> pg_backend_pid()",
-        ['%pg_advisory_xact_lock(712921)%'],
-    ) === 1, 'No actual in-flight SQL lock wait observed.', 25);
+    $postgres = getenv('DB_BACKEND') === 'pgsql';
+    waitFor(static fn(): bool => (int) ($postgres
+        ? $db->scalar(
+            "SELECT COUNT(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND wait_event = 'advisory' AND query LIKE ? AND pid <> pg_backend_pid()",
+            ['%pg_advisory_xact_lock(712821 + balance)%'],
+        )
+        : $db->scalar(
+            "SELECT COUNT(*) FROM information_schema.PROCESSLIST WHERE ID <> CONNECTION_ID() AND LOWER(STATE) = 'user lock' AND INFO LIKE ?",
+            ["%GET_LOCK(CONCAT('lab-cache-overlap-', balance)%"],
+        )) === 1, 'No actual in-flight SQL lock wait observed.', 25);
     $db->transaction(static function (Connection $transaction): void {
         $transaction->table('lab_balances')->where('id', '=', 1)->update(['balance' => 125]);
         $transaction->table('lab_balances')->where('id', '=', 2)->update(['balance' => 75]);
