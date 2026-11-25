@@ -9,6 +9,8 @@ use Infocyph\CacheLayer\Counter\AtomicCounterStoreInterface;
 use Infocyph\CacheLayer\Counter\Exception\AtomicCounterException;
 use Infocyph\OTP\GenericOtp;
 use Infocyph\OTP\HOTP;
+use Infocyph\OTP\MobileOTP;
+use Infocyph\OTP\OCRA;
 use Infocyph\OTP\TOTP;
 use Infocyph\OTP\ValueObjects\VerificationWindow;
 
@@ -79,7 +81,12 @@ function otpAdditionalBackendWorkload(string $backend): void
     $options = new CacheOptions(integrityKey: random_bytes(32), allowClosures: false, allowObjects: false, failOpen: false);
     $root = (string) getenv('RUNNER_TEMP') . '/otp-phpfiles-state';
     $driver = (string) getenv('DB_BACKEND');
-    $dsn = $driver === 'pgsql' ? 'pgsql:host=127.0.0.1;port=5432;dbname=experiment' : 'mysql:host=127.0.0.1;port=3306;dbname=experiment';
+    $dsn = match ($driver) {
+        'pgsql' => 'pgsql:host=127.0.0.1;port=5432;dbname=experiment',
+        'mysql' => 'mysql:host=127.0.0.1;port=3306;dbname=experiment',
+        'mariadb' => 'mysql:host=127.0.0.1;port=3307;dbname=experiment',
+        default => throw new InvalidArgumentException('Unknown OTP state database.'),
+    };
     $factory = match ($backend) {
         'redis' => static fn(): Cache => Cache::redis('lab-otp-extra', options: $options),
         'file' => static fn(): Cache => Cache::file('lab-otp-extra', $root . '/file', $options),
@@ -115,7 +122,31 @@ function otpAdditionalBackendWorkload(string $backend): void
     $results = parallelRace(static fn(): int => (int) $totp->verifyWithWindow($code, $timestamp, new VerificationWindow(), $factory(), 'totp-shared')->matched, 'otp-extra-totp', 12);
     verify(array_sum($results) === 1, 'TOTP replay admitted concurrently.');
     verify(!$totp->verifyWithWindow($totp->generate($timestamp - 30), $timestamp - 30, new VerificationWindow(), $factory(), 'totp-shared')->matched, 'TOTP replay state regressed.');
-    echo "$backend challenge exhaustion, HOTP generations/exhaustion and TOTP monotonic replay passed\n";
+    $mobile = new MobileOTP(MobileOTP::generateSecret(), '1234');
+    $window = new VerificationWindow(0, 0);
+    $mobileCode = $mobile->generate($timestamp);
+    $results = parallelRace(static fn(): int => (int) $mobile->verifyWithWindow($mobileCode, $timestamp, $window, cache: $factory(), factorId: 'mobile-shared')->matched, 'otp-extra-mobile', 12);
+    verify(array_sum($results) === 1, 'MobileOTP shared replay admitted more than once.');
+    verify(!$mobile->verifyWithWindow($mobile->generate($timestamp - 10), $timestamp - 10, $window, cache: $factory(), factorId: 'mobile-shared')->matched, 'MobileOTP moving factor regressed.');
+    verify($mobile->verifyWithWindow($mobileCode, $timestamp, $window, cache: $factory(), factorId: 'mobile-next-generation')->matched, 'MobileOTP replacement generation was not isolated.');
+
+    $challenge = '12345678';
+    $ocra = new OCRA('OCRA-1:HOTP-SHA256-8:C-QN08', random_bytes(32));
+    $response = $ocra->generate($challenge, counter: 42);
+    $results = parallelRace(static fn(): int => (int) $ocra->verifyWithResult($response, $challenge, counter: 42, cache: $factory(), factorId: 'ocra-counter')->matched, 'otp-extra-ocra-counter', 12);
+    verify(array_sum($results) === 1, 'Counter OCRA shared replay admitted more than once.');
+    verify(!$ocra->verifyWithResult($ocra->generate($challenge, counter: 41), $challenge, counter: 41, cache: $factory(), factorId: 'ocra-counter')->matched, 'Counter OCRA moving factor regressed.');
+    verify($ocra->verifyWithResult($response, $challenge, counter: 42, cache: $factory(), factorId: 'ocra-counter-next')->matched, 'Counter OCRA replacement generation was not isolated.');
+    expectFailure(static fn() => $ocra->verifyWithResult($response, $challenge, counter: 42, cache: $factory(), factorId: 'ocra-invalid-ttl', replayTtl: 30), InvalidArgumentException::class, 'Counter OCRA permitted expiring monotonic state.');
+
+    $challengeFactor = new OCRA('OCRA-1:HOTP-SHA256-8:QN08', random_bytes(32));
+    $response = $challengeFactor->generate($challenge);
+    $results = parallelRace(static fn(): int => (int) $challengeFactor->verifyWithResult($response, $challenge, cache: $factory(), factorId: 'ocra-challenge', replayTtl: 120)->matched, 'otp-extra-ocra-challenge', 12);
+    verify(array_sum($results) === 1, 'Challenge OCRA shared replay admitted more than once.');
+    $otherChallenge = '87654321';
+    verify($challengeFactor->verifyWithResult($challengeFactor->generate($otherChallenge), $otherChallenge, cache: $factory(), factorId: 'ocra-challenge', replayTtl: 120)->matched, 'Independent OCRA challenge was denied.');
+    expectFailure(static fn() => $challengeFactor->verifyWithResult($response, $challenge, cache: $factory(), factorId: 'ocra-missing-ttl'), InvalidArgumentException::class, 'Non-counter OCRA accepted absent replay TTL.');
+    echo "$backend challenge exhaustion, HOTP generations/exhaustion, TOTP/MobileOTP moving factors and both OCRA replay contracts passed\n";
 }
 
 

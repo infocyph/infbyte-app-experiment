@@ -90,7 +90,7 @@ function otpEnrollmentWorkload(): void
     $now = 1_800_000_000;
     $extra = ['tenant' => 'alpha & beta', 'generation' => 7];
     $suite = 'OCRA-1:HOTP-SHA256-8:C-QN08';
-    $cache = Cache::redis('otp-enrollment', options: new CacheOptions(failOpen: false));
+    $cache = Cache::redis('otp-enrollment', options: new CacheOptions(integrityKey: random_bytes(32), failOpen: false));
     $cases = [
         'totp' => [new TOTP($secret, 8, 45, 'sha256'), ['period' => 45], []],
         'hotp' => [new HOTP($secret, 8, 'sha256'), ['counter' => 42], ['initialCounter' => 42]],

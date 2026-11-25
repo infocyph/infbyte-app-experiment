@@ -175,6 +175,7 @@ jobs:
           - {scenario: ecosystem-otp-redis, backend: pgsql}
           - {scenario: ecosystem-otp-pdo, backend: pgsql}
           - {scenario: ecosystem-otp-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-pdo, backend: mariadb}
           - {scenario: ecosystem-http-pool, backend: pgsql}
           - {scenario: ecosystem-grpc-inbound, backend: pgsql}
           - {scenario: ecosystem-validation-casts, backend: pgsql}
