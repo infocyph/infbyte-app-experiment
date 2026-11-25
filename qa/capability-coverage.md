@@ -203,3 +203,7 @@ I: two independent MySQL/MariaDB jobs extend the B58 durable ledger and financia
 ## B71 — advanced repository graphs on all five SQL drivers
 
 I: five independent jobs for through many/one, nested eager loading, aggregates/existence, one-of-many with deterministic ties, explicit candidate scope versus winner filter, narrow projection, morph one/many/to and forward/inverse polymorphic pivot with type collision isolation. SQL Server uses the existing real ODBC/DB provisioning path. No ORM/lazy behavior inferred; remaining repository policy/driver-specific cases stay open. Total routine rows 269. Hosted verification pending, no upstream modifications.
+
+## B72 — distributed counters and additional authentication-state backends
+
+I: actual Redis and Valkey counter lane requires fixed/persistent TTL, exact 2^53+ integer behavior, overflow/no-mutation, malformed/invalid input, separate ordinary-cache clear, 1200 concurrent operations, exact one initialization and expiry/delete. Two additional OTP lanes exercise real Valkey and local PHP-files with strict integrity/fail-closed policy, concurrent single-use and attempt exhaustion, HOTP monotonic replay, factor generations and PHP_INT_MAX exhaustion, TOTP concurrent replay. Local PHP-files is explicitly not multi-host production durability certification. No keys or proof bodies in evidence. 272 routine rows. Hosted qualification pending; remaining factor/provider/failover variants open.

@@ -63,10 +63,14 @@ require __DIR__ . '/ecosystem-broker-boundaries.php';
 require __DIR__ . '/ecosystem-http-transfer.php';
 require __DIR__ . '/ecosystem-cache-tls.php';
 require __DIR__ . '/ecosystem-route-boundaries.php';
+require __DIR__ . '/ecosystem-counter-otp-contracts.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
     'cache-tls' => cacheTlsWorkload(),
+    'counter-contracts' => counterContractsWorkload(),
+    'otp-valkey' => otpAdditionalBackendWorkload('valkey'),
+    'otp-phpfiles' => otpAdditionalBackendWorkload('phpfiles'),
     'http-pool' => httpPoolWorkload(),
     'http-transfer' => httpTransferWorkload(),
     'amqp-dlq' => amqpDlqWorkload(),
