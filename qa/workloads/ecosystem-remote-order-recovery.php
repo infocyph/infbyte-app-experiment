@@ -136,14 +136,21 @@ function remotePublicationOrder(string $backend, string $mode, string $phase): v
     verify(in_array($phase, ['seed', 'fault', 'recover', 'consume'], true), 'Unknown order publication phase.');
     [$db, $serializer] = messagingSetup($phase === 'seed');
     $id = 'receipt-publication';
-    $digest = hash('sha256', str_repeat("receipt\0\xff\n", 16384));
+    $digest = hash('sha256', $backend === 'gridfs' ? str_repeat("\x00\xffreceipt-gridfs\n", 65536) : str_repeat("receipt\0\xff\n", 16384));
+    $publication = static function (string $stage) use ($backend, $mode): void {
+        if ($backend === 'gridfs') {
+            gridfsPublicationFaultWorkload($mode, $stage);
+        } else {
+            remoteHttpPublicationContracts($backend, $mode, $stage);
+        }
+    };
     $queue = 'publication-orders';
     if ($phase === 'seed') {
         $db->statement('CREATE TABLE lab_publication_outbox (id VARCHAR(100) PRIMARY KEY, digest VARCHAR(64) NOT NULL, relayed INTEGER NOT NULL)');
         $db->transaction(static function (Connection $active) use ($id, $digest): void {
             verify($active->table('lab_publication_outbox')->insert(['id' => $id, 'digest' => $digest, 'relayed' => 0]), 'Durable intent insert failed.');
         });
-        remoteHttpPublicationContracts($backend, $mode, 'seed');
+        $publication('seed');
     }
     $intent = $db->table('lab_publication_outbox')->find($id);
     verify($intent !== null && $intent['digest'] === $digest && $db->table('lab_publication_outbox')->count() === 1,
@@ -160,7 +167,7 @@ function remotePublicationOrder(string $backend, string $mode, string $phase): v
             return;
         }
         if ($phase === 'fault') {
-            remoteHttpPublicationContracts($backend, $mode, 'fault');
+            $publication('fault');
             verify($transport->size($queue) === 0 && (int) $db->table('lab_publication_outbox')->find($id)['relayed'] === 0
                 && $db->table('lab_job_effects')->count() === 0, 'Uncertain storage write incorrectly settled durable intent.');
             echo "Unconfirmed write left outbox pending and broker empty\n";
@@ -168,7 +175,7 @@ function remotePublicationOrder(string $backend, string $mode, string $phase): v
         }
         if ($phase === 'recover') {
             verify($transport->size($queue) === 0, 'Unexpected publication before reconciliation.');
-            remoteHttpPublicationContracts($backend, $mode, 'recover');
+            $publication('recover');
             $channel->confirm_select();
             $confirmed = 0;
             $channel->set_ack_handler(static function () use (&$confirmed): void { ++$confirmed; });

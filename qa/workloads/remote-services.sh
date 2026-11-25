@@ -15,6 +15,7 @@ trap cleanup EXIT
 provision="$SCENARIO"
 case "$SCENARIO" in
   ecosystem-*-remote-order-recovery) provision="${SCENARIO%-remote-order-recovery}" ;;
+  ecosystem-gridfs-order-publication-*) provision=ecosystem-gridfs ;;
   ecosystem-*-order-http-publication-*) provision="${SCENARIO%-order-http-publication-*}" ;;
   ecosystem-*-archive-*) provision="${SCENARIO%-archive-*}" ;;
   ecosystem-gridfs-publication-before|ecosystem-gridfs-publication-after) provision=ecosystem-gridfs ;;
@@ -129,7 +130,7 @@ case "$provision" in
     ;;
   *) exit 1 ;;
 esac
-if [[ "$SCENARIO" == *-remote-order-recovery || "$SCENARIO" == *-order-http-publication-* ]]; then
+if [[ "$SCENARIO" == *-remote-order-recovery || "$SCENARIO" == *-order-http-publication-* || "$SCENARIO" == ecosystem-gridfs-order-publication-* ]]; then
   containers+=(lab-remote-orders-broker)
   composer require php-amqplib/php-amqplib --no-interaction --prefer-dist --no-progress
   docker run -d --name lab-remote-orders-broker -p 127.0.0.1:15672:5672 -e RABBITMQ_DEFAULT_USER=experiment -e RABBITMQ_DEFAULT_PASS=fixture-only-password rabbitmq:4
@@ -146,7 +147,7 @@ composer check-platform-reqs --no-dev
 composer show --format=json > "$EVIDENCE/packages.json"
 if [[ "$SCENARIO" == ecosystem-cache-mongodb-outage-* ]]; then
   bash "$GITHUB_WORKSPACE/qa/workloads/remote-cache-outage.sh" lab-mongo mongodb
-elif [[ "$SCENARIO" == ecosystem-gridfs-publication-* ]]; then
+elif [[ "$SCENARIO" == ecosystem-gridfs-publication-* || "$SCENARIO" == ecosystem-gridfs-order-publication-* ]]; then
   python3 -m venv "$RUNNER_TEMP/gridfs-peer-venv"
   python="$RUNNER_TEMP/gridfs-peer-venv/bin/python"
   "$python" -m pip install 'pymongo>=4,<5'
@@ -159,14 +160,20 @@ elif [[ "$SCENARIO" == ecosystem-gridfs-publication-* ]]; then
     sleep 0.1
   done
   test -f "$EVIDENCE/gridfs-ready"
-  timeout 120s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
+  if [[ "$SCENARIO" == ecosystem-gridfs-order-publication-* ]]; then
+    for phase in seed fault recover consume; do
+      timeout 180s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" remote-publication-order gridfs "${SCENARIO##*-}" "$phase" | tee "$EVIDENCE/publication-order-$phase.log"
+    done
+  else
+    timeout 120s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
+  fi
   test -s "$EVIDENCE/gridfs-fault.json" && test ! -e "$EVIDENCE/gridfs-replayed"
 elif [[ "$SCENARIO" == *-http-publication-* ]]; then
   backend="${provision#ecosystem-}"
   mode="${SCENARIO##*-}"
   case "$backend" in
     webdav) port=18085 ;;
-    async-s3) port=19000 ;;
+    s3|async-s3) port=19000 ;;
     azure) port=11000 ;;
     gcs) port=14443 ;;
     *) exit 1 ;;

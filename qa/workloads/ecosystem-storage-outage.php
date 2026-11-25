@@ -9,26 +9,13 @@ use League\Flysystem\PhpseclibV3\SftpConnectionProvider;
 function storageOutageContext(bool $seed): StorageContext
 {
     $backend = (string) getenv('LAB_STORAGE_BACKEND');
-    if (!in_array($backend, ['s3', 'sftp'], true)) {
+    if ($backend !== 'sftp') {
         return additionalStorageContext($backend, $seed);
     }
-    if ($backend === 's3') {
-        $client = new Aws\S3\S3Client([
-            'version' => 'latest', 'region' => 'us-east-1',
-            'endpoint' => 'http://127.0.0.1:19000', 'use_path_style_endpoint' => true,
-            'credentials' => ['key' => 'experiment', 'secret' => getenv('LAB_S3_SECRET')],
-            'retries' => 0, 'http' => ['connect_timeout' => 2, 'timeout' => 4],
-        ]);
-        if ($seed) {
-            $client->createBucket(['Bucket' => 'lab-documents']);
-        }
-        $config = static fn(string $prefix): array => ['driver' => 'aws-s3', 'constructor' => [$client, 'lab-documents', $prefix]];
-    } else {
-        $pins = preg_split('/\s+/', trim((string) getenv('LAB_SFTP_HOST_KEYS')), -1, PREG_SPLIT_NO_EMPTY);
-        verify(is_array($pins) && $pins !== [], 'Missing out-of-band trust.');
-        $provider = new SftpConnectionProvider('127.0.0.1', 'experiment', (string) getenv('LAB_SFTP_SECRET'), port: 12222, timeout: 3, maxTries: 1, hostFingerprint: $pins);
-        $config = static fn(string $prefix): array => ['driver' => 'sftp-v3', 'constructor' => [$provider, '/upload/' . $prefix]];
-    }
+    $pins = preg_split('/\s+/', trim((string) getenv('LAB_SFTP_HOST_KEYS')), -1, PREG_SPLIT_NO_EMPTY);
+    verify(is_array($pins) && $pins !== [], 'Missing out-of-band trust.');
+    $provider = new SftpConnectionProvider('127.0.0.1', 'experiment', (string) getenv('LAB_SFTP_SECRET'), port: 12222, timeout: 3, maxTries: 1, hostFingerprint: $pins);
+    $config = static fn(string $prefix): array => ['driver' => 'sftp-v3', 'constructor' => [$provider, '/upload/' . $prefix]];
 
     return new StorageContext(['files' => $config('tenant-a'), 'foreign' => $config('tenant-b')], 'files');
 }
@@ -348,37 +335,45 @@ function remoteHttpPublicationContracts(string $backend, string $mode, string $p
     echo "$backend $mode origin fault and independent publication reconciliation passed\n";
 }
 
-function gridfsPublicationFaultWorkload(string $mode): void
+function gridfsPublicationFaultWorkload(string $mode, string $phase = 'all'): void
 {
     verify(in_array($mode, ['before', 'after'], true), 'Unknown GridFS fault mode.');
-    $context = additionalStorageContext('gridfs', true);
-    $direct = $context->filesystem();
-    $foreign = $context->filesystem('foreign');
+    verify(in_array($phase, ['all', 'seed', 'fault', 'recover'], true), 'Unknown GridFS publication phase.');
     $stage = 'receipts/fault-stage.bin';
     $final = 'receipts/final.bin';
     $payload = str_repeat("\x00\xffreceipt-gridfs\n", 65536);
     $digest = hash('sha256', $payload);
-    $direct->write($final, 'previous');
-    $foreign->write($final, 'foreign-final');
-    $foreign->write($stage, 'foreign-stage');
-    verify(!$direct->fileExists($stage), 'Stage already existed.');
-    $fault = additionalStorageContext('gridfs', false, 27018)->filesystem();
-    $source = fopen('php://temp', 'w+b');
-    verify(is_resource($source), 'Source stream unavailable.');
-    $rejected = false;
-    try {
-        verify(fwrite($source, $payload) === strlen($payload) && rewind($source), 'Source preparation failed.');
-        try {
-            $fault->writeStream($stage, $source);
-        } catch (FilesystemException|\MongoDB\Driver\Exception\Exception $failure) {
-            $rejected = true;
-        }
-    } finally {
-        if (is_resource($source)) {
-            fclose($source);
+    if ($phase === 'all' || $phase === 'seed') {
+        $context = additionalStorageContext('gridfs', true);
+        $direct = $context->filesystem();
+        $foreign = $context->filesystem('foreign');
+        $direct->write($final, 'previous');
+        $foreign->write($final, 'foreign-final');
+        $foreign->write($stage, 'foreign-stage');
+        verify(!$direct->fileExists($stage), 'Stage already existed.');
+        if ($phase === 'seed') {
+            return;
         }
     }
-    verify($rejected, 'Unconfirmed GridFS write reported success.');
+    if ($phase === 'all' || $phase === 'fault') {
+        $fault = additionalStorageContext('gridfs', false, 27018)->filesystem();
+        $source = fopen('php://temp', 'w+b');
+        verify(is_resource($source), 'Source stream unavailable.');
+        $rejected = false;
+        try {
+            verify(fwrite($source, $payload) === strlen($payload) && rewind($source), 'Source preparation failed.');
+            try {
+                $fault->writeStream($stage, $source);
+            } catch (FilesystemException|\MongoDB\Driver\Exception\Exception $failure) {
+                $rejected = true;
+            }
+        } finally {
+            if (is_resource($source)) {
+                fclose($source);
+            }
+        }
+        verify($rejected, 'Unconfirmed GridFS write reported success.');
+    }
     $marker = evidenceDirectory() . '/gridfs-fault.json';
     verify(is_file($marker) && !is_file(evidenceDirectory() . '/gridfs-replayed'), 'Missing intended fault or replayed metadata mutation.');
     $evidence = json_decode((string) file_get_contents($marker), true, flags: JSON_THROW_ON_ERROR);
@@ -387,6 +382,9 @@ function gridfsPublicationFaultWorkload(string $mode): void
     $direct = $fresh->filesystem();
     $foreign = $fresh->filesystem('foreign');
     verify($direct->read($final) === 'previous' && $foreign->read($stage) === 'foreign-stage' && $foreign->read($final) === 'foreign-final', 'Uncertain mutation crossed publication or tenant boundary.');
+    if ($phase === 'fault') {
+        return;
+    }
     if ($mode === 'before') {
         verify(!$direct->fileExists($stage), 'Missing file metadata nevertheless exposed a published file.');
         $direct->write($stage, $payload);

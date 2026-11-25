@@ -1871,6 +1871,26 @@ jobs:
           - {scenario: ecosystem-validation-granular-hex-short, backend: pgsql}
           - {scenario: ecosystem-validation-granular-hex-unprefixed, backend: pgsql}
           - {scenario: ecosystem-validation-granular-regex-alternation, backend: pgsql}
+          - {scenario: ecosystem-s3-order-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-s3-order-http-publication-before, backend: mysql}
+          - {scenario: ecosystem-s3-order-http-publication-before, backend: mariadb}
+          - {scenario: ecosystem-s3-order-http-publication-before, backend: sqlite}
+          - {scenario: ecosystem-s3-order-http-publication-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-s3-order-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-s3-order-http-publication-after, backend: mysql}
+          - {scenario: ecosystem-s3-order-http-publication-after, backend: mariadb}
+          - {scenario: ecosystem-s3-order-http-publication-after, backend: sqlite}
+          - {scenario: ecosystem-s3-order-http-publication-after, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: mysql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: mariadb, php: '8.4'}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: sqlite, php: '8.4'}
+          - {scenario: ecosystem-gridfs-order-publication-before, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: mysql, php: '8.4'}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: mariadb, php: '8.4'}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: sqlite, php: '8.4'}
+          - {scenario: ecosystem-gridfs-order-publication-after, backend: mssql, php: '8.4'}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

@@ -67,6 +67,19 @@ function additionalStorageContext(string $backend, bool $seed = false, ?int $pro
             $provider = new \League\Flysystem\PhpseclibV2\SftpConnectionProvider('127.0.0.1', 'experiment', (string) getenv('LAB_SFTP_SECRET'), port: 12222, timeout: 3);
             return static fn(string $prefix): array => ['driver' => 'sftp-v2', 'constructor' => [$provider, '/upload/' . $prefix]];
         })(),
+        's3' => (static function () use ($seed, $bucket, $proxyPort): Closure {
+            $client = new \Aws\S3\S3Client([
+                'version' => 'latest', 'region' => 'us-east-1',
+                'endpoint' => 'http://127.0.0.1:' . ($proxyPort ?? 19000), 'use_path_style_endpoint' => true,
+                'credentials' => ['key' => 'experiment', 'secret' => getenv('LAB_S3_SECRET')],
+                'retries' => 0, 'request_checksum_calculation' => 'when_required',
+                'http' => ['connect_timeout' => 2, 'timeout' => $proxyPort === null ? 4 : 12, 'expect' => false],
+            ]);
+            if ($seed) {
+                $client->createBucket(['Bucket' => $bucket]);
+            }
+            return static fn(string $prefix): array => ['driver' => 'aws-s3', 'constructor' => [$client, $bucket, $prefix]];
+        })(),
         'async-s3' => (static function () use ($seed, $bucket, $proxyPort): Closure {
             $client = new \AsyncAws\S3\S3Client([
                 'endpoint' => 'http://127.0.0.1:' . ($proxyPort ?? 19000), 'region' => 'us-east-1',
