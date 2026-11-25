@@ -413,3 +413,7 @@ I: independent PostgreSQL lane exports a repeatable-read snapshot of 100 paired 
 ## B100 — Runwire native HTTP/2 flow control and cancellation
 
 I: independent TLS/ALPN H2 client constrains stream credit to 4 KiB, proves sibling progress while a 256 KiB response is stalled, reconciles exact chunks after credit release and requires bounded writer pressure/drain evidence. Resets an incomplete response and partial upload, requires one server cancellation per reset, and confirms same-connection recovery. 353 routine rows; hosted qualification pending (REQUEST, MEM, OPS).
+
+## B101 — Native HTTP/3 response pressure and directional cancellation
+
+I: independent aioquic client uses verified TLS, constrained initial transport credit and concurrent streams to reconcile exact 256 KiB response bytes with server pressure/drain evidence, an incomplete response cancelled by STOP_SENDING, partial upload cancelled by RESET_STREAM, and healthy reuse of the same QUIC connection. Native ext-quic is mandatory; no TCP fallback. 354 routine rows; hosted qualification pending (REQUEST, MEM, OPS).

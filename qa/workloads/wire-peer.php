@@ -6,6 +6,8 @@ use Infocyph\Runwire\DatagramServer;
 use Infocyph\Runwire\CancellationToken;
 use Infocyph\Runwire\Http\Headers;
 use Infocyph\Runwire\Http\Http2\Http2Limits;
+use Infocyph\Runwire\Http\Http3\Http3Limits;
+use Infocyph\Runwire\Http\Http3\Http3Options;
 use Infocyph\Runwire\Http\HttpRequest;
 use Infocyph\Runwire\Http\ResponseWriterInterface;
 use Infocyph\Runwire\Network\Datagram;
@@ -49,9 +51,9 @@ $http = static function (HttpRequest $request, ResponseWriterInterface $writer):
     $writer->start(200, Headers::fromArray(['Content-Length' => (string) strlen($body), 'Content-Type' => 'text/plain']));
     $writer->end($body);
 };
-if ($mode === 'http2-flow') {
+if (in_array($mode, ['http2-flow', 'http3-flow'], true)) {
     $ordinary = $http;
-    $http = static function (HttpRequest $request, ResponseWriterInterface $writer) use ($root, $ordinary): void {
+    $http = static function (HttpRequest $request, ResponseWriterInterface $writer) use ($root, $ordinary, $mode): void {
         $target = $request->target;
         if ($target === '/flow-upload') {
             $request->context->cancellation->onCancel(static function (CancellationToken $token) use ($root): void {
@@ -75,6 +77,13 @@ if ($mode === 'http2-flow') {
         $index = $pressure = $drains = $peak = 0;
         if (!$writer->start(200, Headers::fromArray(['Content-Length' => (string) ($size * $count)]))->accepted()) {
             throw new RuntimeException('Flow test response start rejected.');
+        }
+        if ($cancel && $mode === 'http3-flow') {
+            // Keep a genuinely incomplete response until the peer cancels its receive direction.
+            if (!$writer->write(str_repeat(chr(0), $size))->accepted()) {
+                throw new RuntimeException('Partial QUIC response rejected.');
+            }
+            return;
         }
         if (!$cancel) {
             $writer->onTerminal(static function () use ($root, &$index, &$pressure, &$drains, &$peak): void {
@@ -113,6 +122,7 @@ $server = match ($mode) {
     }, options: new DatagramOptions(maxDatagramBytes: 512)),
     'websocket' => Server::http('127.0.0.1:18785', $http),
     'http3' => (new Server('quic', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')))->withHttp3(),
+    'http3-flow' => (new Server('quic-flow', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')))->withHttp3(new Http3Options(limits: new Http3Limits(maxPendingResponseBytesPerStream: 32768, responseLowWatermarkBytes: 8192, responseHighWatermarkBytes: 16384, maxPendingResponseBytesPerConnection: 65536, maxQpackEncoderQueueBytes: 16384, maxResponseFramePayloadBytes: 4096))),
     'mtls' => new Server('mutual-tls', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem', extraContext: ['cafile' => $root . '/ca.pem'], requireClientCertificate: true)),
     'http2' => new Server('tls', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem')),
     'http2-flow' => new Server('tls-flow', '127.0.0.1:18785', $http, tls: new TlsOptions($root . '/cert.pem', $root . '/key.pem'), http2: new Http2Limits(maxPendingResponseBytesPerStream: 32768, responseLowWatermarkBytes: 8192, responseHighWatermarkBytes: 16384, maxPendingResponseBytesPerConnection: 65536, streamIdleTimeoutSeconds: 15.0)),

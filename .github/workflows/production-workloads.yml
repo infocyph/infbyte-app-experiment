@@ -235,6 +235,7 @@ jobs:
           - {scenario: ecosystem-http-framing, backend: pgsql}
           - {scenario: ecosystem-http-backpressure, backend: pgsql}
           - {scenario: ecosystem-wire-http3, backend: pgsql}
+          - {scenario: ecosystem-wire-http3-flow, backend: pgsql}
           - {scenario: ecosystem-wire-mtls, backend: pgsql}
           - {scenario: ecosystem-scylla, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-redis-failover, backend: pgsql}
