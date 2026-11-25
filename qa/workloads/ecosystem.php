@@ -43,9 +43,12 @@ require __DIR__ . '/ecosystem-remote.php';
 require __DIR__ . '/ecosystem-http.php';
 require __DIR__ . '/ecosystem-contracts.php';
 require __DIR__ . '/ecosystem-webrick.php';
+require __DIR__ . '/ecosystem-jose.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'jwt-jws' => jwtJwsWorkload(),
+    'jwe' => jweWorkload(),
     'gateway' => gatewayWorkload(),
     'response-cache' => responseCacheWorkload(),
     'throttle' => throttleWorkload(),

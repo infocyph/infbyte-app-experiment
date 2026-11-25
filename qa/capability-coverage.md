@@ -97,3 +97,5 @@ B26 expands shared UID sequence, signed closure, configuration precedence, PKI/A
 B27 adds actual MySQL and MariaDB binlog source/reader routing, lag, outage and restart; not automatic HA election.
 
 B28 adds native Webrick gateway/CORS/limits, Redis response cache, atomic throttle and protected cookie scenarios; fixes HTTPS negative evidence and binlog fixture isolation. Wire-level coverage remains separate.
+
+B29 adds full published JWT/JWS algorithm enumeration and JWE key-management enumeration with JWK and serialization checks. This does not close all JOSE, key lifecycle or remote trust capabilities.

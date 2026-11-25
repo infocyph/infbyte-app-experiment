@@ -123,3 +123,7 @@ I: two additional hosted jobs with real isolated source/reader servers, unique s
 ## B28 — Webrick production middleware contracts
 
 I: four independent native middleware jobs: HTTPS/host and CORS policy, header/body framing and count limits; real Redis response-cache reuse and host/query/language isolation plus authenticated and no-store bypass; 12-process atomic throttle exact five admissions with weighted cost and identity isolation; encrypted cookie rotation, tampering, secure attributes and oversized Redis fallback. These exercise public middleware invocation, not full socket-level framing. Existing native/FPM routing lanes remain mandatory. Correct HTTPS negative assertion to require both forbidden requests absent; isolate MySQL X Protocol port and verify binlog readiness via TCP, restore reader read-only after restart. Hosted evidence pending.
+
+## B29 — JOSE algorithm and serialization matrix
+
+I: two independent published Epicrypt lanes: all 3 symmetric and 10 asymmetric JWT/JWS algorithms, native disposable RSA/EC/Ed25519 keys, public/symmetric JWK roundtrip, kid lookup/thumbprint, audience, activation and signature rejection, compact/flattened detached JWS and mixed-signature threshold; all six JWE key-management algorithms with A256GCM, compact/flattened roundtrips and tag rejection, multi-recipient A256KW and nested signed/encrypted token. No keys or token bodies written to evidence. Remote JWKS trust/fetch, distributed replay and remaining key lifecycle/interop matrices remain open. Hosted evidence pending.

@@ -163,3 +163,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B28 — Webrick middleware contracts and fixture review
 - [x] Four independent native middleware jobs; harden HTTPS evidence and binlog fixtures.
 - [ ] Hosted qualification; remaining middleware, deployment and library capabilities remain open.
+
+## B29 — JOSE cryptographic algorithm matrix
+- [x] Two native jobs for all published JWT/JWS and JWE algorithms, JWK and serialization/recipient/threshold contracts.
+- [ ] Hosted qualification and remaining key lifecycle and remote trust capabilities.
