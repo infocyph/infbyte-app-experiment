@@ -299,3 +299,25 @@ function validationNestedErrorsWorkload(): void
     }
     echo "Nested distinct scope, mutable/compiled traversal, custom messages and error projections verified\n";
 }
+
+function validationLocaleWorkload(): void
+{
+    $schema = ['name' => 'required|string|min:3', 'contacts.*.email' => 'required|email'];
+    foreach (['es', 'es_MX'] as $locale) {
+        $builder = Validator::make($schema)
+            ->setFailFast(false)
+            ->setFieldAliases(['name' => 'Nombre', 'contacts.*.email' => 'Correo'])
+            ->addLocalePack('es', ['required' => 'Falta :field.', 'email' => ':field invalido.'])
+            ->setLocale($locale)
+            ->setCustomMessages(['name.min' => ':field necesita :min caracteres (:rule).']);
+        foreach ([$builder, new CompiledValidator($builder)] as $validator) {
+            $missing = $validator->validate(['contacts' => [['email' => 'bad-email']]]);
+            verify($missing->first('name') === 'Falta Nombre.', 'Locale or base locale fallback failed.');
+            verify($missing->first('contacts.0.email') === 'Correo invalido.', 'Wildcard locale alias failed.');
+            $short = $validator->validate(['name' => 'ab', 'contacts' => [['email' => 'a@example.test']]]);
+            verify($short->first('name') === 'Nombre necesita 3 caracteres (min).', 'Custom placeholder override failed.');
+            verify($validator->validate(['name' => 'valid', 'contacts' => [['email' => 'a@example.test']]])->passes(), 'Localized failure leaked into next request.');
+        }
+    }
+    echo "Base and regional locale fallback, wildcard aliases and custom message interpolation passed\n";
+}

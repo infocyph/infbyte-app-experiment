@@ -134,3 +134,37 @@ function diEnvironmentWorkload(): void
     }
     echo "Dynamic and compiled environment binding, literal values and typed invocation passed\n";
 }
+
+function randflakeConversionsWorkload(): void
+{
+    $secret = random_bytes(16);
+    $start = time() - 5;
+    foreach (RandflakeFormat::cases() as $format) {
+        $limits = $format === RandflakeFormat::UID
+            ? ['0', '1', '9223372036854775808', '18446744073709551615']
+            : ['0', '1', '-1', '-9223372036854775808', '9223372036854775807'];
+        $id = Id::randflake(new RandflakeConfig(nodeId: 42, leaseStart: $start, leaseEnd: $start + 300, secret: $secret, format: $format));
+        foreach ([...$limits, $id] as $value) {
+            verify(Randflake::isValid($value, $format), 'Valid numeric boundary rejected.');
+            $bytes = Randflake::toBytes($value, $format);
+            verify(strlen($bytes) === 8 && Randflake::fromBytes($bytes, $format) === $value, 'Binary domain changed.');
+            foreach ([10, 16, 32, 36, 58, 62] as $base) {
+                $encoded = Randflake::toBase($value, $base, $format);
+                verify(Randflake::fromBase($encoded, $base, $format) === $value, 'Radix roundtrip failed.');
+            }
+            verify(Randflake::decodeString(Randflake::encodeString($value, $format), $format) === $value, 'String roundtrip failed.');
+        }
+        $encoded = Randflake::encodeString($id, $format);
+        $parsed = Randflake::inspect($id, $secret, $format);
+        verify($parsed === Randflake::inspectString($encoded, $secret, $format) && $parsed['node_id'] === 42 && $parsed['timestamp'] >= $start, 'Encoded inspection changed metadata.');
+        verify(Randflake::parseString($encoded, $secret, $format)['time']->getTimestamp() === $parsed['timestamp'], 'Encoded timestamp differs.');
+        $invalid = $format === RandflakeFormat::UID ? '-1' : '9223372036854775808';
+        verify(!Randflake::isValid($invalid, $format), 'Out of range decimal accepted.');
+        expectFailure(static fn() => Randflake::toBytes($invalid, $format), \Infocyph\UID\Exceptions\RandflakeException::class, 'Out of range conversion accepted.');
+        expectFailure(static fn() => Randflake::fromBytes('short', $format), \Infocyph\UID\Exceptions\RandflakeException::class, 'Truncated binary accepted.');
+        expectFailure(static fn() => Randflake::decodeString('!', $format), \Infocyph\UID\Exceptions\RandflakeException::class, 'Malformed encoded identifier accepted.');
+    }
+    verify(bin2hex(Randflake::toBytes('1', RandflakeFormat::UID)) === '0000000000000001', 'UID byte order changed.');
+    verify(bin2hex(Randflake::toBytes('1', RandflakeFormat::UPSTREAM)) === '0100000000000000', 'Upstream byte order changed.');
+    echo "Both Randflake domains, signed/unsigned limits, six radices and encoded metadata passed\n";
+}

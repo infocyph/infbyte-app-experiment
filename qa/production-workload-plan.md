@@ -405,3 +405,7 @@ I: independent real Redis and SQLite cache pools validate explicit singleton eli
 ## B88 — ReqShield option and nested error contracts
 
 I: two independent lanes exercise IP family/scope, UUID range/list/exclusion/variant, decimal precision, absolute path and upload bounds, invalid option constructors, targeted/all nested distinct isolation, mutable/compiled reuse, custom messages, typed failure metadata, JSON/API/problem projections and validation exceptions. Remaining locale and rule-option permutations stay open. 301 routine rows; hosted verification pending.
+
+## B89 — Randflake conversion, validation locale and actual preload startup
+
+I: three independent lanes cover signed/unsigned numeric boundaries, all six radices and byte ordering for both Randflake formats; regional locale fallback, wildcard aliases and custom interpolation with mutable/compiled reuse; and a fresh PHP CLI process with generated OPcache preload artifact, pre-autoload class visibility, preload statistics and DI singleton resolution. 304 routine rows; hosted qualification pending.

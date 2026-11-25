@@ -131,11 +131,13 @@ jobs:
           - {scenario: ecosystem-uid-provider-boundaries, backend: pgsql}
           - {scenario: ecosystem-uid-filesystem, backend: pgsql}
           - {scenario: ecosystem-uid-values, backend: pgsql}
+          - {scenario: ecosystem-randflake-conversions, backend: pgsql}
           - {scenario: ecosystem-detached-crypto, backend: pgsql}
           - {scenario: ecosystem-config-reference, backend: pgsql}
           - {scenario: ecosystem-fence-remix, backend: pgsql}
           - {scenario: ecosystem-di-contextual, backend: pgsql}
           - {scenario: ecosystem-di-factories, backend: pgsql}
+          - {scenario: ecosystem-di-preload, backend: pgsql}
           - {scenario: ecosystem-di-cache, backend: pgsql}
           - {scenario: ecosystem-di-attributes, backend: pgsql}
           - {scenario: ecosystem-file-index-retention, backend: pgsql}
@@ -172,6 +174,7 @@ jobs:
           - {scenario: ecosystem-validation-rules, backend: pgsql}
           - {scenario: ecosystem-validation-options, backend: pgsql}
           - {scenario: ecosystem-validation-nested-errors, backend: pgsql}
+          - {scenario: ecosystem-validation-locale, backend: pgsql}
           - {scenario: ecosystem-validation-database, backend: mysql}
           - {scenario: ecosystem-validation-database, backend: pgsql}
           - {scenario: ecosystem-validation-database, backend: sqlite}

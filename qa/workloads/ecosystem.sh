@@ -3,6 +3,10 @@ set -euo pipefail
 case "$SCENARIO" in
   ecosystem-auth-lifecycle|ecosystem-jwt-replay) bash "$GITHUB_WORKSPACE/qa/workloads/auth-lifecycle.sh" ;;
   ecosystem-remote-jwks) bash "$GITHUB_WORKSPACE/qa/workloads/jwks.sh" ;;
+  ecosystem-di-preload)
+    probe="$GITHUB_WORKSPACE/qa/workloads/di-preload.php"
+    php "$probe" generate
+    php -d opcache.enable_cli=1 -d "opcache.preload=$EVIDENCE/di-preload.php" -d "opcache.preload_user=$(id -un)" "$probe" verify | tee "$EVIDENCE/preload.log" ;;
   ecosystem-api-inventory) php "$GITHUB_WORKSPACE/qa/workloads/coverage-audit.php" | tee "$EVIDENCE/inventory.log" ;;
   ecosystem-release-cutover) bash "$GITHUB_WORKSPACE/qa/workloads/release-cutover.sh" ;;
   ecosystem-tenants) bash "$GITHUB_WORKSPACE/qa/workloads/tenants.sh" ;;
