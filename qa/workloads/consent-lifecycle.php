@@ -69,12 +69,72 @@ $app->execution()->run(static function () use ($app, $phase): void {
     $path = (string) getenv('LAB_CONSENT_STATE');
     $audience = 'https://identity.example.test/oidc/userinfo';
     $api = 'https://api.example.test';
-    if ($phase === 'seed') {
+    if ($phase === 'seed' || $phase === 'permission-seed') {
         $schema = $app->make(AuthSchemaInstaller::class);
         $schema->install();
         ensure($schema->installed(), 'Consent schema unavailable.');
     }
     $oauth = $app->make(OAuthManager::class);
+    if (str_starts_with($phase, 'permission-')) {
+        $auth = $app->make(AuthServices::class);
+        $permissions = $auth->permissions();
+        $roles = $auth->roles();
+        $db = $app->make(DBLayerFactory::class)->connection();
+        $count = static fn(): int => (int) $db->scalar('SELECT COUNT(*) FROM auth_oauth_consents');
+        if ($phase === 'permission-seed') {
+            $account = $auth->accounts()->create('permission-owner@example.test')->account;
+            $other = $auth->accounts()->create('permission-other@example.test')->account;
+            ensure($account !== null && $other !== null, 'Permission accounts unavailable.');
+            $client = $oauth->clients()->register(OAuthClientType::Public, [OAuthGrantType::AuthorizationCode], ['https://client.example.test/callback'], ['profile.read'], [$api])->client;
+            $read = $permissions->create('profile.read');
+            $export = $permissions->create('profile.export');
+            $role = $roles->create('profile-exporter');
+            $state = ['account' => $account->id(), 'other' => $other->id(), 'client' => $client->clientId, 'read' => $read->id, 'export' => $export->id, 'role' => $role->id];
+            ensure(file_put_contents($path, json_encode($state, JSON_THROW_ON_ERROR), LOCK_EX) !== false, 'Permission state unavailable.');
+        } else {
+            $state = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
+        }
+        $principal = consentPrincipal($state['account']);
+        $request = consentRequest($oauth, $state['client'], 'profile.read', $api, bin2hex(random_bytes(32)));
+        // Explicit required-permission request tests consent enforcement, not config scope mapping.
+        $request = new AuthorizationRequest($request->client, $request->redirectUri, $request->codeChallenge, $request->scopes, $request->audiences, ['profile.read', 'profile.export']);
+        $denied = static function () use ($oauth, $principal, $request): void {
+            ensure(!$oauth->hasConsent($principal, $request), 'Denied permission retained usable consent.');
+            try {
+                $oauth->grantConsent($principal, $request);
+                throw new \RuntimeException('Denied consent was granted.');
+            } catch (LogicException) {
+                // The durable row count is independently checked by the caller.
+            }
+        };
+        if ($phase === 'permission-seed') {
+            $denied();
+            $permissions->assignToAccount($state['account'], $state['read']);
+            $denied();
+            ensure($count() === 0, 'Denied permission created durable consent.');
+            $permissions->assignToRole($state['role'], $state['export']);
+            $roles->assign($state['account'], $state['role']);
+            $grant = $oauth->grantConsent($principal, $request);
+            ensure($grant->active() && $oauth->hasConsent($principal, $request) && !$oauth->hasConsent(consentPrincipal($state['other']), $request) && $count() === 1, 'Combined role/direct grant or account isolation failed.');
+            $state['consent'] = $grant->id;
+            ensure(file_put_contents($path, json_encode($state, JSON_THROW_ON_ERROR), LOCK_EX) !== false, 'Permission state unavailable.');
+        } elseif ($phase === 'permission-revoke') {
+            ensure($oauth->hasConsent($principal, $request), 'Consent did not survive replacement.');
+            $roles->revoke($state['account'], $state['role']);
+            $denied();
+            ensure($count() === 1, 'Permission revocation erased durable consent.');
+        } else {
+            ensure($phase === 'permission-verify', 'Unknown permission phase.');
+            $denied();
+            $roles->assign($state['account'], $state['role']);
+            ensure($oauth->hasConsent($principal, $request) && $oauth->grantConsent($principal, $request)->id === $state['consent'] && $count() === 1, 'Restored permission did not recover existing consent identity.');
+            $permissions->revokeFromAccount($state['account'], $state['read']);
+            $denied();
+            ensure($count() === 1, 'Direct permission revocation changed consent history.');
+        }
+        echo "Consent permission phase passed: $phase\n";
+        return;
+    }
     if ($phase === 'seed') {
         $accounts = $app->make(AuthServices::class)->accounts();
         $owner = $accounts->create('consent-owner@example.test')->account;

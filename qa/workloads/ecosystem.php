@@ -61,6 +61,7 @@ require __DIR__ . '/ecosystem-cache-faults.php';
 require __DIR__ . '/ecosystem-cache-atomic.php';
 require __DIR__ . '/ecosystem-cache-contracts.php';
 require __DIR__ . '/ecosystem-cache-locking.php';
+require __DIR__ . '/ecosystem-foundation-contracts.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
 require __DIR__ . '/ecosystem-storage-boundaries.php';
 require __DIR__ . '/ecosystem-storage-outage.php';
@@ -224,6 +225,21 @@ match ($argv[1] ?? '') {
     'cache-payload-policy-phpfiles' => cachePayloadPolicyWorkload('phpfiles'),
     'cache-payload-policy-sqlite' => cachePayloadPolicyWorkload('sqlite'),
     'cache-payload-policy-pdo' => cachePayloadPolicyWorkload('pdo'),
+    'foundation-risk-isolation-redis' => foundationRiskIsolation('redis'),
+    'foundation-risk-isolation-valkey' => foundationRiskIsolation('valkey'),
+    'foundation-risk-isolation-memcached' => foundationRiskIsolation('memcached'),
+    'foundation-risk-isolation-file' => foundationRiskIsolation('file'),
+    'foundation-risk-isolation-phpfiles' => foundationRiskIsolation('phpfiles'),
+    'foundation-risk-isolation-sqlite' => foundationRiskIsolation('sqlite'),
+    'foundation-risk-isolation-pdo' => foundationRiskIsolation('pdo'),
+    'foundation-risk-concurrent-redis' => foundationRiskConcurrent('redis'),
+    'foundation-risk-concurrent-valkey' => foundationRiskConcurrent('valkey'),
+    'foundation-risk-concurrent-memcached' => foundationRiskConcurrent('memcached'),
+    'foundation-risk-concurrent-file' => foundationRiskConcurrent('file'),
+    'foundation-risk-concurrent-phpfiles' => foundationRiskConcurrent('phpfiles'),
+    'foundation-risk-concurrent-sqlite' => foundationRiskConcurrent('sqlite'),
+    'foundation-risk-concurrent-pdo' => foundationRiskConcurrent('pdo'),
+    'foundation-resource-contracts' => foundationResourceContracts(),
     'cache-lock-ownership-redis' => cacheLockOwnershipWorkload('redis'),
     'cache-lock-ownership-valkey' => cacheLockOwnershipWorkload('valkey'),
     'cache-lock-ownership-memcached' => cacheLockOwnershipWorkload('memcached'),

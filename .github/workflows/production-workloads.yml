@@ -382,6 +382,27 @@ jobs:
           - {scenario: ecosystem-cache-payload-policy-pdo, backend: pgsql}
           - {scenario: ecosystem-cache-payload-policy-pdo, backend: mysql}
           - {scenario: ecosystem-cache-payload-policy-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-risk-isolation-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-isolation-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-risk-isolation-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-risk-concurrent-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-concurrent-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-risk-concurrent-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-resource-contracts, backend: pgsql}
+          - {scenario: ecosystem-consent-permissions, backend: pgsql}
+          - {scenario: ecosystem-consent-permissions, backend: mysql}
           - {scenario: ecosystem-cache-lock-ownership-redis, backend: pgsql}
           - {scenario: ecosystem-cache-lock-ownership-valkey, backend: pgsql}
           - {scenario: ecosystem-cache-lock-ownership-memcached, backend: pgsql}
