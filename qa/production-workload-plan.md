@@ -417,3 +417,7 @@ I: five additional OTP lanes exercise the existing twelve-process challenge/HOTP
 ## B91 — SQL backend parity and in-flight query invalidation
 
 I: 20 additional MariaDB workload rows and 12 additional SQL Server rows reuse existing assertions, including schema, relations, repository, streaming, transactions and shared cache. SQL Server database initialization is moved to the shared dispatcher for applicable scenarios. Independent PostgreSQL overlap lane confirms actual server-side advisory-lock wait before a concurrent committed transfer, releases the reader only after commit, and checks fresh/warm cached results against the new generation. Remaining topology and driver-specific variations stay open. 343 routine matrix rows; hosted verification pending.
+
+## B92 — Foundation browser OAuth consent over compiled HTTP hosts
+
+I: extend four existing native/FPM fused/sharded OAuth HTTP lanes using a real persisted auth session created by AuthActions, Foundation-owned authorization routes, separate browser cookies, CSRF/origin/cross-session rejection, no-store and frame/referrer policies, explicit deny and approve redirects with state and issuer, rejection of unregistered redirect, and durable public-client PKCE redemption and replay rejection after host replacement. Loopback transport carries fixture cookies explicitly; this is not browser TLS certification. 343 routine rows unchanged; hosted qualification pending.

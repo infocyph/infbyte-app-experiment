@@ -176,10 +176,13 @@ function configuration(): array
     }
     if (getenv('SCENARIO') === 'oauth-http') {
         $config['app']['capabilities'][] = 'session';
+        $config['auth']['http']['resolver_order'] = ['session', 'bearer'];
+        $config['auth']['http']['session_cookie'] = 'foundation_session';
         $config['session'] = [
             'driver' => 'cache', 'stores' => ['cache' => ['store' => 'shared']],
             'cookie' => ['name' => 'lab_session', 'secure' => true, 'http_only' => true, 'same_site' => 'Strict', 'path' => '/'],
             'lock' => ['enabled' => true, 'store' => 'shared', 'wait' => 10.0, 'lease' => 30.0],
+            'csrf' => ['check_origin' => true, 'origin' => 'https://identity.example.test'],
         ];
     }
     if (getenv('SCENARIO') === 'pat') {
