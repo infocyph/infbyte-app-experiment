@@ -89,6 +89,7 @@ require __DIR__ . '/ecosystem-array-contracts.php';
 require __DIR__ . '/ecosystem-array-boundaries.php';
 require __DIR__ . '/ecosystem-array-projections.php';
 require __DIR__ . '/ecosystem-granular-contracts.php';
+require __DIR__ . '/ecosystem-utility-closure-boundaries.php';
 require __DIR__ . '/ecosystem-di-factories.php';
 require __DIR__ . '/ecosystem-di-runtime-contracts.php';
 require __DIR__ . '/ecosystem-di-attribute-boundaries.php';
@@ -741,6 +742,28 @@ match ($argv[1] ?? '') {
     'throttle' => throttleWorkload(),
     'cookie-protection' => cookieProtectionWorkload(),
     'uid-sequences' => uidSequencesWorkload(),
+    'closure-boundary-exact-bound' => closureBoundaryWorkload('exact-bound'),
+    'closure-boundary-prefix' => closureBoundaryWorkload('prefix'),
+    'closure-boundary-encoding' => closureBoundaryWorkload('encoding'),
+    'closure-boundary-pre-authentication' => closureBoundaryWorkload('pre-authentication'),
+    'closure-boundary-authenticated-nonclosure' => closureBoundaryWorkload('authenticated-nonclosure'),
+    'closure-boundary-unsigned-boundary' => closureBoundaryWorkload('unsigned-boundary'),
+    'validation-expression-alternation-direct' => validationExpressionWorkload('alternation', false),
+    'validation-expression-alternation-compiled' => validationExpressionWorkload('alternation', true),
+    'validation-expression-escaped-pipe-direct' => validationExpressionWorkload('escaped-pipe', false),
+    'validation-expression-escaped-pipe-compiled' => validationExpressionWorkload('escaped-pipe', true),
+    'validation-expression-character-class-direct' => validationExpressionWorkload('character-class', false),
+    'validation-expression-character-class-compiled' => validationExpressionWorkload('character-class', true),
+    'validation-expression-escaped-delimiter-direct' => validationExpressionWorkload('escaped-delimiter', false),
+    'validation-expression-escaped-delimiter-compiled' => validationExpressionWorkload('escaped-delimiter', true),
+    'validation-expression-alternate-delimiter-direct' => validationExpressionWorkload('alternate-delimiter', false),
+    'validation-expression-alternate-delimiter-compiled' => validationExpressionWorkload('alternate-delimiter', true),
+    'validation-expression-negative-pattern-direct' => validationExpressionWorkload('negative-pattern', false),
+    'validation-expression-negative-pattern-compiled' => validationExpressionWorkload('negative-pattern', true),
+    'validation-expression-unicode-direct' => validationExpressionWorkload('unicode', false),
+    'validation-expression-unicode-compiled' => validationExpressionWorkload('unicode', true),
+    'validation-expression-trailing-rule-direct' => validationExpressionWorkload('trailing-rule', false),
+    'validation-expression-trailing-rule-compiled' => validationExpressionWorkload('trailing-rule', true),
     'closure' => closureWorkload(),
     'config-layering' => configLayeringWorkload(),
     'pki' => pkiWorkload(),

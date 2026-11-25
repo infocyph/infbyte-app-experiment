@@ -1420,6 +1420,28 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-closure-boundary-exact-bound, backend: pgsql}
+          - {scenario: ecosystem-closure-boundary-prefix, backend: pgsql}
+          - {scenario: ecosystem-closure-boundary-encoding, backend: pgsql}
+          - {scenario: ecosystem-closure-boundary-pre-authentication, backend: pgsql}
+          - {scenario: ecosystem-closure-boundary-authenticated-nonclosure, backend: pgsql}
+          - {scenario: ecosystem-closure-boundary-unsigned-boundary, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-alternation-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-alternation-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-escaped-pipe-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-escaped-pipe-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-character-class-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-character-class-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-escaped-delimiter-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-escaped-delimiter-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-alternate-delimiter-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-alternate-delimiter-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-negative-pattern-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-negative-pattern-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-unicode-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-unicode-compiled, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-trailing-rule-direct, backend: pgsql}
+          - {scenario: ecosystem-validation-expression-trailing-rule-compiled, backend: pgsql}
           - {scenario: ecosystem-jwe-interop-dir-compact-library-to-native, backend: pgsql}
           - {scenario: ecosystem-jwe-interop-dir-compact-native-to-library, backend: pgsql}
           - {scenario: ecosystem-jwe-interop-dir-flattened-library-to-native, backend: pgsql}

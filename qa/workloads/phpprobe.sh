@@ -17,6 +17,26 @@ expect_exit() {
     test "$actual" = "$expected"
 }
 case "$PROBE_MODE" in
+doctor-missing|doctor-valid|doctor-invalid|doctor-disabled-process)
+    expected=0
+    config_status=warn
+    process_status=pass
+    case "$PROBE_MODE" in
+      doctor-valid) printf '%s\n' '{"preset":"default"}' > phpprobe.json; config_status=pass ;;
+      doctor-invalid) printf '%s\n' '{"syntax":{"parallel":0}}' > phpprobe.json; config_status=fail; expected=1 ;;
+      doctor-disabled-process) printf '%s\n' '{"preset":"default"}' > phpprobe.json; config_status=pass; process_status=fail; expected=1 ;;
+    esac
+    if [[ "$PROBE_MODE" == doctor-disabled-process ]]; then
+      actual=0
+      php -d disable_functions=proc_open "$probe" doctor --json > "$evidence/doctor.json" 2> "$evidence/doctor.stderr" || actual=$?
+      test "$actual" = "$expected"
+    else
+      expect_exit "$expected" doctor.json doctor --json
+    fi
+    php -r '$r=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$c=array_column($r["checks"],"status","name");if($r["ok"]!==($argv[2]==="0")||count($c)!==5||$c["config"]!==$argv[3]||$c["function_proc_open"]!==$argv[4]||$c["ext_json"]!=="pass"||$c["ext_tokenizer"]!=="pass"||$c["php_version"]!=="pass")exit(1);' "$evidence/doctor.json" "$expected" "$config_status" "$process_status"
+    expect_exit 2 doctor-unknown.txt doctor --unknown-option
+    expect_exit 0 doctor-help.txt doctor --help
+    ;;
 syntax-graph)
     printf '%s\n' '<?php declare(strict_types=1); final class LabProbe { public function value(): int { return 42; } }' > src/valid.php
     printf '%s\n' '<?php function invalid( {' > invalid.php

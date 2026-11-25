@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [syntax-graph, reference, duplicates, comments, config-check, changed-only, graph-api, reference-scope, duplicate-cache, comment-options, syntax-options, config-precedence, config-schema-init, check-gate-artifacts, comment-custom, comment-suppression, graph-root-boundary]
+        mode: [syntax-graph, reference, duplicates, comments, config-check, changed-only, graph-api, reference-scope, duplicate-cache, comment-options, syntax-options, config-precedence, config-schema-init, check-gate-artifacts, comment-custom, comment-suppression, graph-root-boundary, doctor-missing, doctor-valid, doctor-invalid, doctor-disabled-process]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

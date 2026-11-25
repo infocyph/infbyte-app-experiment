@@ -45,12 +45,12 @@ case "$SCENARIO" in
     composer check-platform-reqs --no-dev
     composer show --format=json > "$EVIDENCE/packages.json"
     php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" telemetry-otel | tee "$EVIDENCE/ecosystem.log" ;;
-  ecosystem-closure)
+  ecosystem-closure|ecosystem-closure-boundary-*)
     cd "$PROJECT"
     composer require opis/closure:^4.5 --no-interaction --prefer-dist --no-progress
     composer check-platform-reqs --no-dev
     composer show --format=json > "$EVIDENCE/packages.json"
-    php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" closure | tee "$EVIDENCE/ecosystem.log" ;;
+    php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log" ;;
   ecosystem-remote-order-recovery) bash "$GITHUB_WORKSPACE/qa/workloads/remote-order-recovery.sh" ;;
   ecosystem-connected|ecosystem-recovery|ecosystem-active-recovery) bash "$GITHUB_WORKSPACE/qa/workloads/connected.sh" ;;
   ecosystem-core-lifecycle) bash "$GITHUB_WORKSPACE/qa/workloads/core-lifecycle.sh" ;;
