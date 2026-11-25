@@ -284,3 +284,47 @@ function sftpRenameFaultWorkload(string $phase, string $mode): void
     verify($disk->read('receipts/healthy-' . $mode) === 'healthy', 'Fresh storage client failed.');
     echo "SFTP $mode rename reconciliation passed\n";
 }
+
+function remoteHttpPublicationContracts(string $backend, string $mode): void
+{
+    verify(in_array($mode, ['before', 'after'], true), 'Unknown publication fault mode.');
+    $context = additionalStorageContext($backend, true);
+    $direct = $context->filesystem();
+    $foreign = $context->filesystem('foreign');
+    $final = 'receipts/final.bin';
+    $stage = 'receipts/fault-stage.bin';
+    $payload = str_repeat("receipt\0\xff\n", 16384);
+    $digest = hash('sha256', $payload);
+    $direct->write($final, 'previous');
+    $foreign->write($final, 'foreign-final');
+    $foreign->write($stage, 'foreign-stage');
+    verify(!$direct->fileExists($stage), 'Stage already existed before fault.');
+    $fault = additionalStorageContext($backend, false, 19002)->filesystem();
+    expectFailure(static fn() => $fault->write($stage, $payload), FilesystemException::class, 'Unconfirmed storage write reported success.');
+    $marker = evidenceDirectory() . '/storage-http-fault.json';
+    verify(is_file($marker), 'Expected origin-facing fault was never reached.');
+    $evidence = json_decode((string) file_get_contents($marker), true, flags: JSON_THROW_ON_ERROR);
+    verify($evidence['mode'] === $mode && $evidence['forwarded'] > 0, 'Incorrect fault marker.');
+    if ($mode === 'before') {
+        verify($evidence['forwarded'] < $evidence['length'], 'Before fault did not interrupt origin body.');
+    } else {
+        verify($evidence['forwarded'] === $evidence['length'] && $evidence['status'] >= 200 && $evidence['status'] < 300, 'After fault lacked a successful origin response.');
+    }
+    $directContext = additionalStorageContext($backend);
+    $direct = $directContext->filesystem();
+    $foreign = $directContext->filesystem('foreign');
+    verify($direct->read($final) === 'previous' && $foreign->read($stage) === 'foreign-stage' && $foreign->read($final) === 'foreign-final', 'Fault crossed staging or tenant boundary.');
+    if ($mode === 'before') {
+        if ($direct->fileExists($stage)) {
+            verify($direct->fileSize($stage) < strlen($payload) && hash('sha256', $direct->read($stage)) !== $digest, 'Interrupted stage was unexpectedly complete.');
+            $direct->delete($stage);
+        }
+        verify(!$direct->fileExists($stage), 'Unconfirmed stage could not be cleaned.');
+        $direct->write($stage, $payload);
+    }
+    verify($direct->fileSize($stage) === strlen($payload) && hash('sha256', $direct->read($stage)) === $digest, 'Committed/retried stage not reconciled.');
+    $direct->move($stage, $final);
+    verify(!$direct->fileExists($stage) && hash('sha256', $direct->read($final)) === $digest, 'Recovered publication failed.');
+    verify($foreign->read($stage) === 'foreign-stage' && $foreign->read($final) === 'foreign-final', 'Recovered publication crossed tenant.');
+    echo "$backend $mode origin fault and independent publication reconciliation passed\n";
+}

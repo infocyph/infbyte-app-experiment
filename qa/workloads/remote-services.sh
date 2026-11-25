@@ -11,6 +11,8 @@ cleanup() {
 trap cleanup EXIT
 provision="$SCENARIO"
 case "$SCENARIO" in
+  ecosystem-webdav-http-publication-before|ecosystem-webdav-http-publication-after|ecosystem-async-s3-http-publication-before|ecosystem-async-s3-http-publication-after|ecosystem-azure-http-publication-before|ecosystem-azure-http-publication-after|ecosystem-gcs-http-publication-before|ecosystem-gcs-http-publication-after)
+    provision="${SCENARIO%-http-publication-*}" ;;
   ecosystem-cache-redis-cluster-*) provision=ecosystem-redis-cluster ;;
   ecosystem-cache-mongodb-*) provision=ecosystem-mongodb ;;
   ecosystem-ftp-outage|ecosystem-ftp-copy-contracts|ecosystem-ftp-staged-contracts|ecosystem-webdav-outage|ecosystem-webdav-copy-contracts|ecosystem-webdav-staged-contracts|ecosystem-gridfs-outage|ecosystem-gridfs-copy-contracts|ecosystem-gridfs-staged-contracts|ecosystem-sftp2-outage|ecosystem-sftp2-copy-contracts|ecosystem-sftp2-staged-contracts|ecosystem-async-s3-outage|ecosystem-async-s3-copy-contracts|ecosystem-async-s3-staged-contracts|ecosystem-azure-outage|ecosystem-azure-copy-contracts|ecosystem-azure-staged-contracts|ecosystem-gcs-outage|ecosystem-gcs-copy-contracts|ecosystem-gcs-staged-contracts)
@@ -115,7 +117,33 @@ case "$provision" in
 esac
 composer check-platform-reqs --no-dev
 composer show --format=json > "$EVIDENCE/packages.json"
-if [[ "$SCENARIO" == ecosystem-s3-publication-fault ]]; then
+if [[ "$SCENARIO" == *-http-publication-* ]]; then
+  backend="${provision#ecosystem-}"
+  mode="${SCENARIO##*-}"
+  case "$backend" in
+    webdav) port=18085 ;;
+    async-s3) port=19000 ;;
+    azure) port=11000 ;;
+    gcs) port=14443 ;;
+    *) exit 1 ;;
+  esac
+  ready=0
+  for attempt in {1..60}; do
+    if timeout 2 bash -c "exec 3<>/dev/tcp/127.0.0.1/$port" 2>/dev/null; then ready=1; break; fi
+    sleep 1
+  done
+  test "$ready" = 1
+  python3 "$GITHUB_WORKSPACE/qa/workloads/storage-http-fault.py" "$EVIDENCE" "$backend" "$mode" "$port" > "$EVIDENCE/storage-http-proxy.log" 2>&1 &
+  fault_peer=$!
+  trap 'kill "$fault_peer" 2>/dev/null || :; wait "$fault_peer" 2>/dev/null || :; if [[ -n "${storage_peer:-}" ]]; then kill "$storage_peer" 2>/dev/null || :; wait "$storage_peer" 2>/dev/null || :; fi; cleanup' EXIT
+  for attempt in {1..100}; do
+    [[ -f "$EVIDENCE/storage-http-ready" ]] && break
+    kill -0 "$fault_peer"
+    sleep 0.1
+  done
+  test -f "$EVIDENCE/storage-http-ready"
+  timeout 180s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
+elif [[ "$SCENARIO" == ecosystem-s3-publication-fault ]]; then
   python3 "$GITHUB_WORKSPACE/qa/workloads/s3-publication-peer.py" "$EVIDENCE" > "$EVIDENCE/s3-peer.log" 2>&1 &
   storage_peer=$!
   trap 'kill "$storage_peer" 2>/dev/null || :; wait "$storage_peer" 2>/dev/null || :; cleanup' EXIT

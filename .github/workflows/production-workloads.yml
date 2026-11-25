@@ -762,6 +762,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-webdav-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-webdav-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-async-s3-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-async-s3-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-azure-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-azure-http-publication-after, backend: pgsql}
+          - {scenario: ecosystem-gcs-http-publication-before, backend: pgsql}
+          - {scenario: ecosystem-gcs-http-publication-after, backend: pgsql}
           - {scenario: ecosystem-foundation-webhook-replay-redis, backend: pgsql}
           - {scenario: ecosystem-foundation-webhook-replay-valkey, backend: pgsql}
           - {scenario: ecosystem-foundation-webhook-replay-memcached, backend: pgsql}

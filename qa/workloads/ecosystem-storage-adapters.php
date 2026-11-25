@@ -47,7 +47,7 @@ function storageLocalModesWorkload(): void
     echo "Memory, prefix, read-only, ZIP and context boundaries passed\n";
 }
 
-function additionalStorageContext(string $backend, bool $seed = false): StorageContext
+function additionalStorageContext(string $backend, bool $seed = false, ?int $proxyPort = null): StorageContext
 {
     $bucket = 'lab-documents';
     $config = match ($backend) {
@@ -55,7 +55,7 @@ function additionalStorageContext(string $backend, bool $seed = false): StorageC
             new \League\Flysystem\Ftp\FtpConnectionOptions('127.0.0.1', '/' . $prefix, 'experiment', 'fixture-only-password', port: 12121, timeout: 3),
         ]],
         'webdav' => static fn(string $prefix): array => ['driver' => 'webdav', 'constructor' => [
-            new \Sabre\DAV\Client(['baseUri' => 'http://127.0.0.1:18085/', 'userName' => 'experiment', 'password' => 'fixture-only-password']), $prefix,
+            new \Sabre\DAV\Client(['baseUri' => 'http://127.0.0.1:' . ($proxyPort ?? 18085) . '/', 'userName' => 'experiment', 'password' => 'fixture-only-password']), $prefix,
         ]],
         'gridfs' => (static function () use ($bucket): Closure {
             $client = new \MongoDB\Client('mongodb://127.0.0.1:27017/?serverSelectionTimeoutMS=3000&connectTimeoutMS=2000&socketTimeoutMS=4000');
@@ -66,9 +66,9 @@ function additionalStorageContext(string $backend, bool $seed = false): StorageC
             $provider = new \League\Flysystem\PhpseclibV2\SftpConnectionProvider('127.0.0.1', 'experiment', (string) getenv('LAB_SFTP_SECRET'), port: 12222, timeout: 3);
             return static fn(string $prefix): array => ['driver' => 'sftp-v2', 'constructor' => [$provider, '/upload/' . $prefix]];
         })(),
-        'async-s3' => (static function () use ($seed, $bucket): Closure {
+        'async-s3' => (static function () use ($seed, $bucket, $proxyPort): Closure {
             $client = new \AsyncAws\S3\S3Client([
-                'endpoint' => 'http://127.0.0.1:19000', 'region' => 'us-east-1',
+                'endpoint' => 'http://127.0.0.1:' . ($proxyPort ?? 19000), 'region' => 'us-east-1',
                 'accessKeyId' => 'experiment', 'accessKeySecret' => getenv('LAB_S3_SECRET'), 'pathStyleEndpoint' => true,
             ]);
             if ($seed) {
@@ -76,17 +76,18 @@ function additionalStorageContext(string $backend, bool $seed = false): StorageC
             }
             return static fn(string $prefix): array => ['driver' => 'async-aws-s3', 'constructor' => [$client, $bucket, $prefix]];
         })(),
-        'azure' => (static function () use ($seed, $bucket): Closure {
-            $connection = 'DefaultEndpointsProtocol=http;AccountName=experiment;AccountKey=' . getenv('LAB_AZURE_KEY') . ';BlobEndpoint=http://127.0.0.1:11000/experiment;';
+        'azure' => (static function () use ($seed, $bucket, $proxyPort): Closure {
+            $connection = 'DefaultEndpointsProtocol=http;AccountName=experiment;AccountKey=' . getenv('LAB_AZURE_KEY') . ';BlobEndpoint=http://127.0.0.1:' . ($proxyPort ?? 11000) . '/experiment;';
             $client = \MicrosoftAzure\Storage\Blob\BlobRestProxy::createBlobService($connection);
             if ($seed) {
                 $client->createContainer($bucket);
             }
             return static fn(string $prefix): array => ['driver' => 'azure-blob-storage', 'constructor' => [$client, $bucket, $prefix]];
         })(),
-        'gcs' => (static function () use ($seed, $bucket): Closure {
-            putenv('STORAGE_EMULATOR_HOST=http://127.0.0.1:14443');
-            $client = new \Google\Cloud\Storage\StorageClient(['projectId' => 'experiment', 'apiEndpoint' => 'http://127.0.0.1:14443', 'retries' => 0, 'requestTimeout' => 4]);
+        'gcs' => (static function () use ($seed, $bucket, $proxyPort): Closure {
+            $endpoint = 'http://127.0.0.1:' . ($proxyPort ?? 14443);
+            putenv('STORAGE_EMULATOR_HOST=' . $endpoint);
+            $client = new \Google\Cloud\Storage\StorageClient(['projectId' => 'experiment', 'apiEndpoint' => $endpoint, 'retries' => 0, 'requestTimeout' => 4]);
             $storage = $seed ? $client->createBucket($bucket) : $client->bucket($bucket);
             return static fn(string $prefix): array => ['driver' => 'google-cloud-storage', 'constructor' => [$storage, $prefix]];
         })(),
