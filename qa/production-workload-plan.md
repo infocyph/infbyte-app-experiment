@@ -191,3 +191,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B35 — distributed invalidation and outbox
 - [x] Three independent SQL/Redis Streams coherence lanes.
 - [ ] Hosted verification, multiprocess node and transport failure cases.
+
+## B36 — native wire interoperability
+- [x] Five real concurrent TCP/Unix/UDP/WebSocket/TLS-HTTP2 lanes.
+- [ ] Hosted verification and remaining wire protocols/hosts.

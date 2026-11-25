@@ -151,3 +151,7 @@ I: four new browser workload jobs (Swoole PHP 8.5 and OpenSwoole PHP 8.6 × fuse
 ## B35 — distributed invalidation and transactional outbox
 
 I: real MySQL/PostgreSQL and Redis Streams, independent local SQLite node stores, namespace isolation, key/namespace invalidation, offline catchup, durable cursor replacement and history rotation; SQL native outbox commit/rollback visibility and idempotent post-commit local application; actual stream trim retention-gap recovery. APCu disabled deliberately to isolate independent node stores within one process; multiprocess node/transport-outage coverage remains open. Hosted verification pending.
+
+## B36 — native Runwire wire interoperability
+
+I: five independent hosted lanes: framed TCP and Unix sockets with fragmented/coalesced writes and oversize-frame rejection; UDP datagram echo and size ceiling; real RFC6455 WebSocket text/binary, ping and origin rejection; TLS ALPN HTTP/2 using independent Python h2 client, 16 concurrent streams per connection × five batches × eight clients, HTTP/1.1 ALPN fallback and untrusted certificate rejection. Independent clients are external protocol oracles, not mocks. HTTP/3/QUIC, mTLS, HTTP/1 request framing, Runwire outbound client variants and remaining deployment hosts are open. Hosted verification pending.

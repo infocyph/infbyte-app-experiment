@@ -15,6 +15,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-wire-tcp, backend: pgsql}
+          - {scenario: ecosystem-wire-unix, backend: pgsql}
+          - {scenario: ecosystem-wire-udp, backend: pgsql}
+          - {scenario: ecosystem-wire-websocket, backend: pgsql}
+          - {scenario: ecosystem-wire-http2, backend: pgsql}
           - {scenario: ecosystem-invalidation-sql, backend: mysql}
           - {scenario: ecosystem-invalidation-sql, backend: pgsql}
           - {scenario: ecosystem-invalidation-stream, backend: pgsql}

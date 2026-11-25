@@ -111,3 +111,5 @@ B33 adds explicit 256-mask Foundation topology qualification and shared-package 
 B34 adds actual Swoole PHP 8.5 and OpenSwoole PHP 8.6 browser runtime acceptance (fused/sharded); no native fallback.
 
 B35 adds real distributed invalidation logs, offline cursor/retention and transactional outbox scenarios; node caches are independent local SQLite stores.
+
+B36 adds native concurrent Runwire wire acceptance with independent clients; HTTP/3 and remaining client/deployment features remain open.
