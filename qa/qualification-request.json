@@ -1,0 +1,7 @@
+{
+  "request": "phase-2-full-qualification-001",
+  "scope": "all routine capability workers, native gRPC, consumer acceptance, PHPProbe, standard soak",
+  "php": "8.5",
+  "external_sqlserver_ha": false,
+  "reason": "Owner requested complete hosted execution for production defect discovery"
+}

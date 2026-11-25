@@ -101,3 +101,6 @@ Replace the generic ecosystem worker with nine capability workers. All 2,177 fro
 | operations | 1 | 1 |
 
 Provisioning: pure utility/crypto/runtime paths no longer start the generic SQL/Redis/mail topology; explicitly integrated variants retain required supporting services. Integrated cache, auth, storage, messaging, routing and Foundation contracts retain conservative SQL/Redis topology where cross-driver or provider behavior is under test. Optional Valkey/Memcached and native extensions preserve the previous scenario conditions, restricted to each capability. Unrelated Mailpit service definitions removed or gated except where cross-layer tests may need it. Shared application installation and original workload assertions remain unchanged. CORE-01/STRUCT/OPS/FLOW: ownership, tuple equivalence, matrix cap, manual dispatch and cancellation verified by source inspection; hosted service/runtime and auditor execution pending. No PHP fallback or dependency pin added. External HA remains manually authorized and non-cancellable during fencing.
+
+
+Phase 2 qualification launch: requested a full PHP 8.5 hosted run through the explicit qualification request path. Preserve results by exact commit; external HA remains blocked until separately provisioned and explicitly authorized. No result is claimed before hosted execution.

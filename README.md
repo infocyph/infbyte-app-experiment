@@ -53,3 +53,8 @@ Replace the generic ecosystem worker with nine capability workers. All 2,177 fro
 | operations | 1 | 1 |
 
 Provisioning: pure utility/crypto/runtime paths no longer start the generic SQL/Redis/mail topology; explicitly integrated variants retain required supporting services. Integrated cache, auth, storage, messaging, routing and Foundation contracts retain conservative SQL/Redis topology where cross-driver or provider behavior is under test. Optional Valkey/Memcached and native extensions preserve the previous scenario conditions, restricted to each capability. Unrelated Mailpit service definitions removed or gated except where cross-layer tests may need it. Shared application installation and original workload assertions remain unchanged. CORE-01/STRUCT/OPS/FLOW: ownership, tuple equivalence, matrix cap, manual dispatch and cancellation verified by source inspection; hosted service/runtime and auditor execution pending. No PHP fallback or dependency pin added. External HA remains manually authorized and non-cancellable during fencing.
+
+
+## Explicit full qualification request
+
+Changing `qa/qualification-request.json` on `main` deliberately launches the full production laboratory (all capability shards and both native gRPC modes), consumer acceptance, all PHPProbe modes and the standard soak profile. Ordinary code and Markdown tracker commits do not trigger this full run. Native manual dispatch remains supported; duplicate full requests share the same cancellation key as a full manual dispatch. Do not edit the request while collecting evidence unless explicitly starting a fresh qualification. External SQL Server HA fencing remains separately authorized and is never triggered by this file.

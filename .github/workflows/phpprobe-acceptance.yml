@@ -2,7 +2,7 @@ name: Published PHPProbe engineering acceptance
 on:
   push:
     branches: [main]
-    paths: ['qa/workloads/phpprobe.sh', '.github/workflows/phpprobe-acceptance.yml']
+    paths: ['qa/workloads/phpprobe.sh', '.github/workflows/phpprobe-acceptance.yml', 'qa/qualification-request.json']
   workflow_dispatch:
     inputs:
       mode:

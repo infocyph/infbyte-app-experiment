@@ -1,5 +1,8 @@
 name: Production workload laboratory
 on:
+  push:
+    branches: [main]
+    paths: ['qa/qualification-request.json']
   workflow_dispatch:
     inputs:
       group:
@@ -11,11 +14,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}${{ inputs.group != 'all' && format('-{0}', inputs.group) || '' }}
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event_name == 'workflow_dispatch' && inputs.group != 'all' && format('-{0}', inputs.group) || '' }}
   cancel-in-progress: true
 jobs:
   database:
-    if: inputs.group == 'all' || inputs.group == 'database'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'database'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -285,7 +288,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   database-2:
-    if: inputs.group == 'all' || inputs.group == 'database'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'database'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -377,7 +380,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   cache:
-    if: inputs.group == 'all' || inputs.group == 'cache' || inputs.group == 'ecosystem'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'cache' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -588,7 +591,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   authentication:
-    if: inputs.group == 'all' || inputs.group == 'authentication' || inputs.group == 'ecosystem'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'authentication' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -802,7 +805,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   cryptography:
-    if: inputs.group == 'all' || inputs.group == 'cryptography' || inputs.group == 'ecosystem'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'cryptography' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -860,7 +863,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   storage:
-    if: inputs.group == 'all' || inputs.group == 'storage' || inputs.group == 'ecosystem'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'storage' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -1130,7 +1133,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   storage-2:
-    if: inputs.group == 'all' || inputs.group == 'storage' || inputs.group == 'ecosystem'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'storage' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -1168,7 +1171,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   messaging:
-    if: inputs.group == 'all' || inputs.group == 'messaging' || inputs.group == 'ecosystem'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'messaging' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -1362,7 +1365,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   runtime:
-    if: inputs.group == 'all' || inputs.group == 'runtime' || inputs.group == 'ecosystem'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'runtime' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -1632,7 +1635,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   runtime-2:
-    if: inputs.group == 'all' || inputs.group == 'runtime' || inputs.group == 'ecosystem'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'runtime' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -1697,7 +1700,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   routing:
-    if: inputs.group == 'all' || inputs.group == 'routing' || inputs.group == 'ecosystem'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'routing' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -1810,7 +1813,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   foundation:
-    if: inputs.group == 'all' || inputs.group == 'foundation' || inputs.group == 'ecosystem'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'foundation' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -1980,7 +1983,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   utilities:
-    if: inputs.group == 'all' || inputs.group == 'utilities' || inputs.group == 'ecosystem'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'utilities' || inputs.group == 'ecosystem'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -2178,7 +2181,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   http:
-    if: inputs.group == 'all' || inputs.group == 'http' || inputs.group == 'application'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'http' || inputs.group == 'application'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -2350,7 +2353,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   business:
-    if: inputs.group == 'all' || inputs.group == 'business' || inputs.group == 'application'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'business' || inputs.group == 'application'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -2401,7 +2404,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   operations:
-    if: inputs.group == 'all' || inputs.group == 'operations' || inputs.group == 'application'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'operations' || inputs.group == 'application'
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -2416,7 +2419,7 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
 
   grpc:
-    if: inputs.group == 'all' || inputs.group == 'grpc'
+    if: github.event_name == 'push' || inputs.group == 'all' || inputs.group == 'grpc'
     name: Native gRPC / PHP 8.5 / ${{ matrix.mode }}
     strategy:
       fail-fast: false
