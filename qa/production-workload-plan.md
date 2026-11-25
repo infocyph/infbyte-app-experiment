@@ -199,3 +199,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B37 — database proxy pooling
 - [x] Actual PgBouncer session/transaction modes and concurrent DBLayer reconciliation.
 - [ ] Hosted verification and other proxy/listener variants.
+
+## B38 — official storage adapter matrix
+- [x] Remaining documented official adapter keys have executable scenarios across eight independent jobs.
+- [ ] Hosted verification, cloud provider/security and local-only feature contracts.

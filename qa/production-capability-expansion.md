@@ -159,3 +159,7 @@ I: five independent hosted lanes: framed TCP and Unix sockets with fragmented/co
 ## B37 — real database proxy pooling
 
 I: two separate PgBouncer session/transaction-pooling lanes, real PostgreSQL source and a three-backend pool, native prepared statement support explicitly configured, eight independent PHP workers × 50 commits with nested savepoint rollback, backend transaction affinity, post-commit effects and exact durable ledger reconciliation. Session mode additionally checks session affinity. No incompatible session features assumed in transaction mode. Statement pooling, Pgpool-II, ProxySQL/MaxScale and SQL Server listener HA remain open; hosted verification pending.
+
+## B38 — Pathwise official adapter matrix
+
+I: eight independent jobs cover memory, read-only, prefixing and ZIP plus actual FTP, WebDAV, GridFS, SFTP v2, AsyncAws S3, Azure-compatible Azurite and GCS-compatible fake-gcs-server. Combined with existing local, S3 and SFTP v3 jobs, all fourteen documented official adapter keys now have executable construction and I/O scenarios. Cloud-compatible emulators do not certify cloud production IAM, service behavior or availability; protocol TLS/host key and outage, custom adapter and local-only transaction/ownership capabilities remain open. Hosted verification pending.

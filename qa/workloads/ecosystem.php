@@ -47,9 +47,18 @@ require __DIR__ . '/ecosystem-jose.php';
 require __DIR__ . '/ecosystem-mailbox.php';
 require __DIR__ . '/ecosystem-brokers.php';
 require __DIR__ . '/ecosystem-invalidation.php';
+require __DIR__ . '/ecosystem-storage-adapters.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'storage-local-modes' => storageLocalModesWorkload(),
+    'ftp' => ftpWorkload(),
+    'webdav' => webdavWorkload(),
+    'gridfs' => gridfsWorkload(),
+    'sftp2' => sftp2Workload(),
+    'async-s3' => asyncS3Workload(),
+    'azure' => azureWorkload(),
+    'gcs' => gcsWorkload(),
     'invalidation-sql' => invalidationSqlWorkload(),
     'invalidation-stream' => invalidationStreamWorkload(),
     'amqp' => amqpWorkload(),

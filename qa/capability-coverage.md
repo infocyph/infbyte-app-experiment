@@ -115,3 +115,5 @@ B35 adds real distributed invalidation logs, offline cursor/retention and transa
 B36 adds native concurrent Runwire wire acceptance with independent clients; HTTP/3 and remaining client/deployment features remain open.
 
 B37 adds real PgBouncer session/transaction pooling, native prepared statements and exact concurrent transaction reconciliation.
+
+B38 adds remaining documented official Pathwise adapters (cloud emulators explicitly distinct from production providers); hosted evidence pending.

@@ -30,7 +30,7 @@ case "$SCENARIO" in
     done
     docker exec lab-cluster-17379 redis-cli -p 17379 cluster info | tee "$EVIDENCE/cluster-info.txt" | grep -q 'cluster_state:ok'
     ;;
-  ecosystem-mongodb)
+  ecosystem-mongodb|ecosystem-gridfs)
     containers+=(lab-mongo)
     docker run -d --name lab-mongo -p 127.0.0.1:27017:27017 mongo:8
     for i in $(seq 1 60); do
@@ -39,8 +39,9 @@ case "$SCENARIO" in
     done
     docker exec lab-mongo mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' | grep -qx 1
     composer require mongodb/mongodb --no-interaction --prefer-dist --no-progress
+    if [[ "$SCENARIO" == ecosystem-gridfs ]]; then composer require league/flysystem-gridfs --no-interaction --prefer-dist --no-progress; fi
     ;;
-  ecosystem-s3)
+  ecosystem-s3|ecosystem-async-s3)
     containers+=(lab-s3)
     export LAB_S3_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
     docker run -d --name lab-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" minio/minio:latest server /data
@@ -49,9 +50,9 @@ case "$SCENARIO" in
       sleep 1
     done
     curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null
-    composer require league/flysystem-aws-s3-v3 --no-interaction --prefer-dist --no-progress
+    if [[ "$SCENARIO" == ecosystem-s3 ]]; then composer require league/flysystem-aws-s3-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-async-aws-s3 --no-interaction --prefer-dist --no-progress; fi
     ;;
-  ecosystem-sftp)
+  ecosystem-sftp|ecosystem-sftp2)
     containers+=(lab-sftp)
     export LAB_SFTP_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
     docker run -d --name lab-sftp -p 127.0.0.1:12222:22 atmoz/sftp:latest "experiment:$LAB_SFTP_SECRET:1001::upload"
@@ -60,7 +61,44 @@ case "$SCENARIO" in
       sleep 1
     done
     test -s "$RUNNER_TEMP/lab-sftp-host.pub"
-    composer require league/flysystem-sftp-v3 --no-interaction --prefer-dist --no-progress
+    if [[ "$SCENARIO" == ecosystem-sftp ]]; then composer require league/flysystem-sftp-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-sftp-v2 --no-interaction --prefer-dist --no-progress; fi
+    ;;
+  ecosystem-storage-local-modes)
+    composer require league/flysystem-memory league/flysystem-read-only league/flysystem-path-prefixing league/flysystem-ziparchive --no-interaction --prefer-dist --no-progress
+    ;;
+  ecosystem-ftp|ecosystem-webdav)
+    python3 -m venv "$RUNNER_TEMP/storage-peer-venv"
+    python="$RUNNER_TEMP/storage-peer-venv/bin/python"
+    "$python" -m pip install 'pyftpdlib>=2,<3' 'wsgidav>=4,<5' 'cheroot>=10,<12'
+    mkdir -p "$RUNNER_TEMP/storage-peer/tenant-a" "$RUNNER_TEMP/storage-peer/tenant-b"
+    "$python" "$GITHUB_WORKSPACE/qa/workloads/storage-peer.py" "${SCENARIO#ecosystem-}" "$RUNNER_TEMP/storage-peer" > "$EVIDENCE/storage-peer.log" 2>&1 &
+    storage_peer=$!
+    trap 'kill "$storage_peer" 2>/dev/null || :; wait "$storage_peer" 2>/dev/null || :; cleanup' EXIT
+    if [[ "$SCENARIO" == ecosystem-ftp ]]; then
+      composer require league/flysystem-ftp --no-interaction --prefer-dist --no-progress
+    else
+      composer require league/flysystem-webdav --no-interaction --prefer-dist --no-progress
+    fi
+    kill -0 "$storage_peer"
+    ;;
+  ecosystem-azure)
+    containers+=(lab-azure)
+    export LAB_AZURE_KEY="$(php -r 'echo base64_encode(random_bytes(64));')"
+    docker run -d --name lab-azure -p 127.0.0.1:11000:10000 -e AZURITE_ACCOUNTS="experiment:$LAB_AZURE_KEY" mcr.microsoft.com/azure-storage/azurite azurite-blob --blobHost 0.0.0.0 --loose --skipApiVersionCheck
+    composer require league/flysystem-azure-blob-storage --no-interaction --prefer-dist --no-progress
+    for i in $(seq 1 30); do
+      if curl -sS --max-time 2 -o /dev/null http://127.0.0.1:11000/experiment; then break; fi
+      sleep 1
+    done
+    ;;
+  ecosystem-gcs)
+    containers+=(lab-gcs)
+    docker run -d --name lab-gcs -p 127.0.0.1:14443:4443 fsouza/fake-gcs-server:latest -scheme http -external-url http://127.0.0.1:14443
+    composer require league/flysystem-google-cloud-storage --no-interaction --prefer-dist --no-progress
+    for i in $(seq 1 30); do
+      if curl -fsS --max-time 2 'http://127.0.0.1:14443/storage/v1/b?project=experiment' >/dev/null; then break; fi
+      sleep 1
+    done
     ;;
   *) exit 1 ;;
 esac
