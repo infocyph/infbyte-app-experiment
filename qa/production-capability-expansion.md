@@ -313,3 +313,7 @@ I: real SQL Server 2022/ODBC 18 hosted lane on PHP 8.4, generated disposable CA 
 ## B75 — broker TLS, persistent restart and redrive
 
 I: RabbitMQ TLS-only actual broker with isolated CA/DNS SAN and wrong trust rejection, durable queue and unacknowledged reservation across stop/start, exact identity/attempt and post-restart publication. Independent ElasticMQ SQS-compatible redrive lane requires broker-side maxReceiveCount, fresh receipts, dead-letter payload and subsequent healthy work. No real AWS certification claimed. Existing application adapters reused; no dependency pin or upstream edits. CORE/SEC/DATA/OPS: transport verification, bounded waits, independent service lifecycle, durable identities; hosted lint and execution pending. 275 routine rows.
+
+## B76 — utility lifecycle and failure boundaries
+
+I: three new independent lanes: UID filesystem fork reservation identity, replacement gaps, overflow/corruption, clock regression, symlink and lock timeout; ArrayKit dotenv raw/resolved references, invalid input, detached/cyclic snapshot and compiled generations; InterMix Fence singleton/multiton/limit/requirements and Remix macro/retry lifecycle. Reuses published public APIs and existing fork harness; no upstream changes. CORE/TYPE/SEC/DATA/OPS lifecycle and ownership assertions, FLOW/EXEC hosted syntax/runtime pending. 278 routine rows. Further variants remain explicitly open.

@@ -124,6 +124,9 @@ jobs:
           - {scenario: ecosystem-sqs-redrive, backend: pgsql}
           - {scenario: ecosystem-remote-jwks, backend: pgsql}
           - {scenario: ecosystem-uid-provider-boundaries, backend: pgsql}
+          - {scenario: ecosystem-uid-filesystem, backend: pgsql}
+          - {scenario: ecosystem-config-reference, backend: pgsql}
+          - {scenario: ecosystem-fence-remix, backend: pgsql}
           - {scenario: ecosystem-di-contextual, backend: pgsql}
           - {scenario: ecosystem-file-index-retention, backend: pgsql}
           - {scenario: ecosystem-archive-security, backend: pgsql}

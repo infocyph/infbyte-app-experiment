@@ -58,6 +58,7 @@ require __DIR__ . '/ecosystem-utility-boundaries.php';
 require __DIR__ . '/ecosystem-http-semantics.php';
 require __DIR__ . '/ecosystem-file-lifecycle.php';
 require __DIR__ . '/ecosystem-utility-contracts.php';
+require __DIR__ . '/ecosystem-utility-lifecycle.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
 require __DIR__ . '/ecosystem-broker-boundaries.php';
 require __DIR__ . '/ecosystem-broker-recovery.php';
@@ -81,6 +82,9 @@ match ($argv[1] ?? '') {
     'sqs-fifo' => sqsFifoWorkload(),
     'remote-jwks' => remoteJwksWorkload(),
     'uid-provider-boundaries' => uidProviderBoundariesWorkload(),
+    'uid-filesystem' => uidFilesystemWorkload(),
+    'config-reference' => configReferenceWorkload(),
+    'fence-remix' => fenceRemixWorkload(),
     'di-contextual' => diContextualWorkload(),
     'file-index-retention' => fileIndexRetentionWorkload(),
     'archive-security' => archiveSecurityWorkload(),
