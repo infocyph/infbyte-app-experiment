@@ -42,6 +42,7 @@ require __DIR__ . '/ecosystem-runtime-budget.php';
 require __DIR__ . '/ecosystem-messaging.php';
 require __DIR__ . '/ecosystem-messaging-events.php';
 require __DIR__ . '/ecosystem-messaging-ownership.php';
+require __DIR__ . '/ecosystem-business-reconciliation.php';
 require __DIR__ . '/ecosystem-smtp-faults.php';
 require __DIR__ . '/ecosystem-remote-order-recovery.php';
 require __DIR__ . '/ecosystem-remote.php';
@@ -332,6 +333,10 @@ match ($argv[1] ?? '') {
     'config-merge-contracts' => configMergeContracts(),
     'config-resilience' => configResilienceContracts(),
     'uid-ordering' => uidOrderingContracts(),
+    'business-cache-queue' => businessCacheQueueContracts(),
+    'business-receipt-redelivery' => businessReceiptRedeliveryContracts(),
+    'business-poison-queue' => businessPoisonQueueContracts(),
+    'business-failure-recovery' => businessFailureRecoveryContracts(),
     'otp-enrollment' => otpEnrollmentWorkload(),
     'scylla' => scyllaWorkload(),
     'redis-failover-seed' => redisFailoverWorkload(true),

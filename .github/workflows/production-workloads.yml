@@ -452,6 +452,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-business-cache-queue, backend: pgsql}
+          - {scenario: ecosystem-business-cache-queue, backend: mysql}
+          - {scenario: ecosystem-business-cache-queue, backend: mariadb}
+          - {scenario: ecosystem-business-cache-queue, backend: sqlite}
+          - {scenario: ecosystem-business-cache-queue, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-business-receipt-redelivery, backend: pgsql}
+          - {scenario: ecosystem-business-receipt-redelivery, backend: mysql}
+          - {scenario: ecosystem-business-receipt-redelivery, backend: mariadb}
+          - {scenario: ecosystem-business-receipt-redelivery, backend: sqlite}
+          - {scenario: ecosystem-business-receipt-redelivery, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-business-poison-queue, backend: pgsql}
+          - {scenario: ecosystem-business-poison-queue, backend: mysql}
+          - {scenario: ecosystem-business-poison-queue, backend: mariadb}
+          - {scenario: ecosystem-business-poison-queue, backend: sqlite}
+          - {scenario: ecosystem-business-poison-queue, backend: mssql, php: '8.4'}
+          - {scenario: ecosystem-business-failure-recovery, backend: pgsql}
+          - {scenario: ecosystem-business-failure-recovery, backend: mysql}
+          - {scenario: ecosystem-business-failure-recovery, backend: mariadb}
+          - {scenario: ecosystem-business-failure-recovery, backend: sqlite}
+          - {scenario: ecosystem-business-failure-recovery, backend: mssql, php: '8.4'}
           - {scenario: ecosystem-di-cache-parity-valkey, backend: pgsql}
           - {scenario: ecosystem-di-cache-parity-memcached, backend: pgsql}
           - {scenario: ecosystem-di-cache-parity-file, backend: pgsql}

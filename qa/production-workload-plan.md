@@ -681,3 +681,7 @@ I: 21 independent jobs: two OTP contracts across eight real authentication-state
 ## B157 — Utility and DI persistence contracts; engineering diagnostics
 
 I: 21 production rows and one separate engineering lane. Seven-store additional DI persistent cache parity, nine-store twelve-process independent warm cache reuse and release generation isolation; ArrayKit interleaved one-shot replay, bounded factory pipelines and replayed source failure, list/map config merge and resilient namespace corruption; oversized UID numeric ordering. PHPProbe syntax parallel/sequential, exclusions, timeout validation and SARIF remains separate engineering-only. CORE-01, TYPE, DATA, MEM, OPS-02, EXEC-03: source/matrix/dispatcher reviewed; hosted qualification pending. 739 routine rows; 11 PHPProbe modes; no upstream changes.
+
+## B158 — Cross-library business reconciliation across five SQL engines
+
+I: 20 independent jobs: transaction-bound query cache/queue visibility, expired-delivery recovery of a protected Pathwise receipt with SQL effect and shared Redis digest, poison SQL payload isolation and durable dead letter, and failed business transaction followed by failure-manager replay and independent consumer settlement. Controlled lease expiry represents worker loss before acknowledgement, not wire-level acknowledgement loss. CORE-01, DATA, SEC, MEM, EXEC-03: source and dispatcher/matrix reviewed; hosted qualification pending. 759 routine rows. No upstream changes.
