@@ -288,6 +288,10 @@ jobs:
           - {scenario: queue, backend: mysql}
           - {scenario: passkey, backend: pgsql}
           - {scenario: passkey, backend: mysql}
+          - {scenario: transfer, backend: pgsql, host: native, matcher: fused}
+          - {scenario: transfer, backend: pgsql, host: native, matcher: sharded}
+          - {scenario: transfer, backend: pgsql, host: fpm, php: '8.4', matcher: fused}
+          - {scenario: transfer, backend: pgsql, host: fpm, php: '8.4', matcher: sharded}
           - {scenario: http, backend: pgsql, host: native, matcher: fused}
           - {scenario: http, backend: pgsql, host: native, matcher: sharded}
           - {scenario: http, backend: mysql, host: native, matcher: fused}

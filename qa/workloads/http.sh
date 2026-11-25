@@ -12,6 +12,8 @@ php "$GITHUB_WORKSPACE/qa/workloads/prepare-http.php"
 if [[ "$SCENARIO" == browser ]]; then
   mkdir -p "$PROJECT/storage/lab-public"
   php -r 'file_put_contents($argv[1],str_repeat("0123456789abcdef",8192),LOCK_EX);' "$PROJECT/storage/lab-public/report.bin"
+elif [[ "$SCENARIO" == transfer ]]; then
+  mkdir -m 700 "$PROJECT/storage/lab-transfers"
 else
   php "$probe" setup
 fi
@@ -116,6 +118,13 @@ CONF
   return 1
 }
 start_host
+if [[ "$SCENARIO" == transfer ]]; then
+  php "$GITHUB_WORKSPACE/qa/workloads/transfer-client.php" | tee "$EVIDENCE/transfer.log"
+  stop_host
+  start_host
+  php "$GITHUB_WORKSPACE/qa/workloads/transfer-client.php" | tee "$EVIDENCE/transfer-replacement.log"
+  exit 0
+fi
 if [[ "$SCENARIO" == browser ]]; then
   client="$GITHUB_WORKSPACE/qa/workloads/browser-client.php"
   umask 077

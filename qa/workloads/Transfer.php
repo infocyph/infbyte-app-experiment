@@ -1,0 +1,66 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Experiment;
+
+use Infocyph\Webrick\Request\Core\UploadedFile;
+use Infocyph\Webrick\Request\Request;
+use Infocyph\Webrick\Response\Response;
+use RuntimeException;
+
+final class Transfer
+{
+    public static function upload(Request $request): Response
+    {
+        $body = $request->getParsedBody();
+        $document = $request->file('document');
+        $attachments = $request->file('attachments');
+        if (!is_array($body) || ($body['reference'] ?? null) !== 'lab-transfer'
+            || !$document instanceof UploadedFile || !is_array($attachments)
+            || count($attachments) !== 2 || !($attachments[0] ?? null) instanceof UploadedFile
+            || !($attachments[1] ?? null) instanceof UploadedFile) {
+            return Response::json(['error' => 'invalid multipart'], 422);
+        }
+        $files = [$document, $attachments[0], $attachments[1]];
+        foreach ($files as $file) {
+            $size = $file->getSize();
+            if ($file->getError() !== UPLOAD_ERR_OK || $size === null || $size > 262144) {
+                return Response::json(['error' => 'invalid file'], 422);
+            }
+        }
+
+        $results = [];
+        foreach ($files as $file) {
+            $target = dirname(__DIR__) . '/storage/lab-transfers/' . bin2hex(random_bytes(16));
+            $file->moveTo($target);
+            try {
+                $hash = hash_file('sha256', $target);
+                $size = filesize($target);
+                ensure(is_string($hash) && is_int($size) && $size === $file->getSize(), 'Moved file bytes differ.');
+                $rejected = false;
+                try {
+                    $file->getStream();
+                } catch (RuntimeException) {
+                    $rejected = true;
+                }
+                ensure($rejected, 'Moved upload remained readable.');
+                $results[] = ['bytes' => $size, 'sha256' => $hash];
+            } finally {
+                unlink($target);
+            }
+        }
+
+        return Response::json(['files' => $results], 201);
+    }
+
+    public static function events(): Response
+    {
+        return Response::stream(static function (): \Generator {
+            for ($sequence = 1; $sequence <= 64; ++$sequence) {
+                yield "id: $sequence\nevent: progress\ndata: " . json_encode(['sequence' => $sequence], JSON_THROW_ON_ERROR) . "\n\n";
+                usleep(5000);
+            }
+        }, headers: ['Content-Type' => 'text/event-stream']);
+    }
+}

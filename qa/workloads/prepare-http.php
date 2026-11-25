@@ -32,6 +32,7 @@ $addition = file_get_contents(__DIR__ . match (getenv('SCENARIO')) {
     'ecosystem-release-cutover' => '/release-routes.php',
     'ecosystem-tenants' => '/tenant-routes.php',
     'browser' => '/browser-routes.php',
+    'transfer' => '/transfer-routes.php',
     'ecosystem-connected', 'ecosystem-recovery' => '/connected-routes.php',
     'ecosystem-endurance' => '/endurance-routes.php',
     default => '/http-routes.php',

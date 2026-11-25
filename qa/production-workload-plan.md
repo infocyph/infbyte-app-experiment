@@ -321,3 +321,7 @@ I: all 252 existing routine scenario rows retained, partitioned by scenario fami
 ## B67 — distributed DBLayer query-cache generation race
 
 I: three independent MySQL/PostgreSQL/SQLite jobs with real shared Redis CacheLayer result cache. Twelve independently started PHP processes race each of two cold generations, each making cold and warm reads; require exactly one SQL execution per generation using DBLayer public statistics. Separate writer demonstrates transaction-local read bypass, rollback retaining the prior cached generation, committed balance conservation and cross-process invalidation. No library edits. Total routine rows 255 across shards; hosted verification pending. In-flight invalidation and further driver-specific cases remain open.
+
+## B68 — multipart and SSE across compiled application hosts
+
+I: four isolated native and FPM jobs (both fused/sharded). Real HTTP multipart text, binary and empty files, nested attachments, duplicate client filenames, random server-owned destinations, move ownership, exact digest/size, missing and oversized rejection and staging cleanup. Finite ordered SSE with media type, client abort and subsequent successful upload, repeated after host replacement. Does not claim server-side generator cancellation or end-to-end low-latency SSE flushing. 259 routine rows across three matrices plus two gRPC jobs; hosted qualification pending. No upstream changes.
