@@ -484,3 +484,51 @@ function intermixHelperBoundaryContracts(string $contract): void
     }
     echo "InterMix helper $contract passed\n";
 }
+
+function remixCallbackContracts(string $contract): void
+{
+    $record = new LabConditionalRecord();
+    $other = new LabConditionalRecord();
+    $calls = 0;
+    switch ($contract) {
+        case 'null-result':
+            $action = static function (LabConditionalRecord $target) use (&$calls): void {
+                ++$calls;
+                $target->increase(2);
+            };
+            verify($record->when(true, $action) === $record && $record->unless(false, $action) === $record
+                && $record->value === 4 && $calls === 2, 'Null callback result lost fluent identity.');
+            break;
+        case 'false-result':
+            verify($record->when(true, static fn(): bool => false) === false
+                && $record->unless(false, static fn(): int => 0) === 0
+                && $record->when(false, static fn() => throw new LogicException('Wrong branch'), static fn(): string => '') === '',
+                'Falsy explicit results were replaced by target.');
+            break;
+        case 'predicate-once':
+            $predicate = static function (LabConditionalRecord $target) use (&$calls): int {
+                ++$calls;
+
+                return $target->value;
+            };
+            $record->increase(3);
+            verify($record->when($predicate, static fn(LabConditionalRecord $target, int $value): int => $target->increase($value)) === 6
+                && $record->unless($predicate, static fn() => throw new LogicException('Wrong branch'), static fn($target, $value): int => $value) === 6
+                && $calls === 2, 'Predicate evaluated repeatedly or lost its captured value.');
+            break;
+        case 'tap-exception':
+            $failure = new DomainException('fixture');
+            try {
+                $record->tap(static fn() => throw $failure);
+                throw new LogicException('Tap swallowed callback failure.');
+            } catch (DomainException $caught) {
+                verify($caught === $failure, 'Tap exception identity changed.');
+            }
+            verify($record->tap()->increase(4) === $record && $record->value === 4, 'Tap proxy failed after callback exception.');
+            break;
+        default:
+            throw new InvalidArgumentException('Unknown Remix callback boundary.');
+    }
+    verify($other->value === 0, 'Conditional or tap callback changed unrelated owner.');
+    echo "Remix $contract callback contract passed\n";
+}

@@ -298,3 +298,51 @@ function responseCacheDirectiveContracts(string $backend): void
     }
     echo "Response cache $backend Expires, Date, Age, shared max-age and malformed directive boundaries passed\n";
 }
+
+function responseCacheCorsComposition(string $backend, string $contract): void
+{
+    [$store, $peer] = cacheContractPeers($backend, 'cors-composition');
+    $vary = $contract === 'inner-keyed' ? ['Origin'] : ['Accept'];
+    $one = new ResponseCacheMiddleware(store: $store, defaultVary: $vary, ttlSeconds: 60);
+    $two = new ResponseCacheMiddleware(store: $peer, defaultVary: $vary, ttlSeconds: 60);
+    $cors = new CorsMiddleware(origins: ['https://*.client.example.test'], methods: 'GET', allowHeaders: ['X-Order'], allowCredentials: true);
+    $calls = 0;
+    $origin = static function (Request $request) use (&$calls): Response {
+        return new Response(200, 'public-' . ++$calls, ['Content-Type' => 'text/plain', 'Cache-Control' => 'public, max-age=60']);
+    };
+    $send = static function (ResponseCacheMiddleware $cache, Request $request) use ($contract, $cors, $origin): Response {
+        return $contract === 'outer'
+            ? $cors($request, static fn(Request $r): Response => $cache($r, $origin))
+            : $cache($request, static fn(Request $r): Response => $cors($r, $origin));
+    };
+    $allowed = ['https://one.client.example.test', 'https://two.client.example.test'];
+    $origins = [...$allowed, 'https://foreign.example.test', ''];
+    foreach ($origins as $index => $value) {
+        $request = Request::fake(uri: 'https://lab.example/report', headers: $value === '' ? [] : ['Origin' => $value]);
+        $first = $send($one, $request);
+        $second = $send($two, $request);
+        $expected = $index < 2 ? $value : '';
+        foreach ([$first, $second] as $response) {
+            verify($response->getStatusCode() === 200 && $response->getHeaderLine('Access-Control-Allow-Origin') === $expected
+                && $response->getHeaderLine('Access-Control-Allow-Credentials') === ($expected === '' ? '' : 'true')
+                && in_array('origin', array_map(static fn(string $token): string => strtolower(trim($token)), explode(',', $response->getHeaderLine('Vary'))), true),
+                'CORS policy leaked or lost origin metadata on shared response.');
+        }
+        [$firstId, $secondId] = match ($contract) {
+            'outer' => [1, 1],
+            'inner-keyed' => [$index + 1, $index + 1],
+            'inner-unkeyed' => [2 * $index + 1, 2 * $index + 2],
+            default => throw new InvalidArgumentException('Unknown cache/CORS ordering.'),
+        };
+        verify($first->getStringBody() === 'public-' . $firstId && $second->getStringBody() === 'public-' . $secondId, 'CORS cache key or unsafe Vary policy differed.');
+    }
+    $expectedCalls = match ($contract) { 'outer' => 1, 'inner-keyed' => 4, 'inner-unkeyed' => 8 };
+    verify($calls === $expectedCalls, 'CORS composition origin count differed.');
+    $preflight = Request::fake(method: 'OPTIONS', uri: 'https://lab.example/report', headers: [
+        'Origin' => $allowed[0], 'Access-Control-Request-Method' => 'GET', 'Access-Control-Request-Headers' => 'X-Order',
+    ]);
+    verify($send($one, $preflight)->getStatusCode() === 204 && $calls === $expectedCalls, 'Preflight reached cached application.');
+    verifyHttpStatus(static fn() => $send($two, $preflight->withHeader('Origin', 'https://foreign.example.test')), 403);
+    verify($calls === $expectedCalls, 'Denied preflight reached application.');
+    echo "Shared $backend $contract CORS/cache ordering, origin isolation and preflight passed\n";
+}

@@ -94,6 +94,9 @@ class Handler(BaseHTTPRequestHandler):
         payload = self.rfile.read(length) if length else b""
         digest = hashlib.sha256(payload).hexdigest()
         key = self.headers.get("Idempotency-Key", "")
+        if self.headers.get("X-Lab-Proxy-Fixture") == "yes":
+            assert self.headers.get("Authorization") == "Bearer origin-only-token"
+            assert self.headers.get("Proxy-Authorization") is None
         identity = (self.command, digest, key)
         with lock:
             counts[path] = counts.get(path, 0) + 1

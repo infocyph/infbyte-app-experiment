@@ -15,7 +15,7 @@ for i in $(seq 1 100); do
 done
 export LAB_HTTP_PORT="$(php -r 'echo json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR)["port"];' "$root/ready.json")"
 export LAB_HTTP_OTHER="$(php -r 'echo json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR)["other"];' "$root/ready.json")"
-if [[ "$SCENARIO" == ecosystem-http-proxy ]]; then
+if [[ "$SCENARIO" == ecosystem-http-proxy || "$SCENARIO" == ecosystem-http-proxy-retry-* ]]; then
   export LAB_HTTP_PROXY=19082
   unset NO_PROXY no_proxy
   python3 "$GITHUB_WORKSPACE/qa/workloads/http-connect-peer.py" "$root" "$LAB_HTTP_PORT" "$LAB_HTTP_PROXY" > "$EVIDENCE/proxy-peer.log" 2>&1 &

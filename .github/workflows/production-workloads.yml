@@ -2082,6 +2082,33 @@ jobs:
           - {scenario: ecosystem-runwire-multiplex-goaway-4, backend: pgsql}
           - {scenario: ecosystem-runwire-multiplex-goaway-8, backend: pgsql}
           - {scenario: ecosystem-runwire-multiplex-goaway-16, backend: pgsql}
+          - {scenario: ecosystem-otp-redis-tls-factor-hotp-live, backend: pgsql}
+          - {scenario: ecosystem-otp-redis-tls-factor-mobile-live, backend: pgsql}
+          - {scenario: ecosystem-otp-redis-tls-factor-ocra-counter-live, backend: pgsql}
+          - {scenario: ecosystem-otp-redis-tls-factor-ocra-challenge-live, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-factor-hotp-live, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-factor-mobile-live, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-factor-ocra-counter-live, backend: pgsql}
+          - {scenario: ecosystem-otp-valkey-tls-factor-ocra-challenge-live, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-file-outer, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-file-inner-keyed, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-file-inner-unkeyed, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-sqlite-outer, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-sqlite-inner-keyed, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-sqlite-inner-unkeyed, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-pdo-outer, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-pdo-inner-keyed, backend: pgsql}
+          - {scenario: ecosystem-response-cache-cors-pdo-inner-unkeyed, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-status-503, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-method-post-unsafe, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-method-post-keyed, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-method-patch-keyed, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-cancel-preflight, backend: pgsql}
+          - {scenario: ecosystem-http-proxy-retry-cancel-during-wait, backend: pgsql}
+          - {scenario: ecosystem-intermix-remix-callback-null-result, backend: pgsql}
+          - {scenario: ecosystem-intermix-remix-callback-false-result, backend: pgsql}
+          - {scenario: ecosystem-intermix-remix-callback-predicate-once, backend: pgsql}
+          - {scenario: ecosystem-intermix-remix-callback-tap-exception, backend: pgsql}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

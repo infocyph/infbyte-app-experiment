@@ -26,7 +26,12 @@ if [[ "$SCENARIO" == ecosystem-otp-*-tls-* ]]; then
   export LAB_OTP_ELECTION_STATE="$root/otp-state.json"
   umask 077
   if [[ "$SCENARIO" == *-live ]]; then
-    php "$probe" otp-tls-live > "$EVIDENCE/otp-live.log" 2>&1 &
+    if [[ "$SCENARIO" == *-factor-*-live ]]; then
+      factor="${SCENARIO#*-factor-}"
+      php "$probe" otp-tls-factor-live "${factor%-live}" > "$EVIDENCE/otp-live.log" 2>&1 &
+    else
+      php "$probe" otp-tls-live > "$EVIDENCE/otp-live.log" 2>&1 &
+    fi
     otp_pid=$!
     trap 'kill "$otp_pid" 2>/dev/null || :; wait "$otp_pid" 2>/dev/null || :; docker rm -f "$name" >/dev/null 2>&1 || :; rm -rf "$root"' EXIT
     for attempt in {1..200}; do

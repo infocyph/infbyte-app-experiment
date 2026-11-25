@@ -8,7 +8,7 @@ use Infocyph\TalkingBytes\Http\HttpClient;
 use Infocyph\TalkingBytes\Http\HttpRequest;
 use Infocyph\TalkingBytes\Http\Retry\HttpRetryPolicy;
 
-function httpRetryMatrixContracts(string $group, string $contract): void
+function httpRetryMatrixContracts(string $group, string $contract, bool $throughProxy = false): void
 {
     $base = 'https://localhost:' . (int) getenv('LAB_HTTP_PORT');
     $ca = (string) getenv('LAB_HTTP_CA');
@@ -18,6 +18,12 @@ function httpRetryMatrixContracts(string $group, string $contract): void
         $method = 'post';
     }
     $request = HttpRequest::$method($base . $path)->caBundle($ca)->timeout(5)->header('Connection', 'close');
+    $proxyCounts = static fn(): array => json_decode((string) file_get_contents(getenv('LAB_HTTP_ROOT') . '/proxy-counts.json'), true, flags: JSON_THROW_ON_ERROR);
+    $before = $throughProxy ? $proxyCounts() : [];
+    if ($throughProxy) {
+        $request = $request->proxy('http://127.0.0.1:' . (int) getenv('LAB_HTTP_PROXY'))
+            ->proxyAuth('fixture', 'fixture-only-password')->withBearerToken('origin-only-token')->header('X-Lab-Proxy-Fixture', 'yes');
+    }
     $payload = "binary\x00order\xff";
     $hasBody = in_array($method, ['put', 'post', 'patch'], true);
     if ($hasBody) {
@@ -84,6 +90,11 @@ function httpRetryMatrixContracts(string $group, string $contract): void
         verify($waits === $expectedWaits, 'Retry-After/backoff/cap decision differs.');
     } elseif ($group === 'transport') {
         verify($waits === ($success ? [10000, 20000] : []), 'Transport retry backoff differs.');
+    }
+    if ($throughProxy) {
+        $after = $proxyCounts();
+        verify($after['accepted'] === $before['accepted'] + $attempts && $after['denied'] === $before['denied'],
+            'Authenticated tunnel multiplicity or admission differs.');
     }
     $ordinary = HttpClient::curl();
     $counts = $ordinary->send(HttpRequest::get($base . '/counts')->caBundle($ca))->response->json();

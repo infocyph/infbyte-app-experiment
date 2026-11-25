@@ -88,3 +88,54 @@ function otpTlsOfflineAdmission(): void
     verify($rejected, 'Stopped TLS authentication backend admitted new state.');
     echo "Fresh TLS authentication admission failed while service was stopped\n";
 }
+
+function otpTlsConnectedFactorContracts(string $factor): void
+{
+    $root = (string) getenv('LAB_CACHE_TLS_ROOT');
+    $options = new CacheOptions(integrityKey: random_bytes(32), failOpen: false);
+    $factory = static fn(): Cache => labOtpTlsCache('otp-tls-factor', $options);
+    $cache = $factory();
+    $key = random_bytes(32);
+    $secret = TOTP::generateSecret(32);
+    $at = intdiv(time(), 30) * 30;
+    $window = new VerificationWindow(0, 0);
+    $service = match ($factor) {
+        'hotp' => new \Infocyph\OTP\HOTP($secret),
+        'mobile' => new \Infocyph\OTP\MobileOTP(substr(bin2hex($key), 0, 16), '1234'),
+        'ocra-counter' => new \Infocyph\OTP\OCRA('OCRA-1:HOTP-SHA256-8:C-QN08', $key),
+        'ocra-challenge' => new \Infocyph\OTP\OCRA('OCRA-1:HOTP-SHA256-8:QN08', $key),
+        default => throw new InvalidArgumentException('Unknown connected TLS factor.'),
+    };
+    $admit = static function (Cache $store, bool $next, string $owner = 'factor') use ($factor, $service, $at, $window): bool {
+        $counter = $next ? 43 : 42;
+        $time = $at + ($next ? 30 : 0);
+        $question = $next ? '87654321' : '12345678';
+
+        return match ($factor) {
+            'hotp' => $service->verifyWithResult($service->generate($counter), counter: $counter, cache: $store, factorId: $owner)->matched,
+            'mobile' => $service->verifyWithWindow($service->generate($time), $time, $window, cache: $store, factorId: $owner)->matched,
+            'ocra-counter' => $service->verifyWithResult($service->generate($question, counter: $counter), $question, counter: $counter, cache: $store, factorId: $owner)->matched,
+            'ocra-challenge' => $service->verifyWithResult($service->generate($question), $question, cache: $store, factorId: $owner, replayTtl: 600)->matched,
+        };
+    };
+    verify($admit($cache, false) && !$admit($cache, false), 'Initial connected factor replay admission failed.');
+    verify(touch($root . '/otp-live-ready'), 'TLS factor readiness failed.');
+    otpTlsWait($root . '/otp-live-offline');
+    foreach ([false, true] as $next) {
+        $admitted = false;
+        try {
+            $admitted = $admit($cache, $next);
+        } catch (CacheBackendException|RedisException) {
+            // Native disconnected cache errors are an explicit fail-closed outcome.
+        }
+        verify(!$admitted, 'Disconnected TLS factor admitted a proof.');
+    }
+    verify(touch($root . '/otp-live-rejected'), 'TLS factor outage observation failed.');
+    otpTlsWait($root . '/otp-live-recovered');
+    $replacement = $factory();
+    verify(!$admit($replacement, false), 'Durable replay cursor regressed.');
+    $results = parallelRace(static fn(): int => (int) $admit($factory(), true), 'otp-tls-connected-factor', 12);
+    verify(array_sum($results) === 1 && !$admit($replacement, true), 'Recovered proof did not settle exactly once.');
+    verify($admit($replacement, true, 'foreign') && !$admit($replacement, true, 'foreign'), 'Recovered factor crossed account identity.');
+    echo "Connected $factor TLS outage and concurrent replay recovery passed\n";
+}
