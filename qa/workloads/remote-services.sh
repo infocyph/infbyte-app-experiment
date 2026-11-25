@@ -11,6 +11,7 @@ cleanup() {
 trap cleanup EXIT
 provision="$SCENARIO"
 case "$SCENARIO" in
+  ecosystem-*-archive-*) provision="${SCENARIO%-archive-*}" ;;
   ecosystem-gridfs-publication-before|ecosystem-gridfs-publication-after) provision=ecosystem-gridfs ;;
   ecosystem-ftp-rename-before|ecosystem-ftp-rename-after|ecosystem-ftp-interrupted-upload) provision=ecosystem-ftp ;;
   ecosystem-sftp2-interrupted-upload) provision=ecosystem-sftp2 ;;

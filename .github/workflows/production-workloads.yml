@@ -1138,6 +1138,42 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-s3-archive-selection, backend: pgsql}
+          - {scenario: ecosystem-s3-archive-collision, backend: pgsql}
+          - {scenario: ecosystem-s3-archive-encrypted, backend: pgsql}
+          - {scenario: ecosystem-s3-archive-traversal, backend: pgsql}
+          - {scenario: ecosystem-sftp-archive-selection, backend: pgsql}
+          - {scenario: ecosystem-sftp-archive-collision, backend: pgsql}
+          - {scenario: ecosystem-sftp-archive-encrypted, backend: pgsql}
+          - {scenario: ecosystem-sftp-archive-traversal, backend: pgsql}
+          - {scenario: ecosystem-ftp-archive-selection, backend: pgsql}
+          - {scenario: ecosystem-ftp-archive-collision, backend: pgsql}
+          - {scenario: ecosystem-ftp-archive-encrypted, backend: pgsql}
+          - {scenario: ecosystem-ftp-archive-traversal, backend: pgsql}
+          - {scenario: ecosystem-webdav-archive-selection, backend: pgsql}
+          - {scenario: ecosystem-webdav-archive-collision, backend: pgsql}
+          - {scenario: ecosystem-webdav-archive-encrypted, backend: pgsql}
+          - {scenario: ecosystem-webdav-archive-traversal, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-selection, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-collision, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-encrypted, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-traversal, backend: pgsql}
+          - {scenario: ecosystem-sftp2-archive-selection, backend: pgsql}
+          - {scenario: ecosystem-sftp2-archive-collision, backend: pgsql}
+          - {scenario: ecosystem-sftp2-archive-encrypted, backend: pgsql}
+          - {scenario: ecosystem-sftp2-archive-traversal, backend: pgsql}
+          - {scenario: ecosystem-async-s3-archive-selection, backend: pgsql}
+          - {scenario: ecosystem-async-s3-archive-collision, backend: pgsql}
+          - {scenario: ecosystem-async-s3-archive-encrypted, backend: pgsql}
+          - {scenario: ecosystem-async-s3-archive-traversal, backend: pgsql}
+          - {scenario: ecosystem-azure-archive-selection, backend: pgsql}
+          - {scenario: ecosystem-azure-archive-collision, backend: pgsql}
+          - {scenario: ecosystem-azure-archive-encrypted, backend: pgsql}
+          - {scenario: ecosystem-azure-archive-traversal, backend: pgsql}
+          - {scenario: ecosystem-gcs-archive-selection, backend: pgsql}
+          - {scenario: ecosystem-gcs-archive-collision, backend: pgsql}
+          - {scenario: ecosystem-gcs-archive-encrypted, backend: pgsql}
+          - {scenario: ecosystem-gcs-archive-traversal, backend: pgsql}
           - {scenario: ecosystem-signed-compiled-permanent, backend: pgsql, matcher: fused}
           - {scenario: ecosystem-signed-compiled-permanent, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-signed-compiled-temporary, backend: pgsql, matcher: fused}

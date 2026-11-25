@@ -828,3 +828,7 @@ I: 22 independently executable compiled-kernel lanes (11 contracts on fused/shar
 ## B192 — Published PHPProbe configuration and governance boundaries
 
 I: six independent engineering-only lanes (17 total engineering modes): real CLI configuration path replacement and exclusion augmentation, invalid schema/root and init no-overwrite/force behavior, syntax gate subprocess/report isolation, scoped custom comment rules and overrides, valid/unknown/expired/dead suppression governance, graph portable root/output rejection. Fixture-only policy suppressions are deliberately tested, not applied to repository gates. CORE-01, DATA, OPS, EXEC-03: source and dispatch reviewed; hosted execution pending. Routine production rows unchanged at 1247.
+
+## B193 — Remote archive publication and extraction boundaries
+
+I: 36 independently executable real remote-storage lanes (four ZIP contracts on nine existing protocol/provider fixtures): native independent archive inspection and selective extraction, pre-existing target rejection without partial publication and explicit retry, AES-256/password rejection and valid recovery, and malicious traversal preflight with exact independent target manifest. Actual remote archive staging, separate client observations, source and tenant namespace invariants; no provider certification for emulators. CORE-01, SEC, DATA, OPS, EXEC-03: source, matrix and dispatch reviewed; hosted execution pending. No upstream changes. 1283 routine rows.

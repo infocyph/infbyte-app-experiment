@@ -2,6 +2,7 @@
 set -euo pipefail
 bash "$GITHUB_WORKSPACE/qa/workloads/database-init.sh"
 case "$SCENARIO" in
+  ecosystem-s3-archive-*|ecosystem-sftp-archive-*|ecosystem-ftp-archive-*|ecosystem-webdav-archive-*|ecosystem-gridfs-archive-*|ecosystem-sftp2-archive-*|ecosystem-async-s3-archive-*|ecosystem-azure-archive-*|ecosystem-gcs-archive-*) bash "$GITHUB_WORKSPACE/qa/workloads/remote-services.sh" ;;
   ecosystem-cache-scylla-tls-*) bash "$GITHUB_WORKSPACE/qa/workloads/scylla-tls.sh" ;;
   ecosystem-cache-redis-cluster-tls-*) bash "$GITHUB_WORKSPACE/qa/workloads/cluster-tls.sh" ;;
   ecosystem-cache-mongodb-tls-trust|ecosystem-cache-mongodb-tls-atomic|ecosystem-cache-mongodb-tls-restart|ecosystem-sqs-tls-contracts) bash "$GITHUB_WORKSPACE/qa/workloads/remote-tls.sh" ;;
