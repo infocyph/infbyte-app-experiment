@@ -32,6 +32,8 @@ case "$SCENARIO" in
   ecosystem-wire-outbound-h3) bash "$GITHUB_WORKSPACE/qa/workloads/outbound-h3.sh" ;;
   ecosystem-wire-*) bash "$GITHUB_WORKSPACE/qa/workloads/wire.sh" ;;
   ecosystem-module-*) bash "$GITHUB_WORKSPACE/qa/workloads/module-matrix.sh" ;;
+  ecosystem-otp-cluster-*) bash "$GITHUB_WORKSPACE/qa/workloads/otp-cluster-election.sh" ;;
+  ecosystem-amqp-quorum-*) bash "$GITHUB_WORKSPACE/qa/workloads/amqp-quorum.sh" ;;
   ecosystem-amqp-tls) bash "$GITHUB_WORKSPACE/qa/workloads/broker-tls.sh" ;;
   ecosystem-amqp-crash|ecosystem-sqs-fifo-groups|ecosystem-sqs-visibility-recovery|ecosystem-amqp|ecosystem-sqs|ecosystem-amqp-dlq|ecosystem-sqs-fifo|ecosystem-sqs-redrive|ecosystem-amqp-ack-uncertain|ecosystem-amqp-wire-ack|ecosystem-sqs-ack-uncertain|ecosystem-sqs-wire-ack|ecosystem-amqp-consumer-failures|ecosystem-sqs-consumer-failures) bash "$GITHUB_WORKSPACE/qa/workloads/brokers.sh" ;;
   ecosystem-imap|ecosystem-pop3) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox.sh" ;;

@@ -1420,6 +1420,28 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-otp-cluster-redis-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-redis-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-generic, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-hotp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-totp, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-mobile, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-ocra-counter, backend: pgsql}
+          - {scenario: ecosystem-otp-cluster-valkey-ocra-challenge, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-leader, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-leader, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-leader, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-leader, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-leader, backend: mssql}
+          - {scenario: ecosystem-amqp-quorum-follower, backend: pgsql}
+          - {scenario: ecosystem-amqp-quorum-follower, backend: mysql}
+          - {scenario: ecosystem-amqp-quorum-follower, backend: mariadb}
+          - {scenario: ecosystem-amqp-quorum-follower, backend: sqlite}
+          - {scenario: ecosystem-amqp-quorum-follower, backend: mssql}
           - {scenario: ecosystem-closure-boundary-exact-bound, backend: pgsql}
           - {scenario: ecosystem-closure-boundary-prefix, backend: pgsql}
           - {scenario: ecosystem-closure-boundary-encoding, backend: pgsql}

@@ -98,6 +98,7 @@ require __DIR__ . '/ecosystem-validation-casts.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
 require __DIR__ . '/ecosystem-broker-boundaries.php';
 require __DIR__ . '/ecosystem-broker-recovery.php';
+require __DIR__ . '/ecosystem-topology-closure.php';
 require __DIR__ . '/ecosystem-http-transfer.php';
 require __DIR__ . '/ecosystem-http-boundaries.php';
 require __DIR__ . '/ecosystem-http-retry-matrix.php';
@@ -157,6 +158,10 @@ match ($argv[1] ?? '') {
     'cache-mongodb-tls-offline' => mongoTlsContracts('offline'),
     'cache-mongodb-tls-seed' => mongoTlsContracts('seed'),
     'cache-mongodb-tls-recover' => mongoTlsContracts('recover'),
+    'amqp-quorum-seed' => amqpQuorumPhase(true),
+    'amqp-quorum-verify' => amqpQuorumPhase(false),
+    'otp-cluster-promotion-seed' => otpClusterPromotionWorkload(true, (string) ($argv[2] ?? '')),
+    'otp-cluster-promotion-verify' => otpClusterPromotionWorkload(false, (string) ($argv[2] ?? '')),
     'amqp-crash-seed' => amqpCrashContracts(true),
     'amqp-crash-recover' => amqpCrashContracts(false),
     'sqs-fifo-groups' => sqsOwnershipContracts('fifo-groups'),
