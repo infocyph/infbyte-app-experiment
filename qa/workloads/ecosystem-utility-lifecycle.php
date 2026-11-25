@@ -254,3 +254,233 @@ function remixCompositionWorkload(): void
     verify(LabFenceLimit::countInstances() === 0, 'Invalid requirements published an instance.');
     echo "Conditional and tap proxies, macro mix and annotation atomicity, Fence requirement and override lifecycle passed\n";
 }
+
+final class LabUnlockedMacroBoundary
+{
+    use MacroMix;
+
+    private int $total = 0;
+
+    public function total(): int
+    {
+        return $this->total;
+    }
+}
+
+final class LabLockedMacroBoundary
+{
+    use MacroMix;
+
+    public const ENABLE_LOCK = true;
+
+    private int $total = 0;
+
+    public function total(): int
+    {
+        return $this->total;
+    }
+}
+
+final class LabMacroCallable
+{
+    public int $calls = 0;
+
+    public function __invoke(int $value): int
+    {
+        ++$this->calls;
+
+        return $value * 2;
+    }
+
+    public function touch(int $value): void
+    {
+        $this->calls += $value;
+    }
+}
+
+function remixMacroBoundaryContracts(bool $locked, string $contract): void
+{
+    $class = $locked ? LabLockedMacroBoundary::class : LabUnlockedMacroBoundary::class;
+    $other = $locked ? LabUnlockedMacroBoundary::class : LabLockedMacroBoundary::class;
+    $one = new $class();
+    $two = new $class();
+    $callable = new LabMacroCallable();
+    try {
+        switch ($contract) {
+            case 'private-binding':
+                $class::macro('increase', function (int $value): void { $this->total += $value; });
+                verify($one->increase(7) === $one && $two->increase(3) === $two && $one->total() === 7 && $two->total() === 3, 'Bound macro crossed instance or private scope.');
+                break;
+            case 'static-denial':
+                $class::macro('increase', function (int $value): void { $this->total += $value; });
+                expectFailure(static fn() => $class::increase(5), BadMethodCallException::class, 'Unbound static invocation admitted.');
+                verify($one->total() === 0 && $one->increase(4)->total() === 4, 'Static rejection damaged callable state.');
+                break;
+            case 'replacement':
+                $class::macro('value', function (): int { return $this->total; });
+                verify($one->value() === 0, 'Initial bound closure failed.');
+                $class::macro('value', static fn(): int => 15);
+                verify($class::value() === 15 && $one->value() === 15, 'Replacement retained closure binding metadata.');
+                $class::macro('value', $callable);
+                verify($class::value(6) === 12 && $one->value(7) === 14 && $callable->calls === 2, 'Callable replacement retained stale metadata.');
+                break;
+            case 'invokable':
+                $class::macro('double', $callable);
+                verify($class::double(3) === 6 && $one->double(9) === 18 && $callable->calls === 2, 'Invokable state or result changed.');
+                break;
+            case 'array-callable':
+                $class::macro('touch', [$callable, 'touch']);
+                verify($one->touch(2) === $one && $class::touch(3) === $class && $callable->calls === 5, 'Void callable return or owner differs.');
+                break;
+            case 'first-class':
+                $class::macro('touch', $callable->touch(...));
+                expectFailure(static fn() => $one->touch(2), BadMethodCallException::class, 'Non-bindable first-class closure was rebound.');
+                verify($callable->calls === 0, 'Rejected closure executed.');
+                $class::macro('touch', [$callable, 'touch']);
+                verify($one->touch(3) === $one && $callable->calls === 3, 'Valid callable failed after rejected closure.');
+                break;
+            case 'registry-isolation':
+                $class::macro('value', static fn(): string => 'first');
+                $other::macro('value', static fn(): string => 'second');
+                verify($class::value() === 'first' && $other::value() === 'second', 'Separate consumer classes shared a registry.');
+                $class::removeMacro('unknown');
+                $class::removeMacro('value');
+                expectFailure(static fn() => $one->value(), BadMethodCallException::class, 'Removed macro remained callable.');
+                verify(!$class::hasMacro('value') && $other::value() === 'second', 'Removal crossed a consumer class.');
+                break;
+            case 'exception-recovery':
+                $failure = new DomainException('fixture');
+                $class::macro('operation', static fn() => throw $failure);
+                try {
+                    $one->operation();
+                    throw new LogicException('Macro exception swallowed.');
+                } catch (DomainException $caught) {
+                    verify($caught === $failure, 'Macro exception identity changed.');
+                }
+                $class::macro('operation', static fn(): int => 42);
+                verify($class::operation() === 42 && $one->operation() === 42, 'Macro failed after exception.');
+                break;
+            default:
+                throw new InvalidArgumentException('Unknown macro boundary.');
+        }
+    } finally {
+        foreach ([$class, $other] as $owner) {
+            foreach (array_keys($owner::getMacros()) as $name) {
+                $owner::removeMacro($name);
+            }
+            verify($owner::getMacros() === [], 'Macro registry cleanup failed.');
+        }
+    }
+    echo "Remix $contract (lock " . ($locked ? 'on' : 'off') . ") passed\n";
+}
+
+final class LabFenceConstructionBoundary
+{
+    use Limit;
+
+    public static bool $reject = true;
+
+    public function __construct()
+    {
+        if (self::$reject) {
+            throw new DomainException('constructor failure');
+        }
+    }
+}
+
+function intermixHelperBoundaryContracts(string $contract): void
+{
+    require_once getenv('PROJECT') . '/vendor/infocyph/intermix/src/functions.php';
+    switch ($contract) {
+        case 'fence-constructor':
+            LabFenceConstructionBoundary::reset();
+            expectFailure(static fn() => LabFenceConstructionBoundary::instance('failed'), DomainException::class, 'Constructor failure swallowed.');
+            verify(LabFenceConstructionBoundary::countInstances() === 0 && !LabFenceConstructionBoundary::hasInstance('failed'), 'Failed construction allocated a slot.');
+            LabFenceConstructionBoundary::$reject = false;
+            $one = LabFenceConstructionBoundary::instance('failed');
+            verify($one === LabFenceConstructionBoundary::instance('failed') && LabFenceConstructionBoundary::countInstances() === 1, 'Construction recovery failed.');
+            LabFenceConstructionBoundary::reset();
+            break;
+        case 'fence-default-key':
+            LabFenceMulti::reset();
+            $one = LabFenceMulti::instance(null);
+            verify($one === LabFenceMulti::instance() && $one === LabFenceMulti::instance('default') && LabFenceMulti::hasInstance(null), 'Default and null slots diverged.');
+            verify(LabFenceMulti::instance('') !== $one && LabFenceMulti::getKeys() === ['default', ''], 'Explicit empty key was normalized to default.');
+            LabFenceMulti::reset();
+            break;
+        case 'fence-limit-shrink':
+            LabFenceLimit::reset();
+            LabFenceLimit::setLimit(3);
+            $one = LabFenceLimit::instance('one');
+            LabFenceLimit::instance('two');
+            LabFenceLimit::setLimit(1);
+            verify(LabFenceLimit::countInstances() === 2 && LabFenceLimit::instance('one') === $one, 'Limit reduction evicted a live owner.');
+            expectFailure(static fn() => LabFenceLimit::instance('three'), LimitExceededException::class, 'Reduced limit admitted another owner.');
+            LabFenceLimit::clearInstances();
+            LabFenceLimit::instance('new');
+            expectFailure(static fn() => LabFenceLimit::instance('extra'), LimitExceededException::class, 'Clear removed the limit override.');
+            LabFenceLimit::reset();
+            break;
+        case 'fence-late-class':
+            LabFenceMulti::reset();
+            $name = 'LabLateRequirementBoundary';
+            $constraints = ['classes' => [$name], 'extensions' => ['JSON']];
+            expectFailure(static fn() => LabFenceMulti::instance('late', $constraints), RequirementException::class, 'Missing class accepted.');
+            class_alias(LabMacroCallable::class, $name);
+            verify(LabFenceMulti::instance('late', $constraints) === LabFenceMulti::instance('late'), 'Negative class lookup was retained after availability changed.');
+            LabFenceMulti::reset();
+            break;
+        case 'retry-exhaustion':
+            $calls = [];
+            $failures = [new RuntimeException('one'), new RuntimeException('two'), new RuntimeException('three')];
+            try {
+                retry(3, static function (int $attempt) use (&$calls, $failures): never {
+                    $calls[] = $attempt;
+                    throw $failures[$attempt - 1];
+                });
+                throw new LogicException('Retry exhaustion swallowed.');
+            } catch (RuntimeException $caught) {
+                verify($caught === $failures[2] && $calls === [1, 2, 3], 'Final error identity or attempt budget differs.');
+            }
+            break;
+        case 'retry-backoff':
+            $times = [];
+            $value = retry(3, static function (int $attempt) use (&$times): int {
+                $times[] = hrtime(true);
+                if ($attempt < 3) {
+                    throw new RuntimeException('transient');
+                }
+
+                return 42;
+            }, delayMs: 10, backoff: 2.0);
+            verify($value === 42 && count($times) === 3 && $times[1] - $times[0] >= 10_000_000 && $times[2] - $times[1] >= 20_000_000, 'Monotonic retry backoff was not applied.');
+            break;
+        case 'retry-predicate':
+            $attempts = [];
+            $observed = [];
+            $transient = new RuntimeException('transient');
+            $permanent = new DomainException('permanent');
+            try {
+                retry(4, static function (int $attempt) use (&$attempts, $transient, $permanent): never {
+                    $attempts[] = $attempt;
+                    throw $attempt === 1 ? $transient : $permanent;
+                }, static function (Throwable $error) use (&$observed): bool {
+                    $observed[] = $error;
+
+                    return $error instanceof RuntimeException;
+                });
+                throw new LogicException('Permanent failure swallowed.');
+            } catch (DomainException $caught) {
+                verify($caught === $permanent && $attempts === [1, 2] && $observed === [$transient, $permanent], 'Retry predicate or error identity differs.');
+            }
+            break;
+        case 'retry-invalid-budget':
+            $called = false;
+            expectFailure(static function () use (&$called): void { retry(0, static function () use (&$called): void { $called = true; }); }, InvalidArgumentException::class, 'Invalid retry budget accepted.');
+            verify(!$called && retry(1, static fn(int $attempt): int => $attempt) === 1, 'Invalid budget executed work or affected next invocation.');
+            break;
+        default:
+            throw new InvalidArgumentException('Unknown helper boundary.');
+    }
+    echo "InterMix helper $contract passed\n";
+}

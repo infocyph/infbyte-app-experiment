@@ -938,3 +938,7 @@ I: 20 independent lanes (two actual peer ALPN versions × strict, preferred/reve
 ## B228 — Native H2 shared-socket concurrent stream settlement
 
 I: 20 independent native TLS lanes (2/4/8/16 concurrent streams × reverse response order, mixed HEAD/GET, peer RST, token cancellation, flow-control saturation). Real hyper-h2 server observes one socket, odd stream IDs, request methods/authority, native reset and WINDOW_UPDATE-dependent progress, and a new request on the original socket. Client checks exact per-stream bytes, independent errors, single terminal settlement, capacity and origin rejection, active-count recovery, and loop teardown. CORE-01, SEC, REQUEST, OPS, EXEC-03: API and fixture dispatch/matrix inspected; hosted execution pending. 2,089 routine rows, 1,262 distinct scenario names, 41 engineering modes.
+
+## B229 — InterMix helper ownership, locked macro mutation and retry boundaries
+
+I: 24 independent lanes: eight callable ownership/replacement/error/recovery contracts with real MacroMix mutation locking enabled and disabled, four Fence constructor/default-key/limit/class-availability transitions, and four retry attempt/exhaustion/predicate/backoff contracts. Explicit instance and class isolation, exact exception identity, no rejected mutation side effects, cleanup and monotonic lower-bound timing assertions; no timing upper bound or throughput claim. CORE-01, TYPE, SEC, OPS, EXEC-03: source/dispatch and inventory inspected; hosted execution pending. 2,113 routine rows, 1,286 distinct scenario names, 41 engineering modes.

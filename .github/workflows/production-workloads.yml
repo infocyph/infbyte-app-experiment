@@ -2021,6 +2021,30 @@ jobs:
           - {scenario: ecosystem-runwire-multiplex-flow-4, backend: pgsql}
           - {scenario: ecosystem-runwire-multiplex-flow-8, backend: pgsql}
           - {scenario: ecosystem-runwire-multiplex-flow-16, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-unlocked-private-binding, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-unlocked-static-denial, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-unlocked-replacement, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-unlocked-invokable, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-unlocked-array-callable, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-unlocked-first-class, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-unlocked-registry-isolation, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-unlocked-exception-recovery, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-locked-private-binding, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-locked-static-denial, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-locked-replacement, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-locked-invokable, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-locked-array-callable, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-locked-first-class, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-locked-registry-isolation, backend: pgsql}
+          - {scenario: ecosystem-intermix-macro-locked-exception-recovery, backend: pgsql}
+          - {scenario: ecosystem-intermix-helper-fence-constructor, backend: pgsql}
+          - {scenario: ecosystem-intermix-helper-fence-default-key, backend: pgsql}
+          - {scenario: ecosystem-intermix-helper-fence-limit-shrink, backend: pgsql}
+          - {scenario: ecosystem-intermix-helper-fence-late-class, backend: pgsql}
+          - {scenario: ecosystem-intermix-helper-retry-exhaustion, backend: pgsql}
+          - {scenario: ecosystem-intermix-helper-retry-backoff, backend: pgsql}
+          - {scenario: ecosystem-intermix-helper-retry-predicate, backend: pgsql}
+          - {scenario: ecosystem-intermix-helper-retry-invalid-budget, backend: pgsql}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}
