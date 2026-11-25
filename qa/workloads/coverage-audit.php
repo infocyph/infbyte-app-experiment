@@ -71,7 +71,7 @@ function auditMatrix(string $repository, string $workloads): array
             auditAssert(is_file($workloads . '/' . $script), 'Dispatcher script not found: ' . $script);
         }
     }
-    preg_match_all('/^\h{2}(database|database-expansion|ecosystem|ecosystem-extra|ecosystem-residual|ecosystem-expansion|application):\h*\n(.*?)(?=^ {2}\S|\z)/ms', $workflow, $shards, PREG_SET_ORDER);
+    preg_match_all('/^\h{2}(database|database-expansion|ecosystem|ecosystem-extra|ecosystem-residual|ecosystem-expansion|ecosystem-closure|application):\h*\n(.*?)(?=^ {2}\S|\z)/ms', $workflow, $shards, PREG_SET_ORDER);
     $shardCounts = [];
     foreach ($shards as $shard) {
         preg_match_all('/^\h*-\h*\{scenario:\h*([^,}]+)/m', $shard[2], $entries);
@@ -79,11 +79,11 @@ function auditMatrix(string $repository, string $workloads): array
         foreach ($entries[1] as $name) {
             $name = trim($name);
             $expected = str_starts_with($name, 'db-') ? 'database' : (str_starts_with($name, 'ecosystem-') ? 'ecosystem' : 'application');
-            auditAssert($expected === $shard[1] || ($expected === 'database' && $shard[1] === 'database-expansion') || ($expected === 'ecosystem' && in_array($shard[1], ['ecosystem-extra', 'ecosystem-residual', 'ecosystem-expansion'], true)), 'Scenario assigned to wrong shard: ' . $name);
+            auditAssert($expected === $shard[1] || ($expected === 'database' && $shard[1] === 'database-expansion') || ($expected === 'ecosystem' && in_array($shard[1], ['ecosystem-extra', 'ecosystem-residual', 'ecosystem-expansion', 'ecosystem-closure'], true)), 'Scenario assigned to wrong shard: ' . $name);
         }
         $shardCounts[$shard[1]] = count($entries[1]);
     }
-    auditAssert(count($shardCounts) === 7 && array_sum($shardCounts) === count($rows), 'Incomplete matrix shard inventory.');
+    auditAssert(count($shardCounts) === 8 && array_sum($shardCounts) === count($rows), 'Incomplete matrix shard inventory.');
     ksort($scenarios);
 
     return ['matrix_rows' => count($rows), 'matrix_shards' => $shardCounts, 'unique_scenarios' => array_keys($scenarios), 'rows' => array_values($rows)];

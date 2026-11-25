@@ -1414,6 +1414,45 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
       php: ${{ matrix.php || '8.6' }}
 
+  ecosystem-closure:
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-host-budget-request, backend: pgsql, host: fpm, php: '8.4'}
+          - {scenario: ecosystem-host-budget-request, backend: pgsql, host: frankenphp}
+          - {scenario: ecosystem-host-budget-request, backend: pgsql, host: roadrunner}
+          - {scenario: ecosystem-host-budget-request, backend: pgsql, host: swoole, php: '8.5'}
+          - {scenario: ecosystem-host-budget-request, backend: pgsql, host: openswoole, php: '8.6'}
+          - {scenario: ecosystem-host-budget-single, backend: pgsql, host: fpm, php: '8.4'}
+          - {scenario: ecosystem-host-budget-single, backend: pgsql, host: frankenphp}
+          - {scenario: ecosystem-host-budget-single, backend: pgsql, host: roadrunner}
+          - {scenario: ecosystem-host-budget-single, backend: pgsql, host: swoole, php: '8.5'}
+          - {scenario: ecosystem-host-budget-single, backend: pgsql, host: openswoole, php: '8.6'}
+          - {scenario: ecosystem-host-budget-split, backend: pgsql, host: fpm, php: '8.4'}
+          - {scenario: ecosystem-host-budget-split, backend: pgsql, host: frankenphp}
+          - {scenario: ecosystem-host-budget-split, backend: pgsql, host: roadrunner}
+          - {scenario: ecosystem-host-budget-split, backend: pgsql, host: swoole, php: '8.5'}
+          - {scenario: ecosystem-host-budget-split, backend: pgsql, host: openswoole, php: '8.6'}
+          - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: fpm, php: '8.4'}
+          - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: frankenphp}
+          - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: roadrunner}
+          - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: swoole, php: '8.5'}
+          - {scenario: ecosystem-host-budget-overflow, backend: pgsql, host: openswoole, php: '8.6'}
+          - {scenario: ecosystem-host-budget-head, backend: pgsql, host: fpm, php: '8.4'}
+          - {scenario: ecosystem-host-budget-head, backend: pgsql, host: frankenphp}
+          - {scenario: ecosystem-host-budget-head, backend: pgsql, host: roadrunner}
+          - {scenario: ecosystem-host-budget-head, backend: pgsql, host: swoole, php: '8.5'}
+          - {scenario: ecosystem-host-budget-head, backend: pgsql, host: openswoole, php: '8.6'}
+    uses: ./.github/workflows/production-worker.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+      php: ${{ matrix.php || '8.6' }}
+
   application:
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
