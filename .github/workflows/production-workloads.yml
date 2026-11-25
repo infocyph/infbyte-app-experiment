@@ -190,6 +190,7 @@ jobs:
           - {scenario: ecosystem-fence-remix, backend: pgsql}
           - {scenario: ecosystem-di-contextual, backend: pgsql}
           - {scenario: ecosystem-di-factories, backend: pgsql}
+          - {scenario: ecosystem-di-graph-failures, backend: pgsql}
           - {scenario: ecosystem-di-preload, backend: pgsql}
           - {scenario: ecosystem-di-cache, backend: pgsql}
           - {scenario: ecosystem-di-cache-outage, backend: pgsql}

@@ -501,3 +501,7 @@ I: real SQL Server/ODBC lane enables READ_COMMITTED_SNAPSHOT and verifies the da
 ## B112 — ReqShield sanitizer contracts and nested pipeline composition
 
 I: independent sanitizer lane checks 40 direct/named/compiled cases with explicit expected values, optional currency/slug/tag/truncation parameters, malformed and recursive JSON, batch operation, 300 distinct named pipelines across bounded cache eviction, retained compiled pipeline after clear and unknown-name rejection. Mutable and compiled validation must agree on overlapping direct and nested wildcard transformations without mutating caller input or retaining state. Sanitizers are not security validators or HTML allow-list security boundaries. 369 routine rows; hosted qualification pending (TYPE, DATA, EXEC-03).
+
+## B113 — InterMix graph rejection, recovery and release artifact preservation
+
+I: independent DI lane checks missing aliases, cyclic aliases, invalid named constructor arguments and property metadata, strict validation, dynamic/compiled build rejection, immutable prior artifact digest and usability, repair of the rejected mutable builder, and dynamic/compiled parity after correction. Transitive singleton-to-scoped capture must be rejected while scoped roots resolve correctly across successful and failed request scopes. 370 routine rows; hosted qualification pending (TYPE, CONFIG, OPS, EXEC-03).

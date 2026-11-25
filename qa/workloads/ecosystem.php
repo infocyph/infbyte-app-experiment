@@ -116,6 +116,7 @@ match ($argv[1] ?? '') {
     'fence-remix' => fenceRemixWorkload(),
     'di-contextual' => diContextualWorkload(),
     'di-factories' => diFactoriesWorkload(),
+    'di-graph-failures' => diGraphFailuresWorkload(),
     'di-cache' => diCacheWorkload(),
     'di-cache-outage' => diCacheOutageWorkload(),
     'di-attributes' => diAttributesWorkload(),

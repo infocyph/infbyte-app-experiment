@@ -104,3 +104,77 @@ function diFactoriesWorkload(): void
     expectFailure(static fn() => $preloadBuilder->value('later', true), ContainerException::class, 'Preload did not finalize the graph.');
     echo "Compiled constructor/static factories, frozen graph, all runtime lifetimes, alias/tag ownership, rejected recipes and preload generation passed\n";
 }
+
+final class LabGraphScoped {}
+
+final readonly class LabGraphIntermediate
+{
+    public function __construct(public LabGraphScoped $dependency) {}
+}
+
+final readonly class LabGraphRoot
+{
+    public function __construct(public LabGraphIntermediate $intermediate) {}
+}
+
+function diGraphFailuresWorkload(): void
+{
+    $root = evidenceDirectory();
+    $artifact = $root . '/stable-graph.php';
+    $stable = ContainerBuilder::create('stable-graph')->value('tenant', 'alpha');
+    $report = $stable->compile($artifact, strict: true);
+    $digest = $report['digest'];
+    verify(hash_file('sha256', $artifact) === $digest, 'Initial artifact digest mismatch.');
+
+    $invalid = ContainerBuilder::create('invalid-graph')
+        ->alias('dangling', 'missing-service')
+        ->alias('cycle-a', 'cycle-b')->alias('cycle-b', 'cycle-a')
+        ->autowire('bad-argument', LabFactoryProduct::class, ['unknown' => 'bad'])
+        ->autowire('bad-property', LabGraphScoped::class, properties: ['unknown' => true]);
+    $issues = implode("\n", $invalid->validate());
+    foreach (['dangling', 'missing-service', 'cycle-a', 'cycle-b', 'bad-argument', 'bad-property'] as $identifier) {
+        verify(str_contains($issues, $identifier), 'Graph diagnostic missing: ' . $identifier);
+    }
+    expectFailure(static fn() => $invalid->validate(strict: true), ContainerException::class, 'Strict validation accepted malformed graph.');
+    expectFailure(static fn() => $invalid->build(), ContainerException::class, 'Dynamic runtime accepted malformed graph.');
+    expectFailure(static fn() => $invalid->compile($artifact, strict: true), ContainerException::class, 'Compiler accepted malformed graph.');
+    verify(hash_file('sha256', $artifact) === $digest && $stable->productionPrevalidated($artifact, $digest)->get('tenant') === 'alpha', 'Rejected build damaged the active artifact.');
+
+    $invalid->value('missing-service', 'resolved')
+        ->unbind('cycle-b')->value('cycle-b', 'cycle-resolved')
+        ->unbind('bad-argument')->autowire('bad-argument', LabFactoryProduct::class, ['tenant' => 'alpha', 'options' => []])
+        ->unbind('bad-property')->autowire('bad-property', LabGraphScoped::class);
+    verify($invalid->validate() === [], 'Corrected graph retained earlier diagnostics.');
+    $recoveredPath = $root . '/recovered-graph.php';
+    $invalid->compile($recoveredPath, strict: true);
+    foreach ([$invalid->build(), $invalid->production($recoveredPath)] as $runtime) {
+        verify($runtime->get('dangling') === 'resolved' && $runtime->get('cycle-a') === 'cycle-resolved', 'Corrected aliases failed.');
+        verify($runtime->get('bad-argument')->tenant === 'alpha' && $runtime->get('bad-property') instanceof LabGraphScoped, 'Corrected autowiring failed.');
+    }
+
+    $graph = static fn(LifetimeEnum $rootLifetime): ContainerBuilder => ContainerBuilder::create('captive-' . $rootLifetime->name)
+        ->autowire(LabGraphScoped::class, LabGraphScoped::class, lifetime: LifetimeEnum::Scoped)
+        ->autowire(LabGraphIntermediate::class, LabGraphIntermediate::class, lifetime: LifetimeEnum::Transient)
+        ->autowire(LabGraphRoot::class, LabGraphRoot::class, lifetime: $rootLifetime);
+    $captive = $graph(LifetimeEnum::Singleton);
+    expectFailure(static fn() => $captive->build(), ContainerException::class, 'Transitive singleton-to-scoped dependency accepted.');
+    expectFailure(static fn() => $captive->compile($artifact, strict: true), ContainerException::class, 'Captive graph was compiled.');
+    verify(hash_file('sha256', $artifact) === $digest, 'Captive graph damaged the active artifact.');
+    $safe = $graph(LifetimeEnum::Scoped);
+    $safePath = $root . '/safe-scope-graph.php';
+    $safe->compile($safePath, strict: true);
+    foreach ([$safe->build(), $safe->production($safePath)] as $runtime) {
+        $first = $runtime->withinScope('first', static function (RuntimeContainerInterface $scope): LabGraphRoot {
+            $entry = $scope->get(LabGraphRoot::class);
+            verify($entry === $scope->get(LabGraphRoot::class) && $entry->intermediate->dependency === $scope->get(LabGraphScoped::class), 'Scoped graph identity mismatch.');
+            return $entry;
+        });
+        expectFailure(static fn() => $runtime->withinScope('failed', static function (RuntimeContainerInterface $scope): never {
+            $scope->get(LabGraphRoot::class);
+            throw new DomainException('Intentional scope failure.');
+        }), DomainException::class, 'Scope callback failure was swallowed.');
+        $second = $runtime->withinScope('second', static fn(RuntimeContainerInterface $scope): LabGraphRoot => $scope->get(LabGraphRoot::class));
+        verify($first !== $second && $first->intermediate->dependency !== $second->intermediate->dependency, 'Scope failure leaked a previous graph.');
+    }
+    echo "Invalid graph diagnostics, rejected artifact replacement, corrected graph and transitive lifetime isolation passed\n";
+}
