@@ -12,7 +12,11 @@ if [[ "$SCENARIO" == ecosystem-scylla || "$SCENARIO" == ecosystem-cache-scylla-*
     sleep 2
   done
   test "$ready" = 1
-  php "$script" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
+  if [[ "$SCENARIO" == ecosystem-cache-scylla-outage-* ]]; then
+    bash "$GITHUB_WORKSPACE/qa/workloads/remote-cache-outage.sh" lab-scylla scylla
+  else
+    php "$script" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
+  fi
   exit
 fi
 ports=(17379 17380 17381 17382 17383 17384)

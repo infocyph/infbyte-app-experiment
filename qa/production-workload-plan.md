@@ -729,3 +729,7 @@ I: 21 lanes: 18 configured Foundation CommunicationServiceProvider protected Web
 ## B169 — HTTP remote adapter transport publication faults
 
 I: eight independent jobs: interrupted body and withheld successful origin response on WebDAV, AsyncAWS S3/MinIO, Azure-compatible and GCS-compatible storage. Loopback proxy preserves request semantics, records actual forwarded bytes and observed response, denies/records SDK retry attempts; independent direct client reconciles staged bytes/cleanup and final/foreign isolation. Hosted qualification must prove actual target markers, including the GCS upload protocol. Does not claim other native-protocol uncertainty or real cloud-provider qualification. CORE-01, DATA, SEC, MEM, EXEC-03: source/matrix wiring inspected; hosted outcomes deferred. 956 routine rows.
+
+## B170 — Native remote-cache outage contracts
+
+I: four independent jobs for MongoDB and ScyllaDB fail-open and fail-closed behavior with live clients, actual service stop and port absence, rejected reads/writes, durable restart and independent namespace/read reconciliation. MongoDB CAS must reject during outage and recover afterwards; Scylla explicitly has no native atomic capability. Existing service/extension provisioning reused. Bounded host/worker barriers retain failure logs. CORE-01, DATA, SEC, EXEC-03: source/matrix wiring inspected; hosted outcomes deferred. 960 routine rows.

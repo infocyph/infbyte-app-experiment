@@ -762,6 +762,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-cache-mongodb-outage-closed, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-mongodb-outage-open, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-outage-closed, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-cache-scylla-outage-open, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-webdav-http-publication-before, backend: pgsql}
           - {scenario: ecosystem-webdav-http-publication-after, backend: pgsql}
           - {scenario: ecosystem-async-s3-http-publication-before, backend: pgsql}

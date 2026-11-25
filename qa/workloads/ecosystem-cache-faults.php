@@ -41,9 +41,9 @@ function cacheOutageWorkload(string $backend = 'redis'): void
     echo "Actual $backend stop, fail-open/closed, atomic failure and restart reconciliation passed\n";
 }
 
-function cacheWaitMarker(string $path): void
+function cacheWaitMarker(string $path, int $seconds = 60): void
 {
-    $deadline = hrtime(true) + 60_000_000_000;
+    $deadline = hrtime(true) + $seconds * 1_000_000_000;
     while (!is_file($path)) {
         verify(hrtime(true) < $deadline, 'Cache fixture barrier timed out.');
         usleep(20000);
@@ -94,4 +94,52 @@ function invalidationProcessesWorkload(): void
     }, 'invalidation-processes', 8);
     verify(array_sum($results) === 648, 'Node reconciliation count mismatch.');
     echo "Eight independent process-owned caches, 81 invalidations and durable cursor replacement passed\n";
+}
+
+function remoteCacheOutageContracts(string $backend, bool $failOpen): void
+{
+    $root = (string) getenv('LAB_CACHE_FAULT_ROOT');
+    verify(is_dir($root), 'Missing outage fixture barrier.');
+    $namespace = 'remote-outage';
+    $make = static fn(string $name, bool $open): Cache => sharedAtomicCache($backend, $name, $root, new CacheOptions(failOpen: $open));
+    $active = $make($namespace, $failOpen);
+    $observer = $make($namespace, false);
+    $foreign = $make('foreign-outage', false);
+    verify($active->set('confirmed', ['value' => 42], 1800), 'Confirmed seed failed.');
+    verify($observer->get('confirmed') === ['value' => 42], 'Independent seed read failed.');
+    verify($foreign->set('confirmed', 'foreign', 1800), 'Foreign namespace seed failed.');
+    $atomic = $active->atomic();
+    verify(($atomic !== null) === ($backend === 'mongodb'), 'Backend atomic capability changed.');
+    if ($atomic !== null) {
+        verify($atomic->setIfAbsent('lease', 'owned', 1800), 'Atomic seed failed.');
+    }
+    verify(touch($root . '/seeded'), 'Outage seed marker failed.');
+    cacheWaitMarker($root . '/stopped');
+    if ($failOpen) {
+        verify($active->get('confirmed', 'unavailable') === 'unavailable', 'Fail-open read concealed outage or returned stale data.');
+        verify(!$active->set('rejected', 1, 1800), 'Fail-open write reported success.');
+        if ($atomic !== null) {
+            verify(!$atomic->compareAndSet('lease', 'owned', 'changed', 1800), 'Fail-open CAS reported success.');
+        }
+    } else {
+        expectFailure(static fn() => $active->get('confirmed'), CacheBackendException::class, 'Fail-closed read concealed outage.');
+        expectFailure(static fn() => $active->set('rejected', 1, 1800), CacheBackendException::class, 'Fail-closed write concealed outage.');
+        if ($atomic !== null) {
+            expectFailure(static fn() => $atomic->compareAndSet('lease', 'owned', 'changed', 1800), CacheBackendException::class, 'Fail-closed CAS concealed outage.');
+        }
+    }
+    verify(touch($root . '/observed'), 'Outage observation marker failed.');
+    cacheWaitMarker($root . '/restarted', 240);
+    $replacement = $make($namespace, false);
+    $other = $make('foreign-outage', false);
+    verify($replacement->get('confirmed') === ['value' => 42] && !$replacement->has('rejected'), 'Confirmed/rejected mutation reconciliation failed.');
+    verify($other->get('confirmed') === 'foreign', 'Outage crossed namespace.');
+    if ($atomic !== null) {
+        verify($replacement->get('lease') === 'owned', 'Failed CAS modified confirmed lease.');
+        $replacementAtomic = $replacement->atomic();
+        verify($replacementAtomic !== null && $replacementAtomic->compareAndSet('lease', 'owned', 'recovered', 600), 'Replacement CAS failed.');
+    }
+    verify($replacement->set('recovered', 2, 600), 'Replacement write failed.');
+    verify($make($namespace, false)->get('recovered') === 2, 'Fresh independent recovery read failed.');
+    echo "Actual $backend outage, fail policy, confirmed-state reconciliation and fresh recovery passed\n";
 }

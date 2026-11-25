@@ -117,7 +117,9 @@ case "$provision" in
 esac
 composer check-platform-reqs --no-dev
 composer show --format=json > "$EVIDENCE/packages.json"
-if [[ "$SCENARIO" == *-http-publication-* ]]; then
+if [[ "$SCENARIO" == ecosystem-cache-mongodb-outage-* ]]; then
+  bash "$GITHUB_WORKSPACE/qa/workloads/remote-cache-outage.sh" lab-mongo mongodb
+elif [[ "$SCENARIO" == *-http-publication-* ]]; then
   backend="${provision#ecosystem-}"
   mode="${SCENARIO##*-}"
   case "$backend" in
