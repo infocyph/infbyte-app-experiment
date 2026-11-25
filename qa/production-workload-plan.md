@@ -251,3 +251,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B50 — Webrick semantic composition
 - [x] Representation and signed-request scenarios.
 - [ ] Hosted verification and remaining algorithm/streaming variants.
+
+## B51 — authenticated multi-tenant application
+- [x] Four backend/matcher combinations with real auth, checkout and tenant isolation.
+- [ ] Hosted verification and expanded tenancy messaging/identity variants.

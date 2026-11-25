@@ -15,6 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-tenants, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-tenants, backend: mysql, matcher: sharded}
+          - {scenario: ecosystem-tenants, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-tenants, backend: pgsql, matcher: sharded}
           - {scenario: ecosystem-http-representations, backend: pgsql}
           - {scenario: ecosystem-http-signatures, backend: pgsql}
           - {scenario: ecosystem-uid-families, backend: pgsql}

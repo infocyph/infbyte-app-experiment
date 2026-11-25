@@ -211,3 +211,7 @@ I: identifier generation for remaining facade families, both Sonyflake/Randflake
 ## B50 — Webrick representation and signed-request semantics
 
 I: middleware composition for gzip, all ETag encoding modes, content/language negotiation, accumulated Vary, security headers, response lint, authoritative conditional GET and mutation rejection, and opt-in input normalization; independent signed absolute URL key rotation, expiry, host/query tamper and ignored-query policy. Hosted verification pending. Other coding algorithms and transport-specific streaming remain separate.
+
+## B51 — authenticated multi-tenant checkout
+
+I: four independent production HTTP combinations (MySQL/PostgreSQL × fused/sharded). Two equally authorized tenants reuse request keys independently; eight clients exercise 320 orders, replay, missing token, wrong-tenant permission, unprivileged account, cross-tenant ID reads, SQL inventory conservation, cache and local document integrity. Ownership is derived from the authenticated account and application membership table, not trusted route input. Existing connected outbox/mail workload remains separate. Hosted verification pending, including known upstream production-auth readiness issues.
