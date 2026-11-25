@@ -119,3 +119,5 @@ B37 adds real PgBouncer session/transaction pooling, native prepared statements 
 B38 adds remaining documented official Pathwise adapters (cloud emulators explicitly distinct from production providers); hosted evidence pending.
 
 B39 adds native Scylla and six-node Redis Cluster actual failover; Cassandra driver compatibility and hosted evidence pending.
+
+B40 adds real RoadRunner and FrankenPHP workers through Foundation's trusted compiled release factory, both compiled matchers. Hosted evidence pending.

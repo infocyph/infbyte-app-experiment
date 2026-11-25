@@ -24,6 +24,11 @@ export INFOCYPH_FOUNDATION_RELEASE_ROOT="$release_root" INFOCYPH_FOUNDATION_RELE
 host=""
 nginx_pid=""
 stop_host() {
+  if [[ "$HOST_MODE" == frankenphp ]]; then
+    docker logs infbyte-lab-frankenphp >> "$EVIDENCE/host.log" 2>&1 || :
+    docker rm -f infbyte-lab-frankenphp >/dev/null 2>&1 || :
+    return
+  fi
   if [[ "$HOST_MODE" == fpm ]]; then
     docker logs infbyte-lab-fpm >> "$EVIDENCE/fpm.log" 2>&1 || :
     docker logs infbyte-lab-nginx >> "$EVIDENCE/nginx.log" 2>&1 || :
@@ -35,7 +40,20 @@ stop_host() {
 }
 trap stop_host EXIT
 start_host() {
-  if [[ "$HOST_MODE" != fpm ]]; then
+  if [[ "$HOST_MODE" == roadrunner || "$HOST_MODE" == frankenphp ]]; then
+    bash "$GITHUB_WORKSPACE/qa/workloads/host-config.sh"
+    if [[ "$HOST_MODE" == roadrunner ]]; then
+      "$RUNNER_TEMP/lab-rr" serve -c "$RUNNER_TEMP/lab-rr.yaml" >> "$EVIDENCE/host.log" 2>&1 &
+      host=$!
+    else
+      docker run -d --name infbyte-lab-frankenphp --network host --user "$(id -u):$(id -g)" \
+        -v "$PROJECT:$PROJECT" -v "$RUNNER_TEMP/lab-caddyfile:/tmp/lab-caddyfile:ro" -w "$PROJECT" \
+        -e APP_ENV -e APP_DEBUG -e AUTH_TOKEN_SECRET -e AUTH_OTP_RECOVERY_HMAC_KEY -e AUTH_OTP_PROTECTION_KEY \
+        -e INFOCYPH_FOUNDATION_RELEASE_ROOT -e INFOCYPH_FOUNDATION_RELEASE_MANIFEST_SHA256 \
+        -e XDG_CONFIG_HOME=/tmp -e XDG_DATA_HOME=/tmp \
+        --entrypoint /usr/local/bin/frankenphp infbyte-lab-frankenphp run --config /tmp/lab-caddyfile --adapter caddyfile
+    fi
+  elif [[ "$HOST_MODE" != fpm ]]; then
     local runtime=native
     case "$HOST_MODE" in
       native) ;;
@@ -90,6 +108,8 @@ CONF
   if [[ "$HOST_MODE" == fpm ]]; then
     docker logs infbyte-lab-fpm >&2 || :
     docker logs infbyte-lab-nginx >&2 || :
+  elif [[ "$HOST_MODE" == frankenphp ]]; then
+    docker logs infbyte-lab-frankenphp >&2 || :
   else
     cat "$EVIDENCE/host.log" >&2
   fi

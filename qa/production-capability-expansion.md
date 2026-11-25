@@ -167,3 +167,7 @@ I: eight independent jobs cover memory, read-only, prefixing and ZIP plus actual
 ## B39 — Scylla and real Redis Cluster election
 
 I: native Cassandra-extension Scylla lane for binary/bulk values, TTL, tag invalidation and namespace isolation; six-node Redis Cluster with three replica links, replication offset catchup, actual primary stop and observed replica promotion, complete durable-value and post-election write reconciliation. The native PHP Cassandra driver is a mandatory prerequisite, not a mocked replacement. Hosted evidence pending; additional cache outage/security and provider-specific contracts remain open.
+
+## B40 — RoadRunner and FrankenPHP worker hosts
+
+I: four browser lanes on actual RoadRunner and FrankenPHP worker processes with fused/sharded compiled releases, explicit Runwire host drivers and Foundation trusted release factory, existing 200-cycle concurrent browser contract and generation replacement. No native-host substitution. Scylla/Redis HA now fail closed on backend exceptions. Hosted verification pending; host-specific advanced capabilities and protocol variants remain open.

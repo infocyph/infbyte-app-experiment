@@ -3,17 +3,18 @@
 declare(strict_types=1);
 
 use Infocyph\CacheLayer\Cache\Cache;
+use Infocyph\CacheLayer\Cache\CacheOptions;
 
 function scyllaWorkload(): void
 {
     verify(class_exists('Cassandra'), 'Native Cassandra driver is required for Scylla.');
-    $cache = Cache::scylla('lab-scylla');
-    $other = Cache::scylla('lab-scylla-other');
+    $cache = Cache::scylla('lab-scylla', options: new CacheOptions(failOpen: false));
+    $other = Cache::scylla('lab-scylla-other', options: new CacheOptions(failOpen: false));
     $values = [];
     for ($i = 0; $i < 240; ++$i) {
         $values['item-' . $i] = ['ordinal' => $i, 'payload' => "binary\x00" . $i];
     }
-    $cache->setMultiple($values, 300);
+    verify($cache->setMultiple($values, 300), 'Scylla bulk write failed.');
     verify(iterator_to_array($cache->getMultiple(array_keys($values))) === $values, 'Scylla bulk round trip mismatch.');
     $other->set('item-0', 'independent', 300);
     $cache->remember('tagged', static fn (): string => 'before', 300, ['catalog']);
@@ -33,13 +34,13 @@ function scyllaWorkload(): void
 function redisFailoverWorkload(bool $seed): void
 {
     $seeds = array_map(static fn (int $port): string => '127.0.0.1:' . $port, range(17379, 17384));
-    $cache = Cache::redisCluster('lab-failover', $seeds);
+    $cache = Cache::redisCluster('lab-failover', $seeds, options: new CacheOptions(failOpen: false));
     $values = [];
     for ($i = 0; $i < 300; ++$i) {
         $values['item-' . $i] = ['ordinal' => $i, 'digest' => hash('sha256', (string) $i)];
     }
     if ($seed) {
-        $cache->setMultiple($values, 600);
+        verify($cache->setMultiple($values, 600), 'Redis Cluster seed write failed.');
     }
     verify(iterator_to_array($cache->getMultiple(array_keys($values))) === $values, 'Redis Cluster replicated data mismatch.');
     if (!$seed) {

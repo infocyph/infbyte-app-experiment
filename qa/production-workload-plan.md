@@ -207,3 +207,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B39 — Scylla and Redis Cluster HA
 - [x] Native Scylla and real Redis Cluster replica-promotion scenarios.
 - [ ] Hosted verification, native Cassandra compatibility and remaining cache contracts.
+
+## B40 — RoadRunner and FrankenPHP worker parity
+- [x] Four actual hosted browser lanes with compiled releases and host replacement.
+- [ ] Hosted verification and remaining runtime-specific contracts.

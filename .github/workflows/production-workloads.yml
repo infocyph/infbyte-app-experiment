@@ -15,6 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: browser, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser, backend: pgsql, host: frankenphp, matcher: sharded}
           - {scenario: ecosystem-scylla, backend: pgsql, php: '8.4'}
           - {scenario: ecosystem-redis-failover, backend: pgsql}
           - {scenario: ecosystem-storage-local-modes, backend: pgsql}
@@ -335,6 +339,28 @@ jobs:
           docker run --rm infbyte-lab-fpm php -v
           docker run --rm infbyte-lab-fpm php -m
           docker pull nginx:alpine
+      - name: Provision the actual RoadRunner binary and host client
+        if: matrix.host == 'roadrunner'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$PROJECT"
+          composer require 'roadrunner/http:^4.0' --no-interaction --prefer-dist --no-progress --with-all-dependencies
+          composer check-platform-reqs --no-dev
+          composer show --format=json > "$EVIDENCE/packages.json"
+          docker pull ghcr.io/roadrunner-server/roadrunner:3.0.1
+          container="$(docker create ghcr.io/roadrunner-server/roadrunner:3.0.1)"
+          trap 'docker rm -f "$container" >/dev/null' EXIT
+          docker cp "$container:/usr/bin/rr" "$RUNNER_TEMP/lab-rr"
+          chmod +x "$RUNNER_TEMP/lab-rr"
+          "$RUNNER_TEMP/lab-rr" --version | tee "$EVIDENCE/roadrunner-version.txt"
+      - name: Provision actual FrankenPHP worker runtime
+        if: matrix.host == 'frankenphp'
+        shell: bash
+        run: |
+          docker build -t infbyte-lab-frankenphp - < qa/workloads/Frankenphp.Dockerfile
+          docker run --rm --entrypoint php infbyte-lab-frankenphp -v
+          docker run --rm --entrypoint php infbyte-lab-frankenphp -m
       - name: Execute independent concurrent business workers and reconcile state
         if: matrix.scenario != 'http' && matrix.scenario != 'operations' && matrix.scenario != 'browser' && !startsWith(matrix.scenario, 'db-') && !startsWith(matrix.scenario, 'ecosystem-')
         shell: bash
