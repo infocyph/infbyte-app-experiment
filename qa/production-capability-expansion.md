@@ -135,3 +135,7 @@ Latest completed production run [45551568675](https://github.com/infocyph/infbyt
 ## B31 — inbound mailbox protocols
 
 I: two independent hosted jobs using real Dovecot IMAP/POP3, twelve synthetic messages each. IMAP server search, MIME/raw fetch, seen/unseen flags, copy/move, expunge and folder lifecycle plus bad authentication; POP3 UIDL identity, dot transparency, reset and deletion commit/reconnect. Plaintext is restricted to disposable loopback fixtures; TLS/STARTTLS and IDLE remain open. No upstream edits; hosted evidence pending.
+
+## B32 — broker integration boundaries
+
+I: real RabbitMQ and ElasticMQ SQS-compatible services using application-owned adapters implementing Omnibus AmqpBackend/SqsBackend (library exposes contracts, not concrete vendor clients). AMQP requeue, acknowledgement, rejection, unsupported delayed delivery and 50-message reconciliation; SQS delay, visibility, receipt replacement, batch limit and 50-message reconciliation. AMQP test adapter represents first/redelivered attempt only; SQS emulator is not AWS production certification. FIFO, DLQ policy, TLS and outage remain open. No upstream fixes; hosted evidence pending.

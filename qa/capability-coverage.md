@@ -103,3 +103,5 @@ B29 adds full published JWT/JWS algorithm enumeration and JWE key-management enu
 B30 records historical 70/88 hosted evidence (run 45551568675) and repairs three fixture failure groups. Latest B29 run 45554179175 (152 production jobs) and consumer 45554179122 (20 jobs) were queued; exact-head verification and remaining scenario implementation are open. See detailed expansion register for failure attribution.
 
 B31 adds real IMAP and POP3 mailbox acceptance; TLS/IDLE remain open.
+
+B32 adds RabbitMQ and SQS-compatible integration using documented application-owned backend boundaries; not a production AWS or full AMQP adapter certification.

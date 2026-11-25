@@ -175,3 +175,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B31 — inbound mailbox protocols
 - [x] Real IMAP and POP3 stateful mailbox acceptance lanes.
 - [ ] Hosted verification and remaining TLS/IDLE/provider behavior.
+
+## B32 — broker integration
+- [x] RabbitMQ and SQS-compatible real backend lanes.
+- [ ] Hosted verification and advanced provider policy/HA.

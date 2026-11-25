@@ -45,9 +45,12 @@ require __DIR__ . '/ecosystem-contracts.php';
 require __DIR__ . '/ecosystem-webrick.php';
 require __DIR__ . '/ecosystem-jose.php';
 require __DIR__ . '/ecosystem-mailbox.php';
+require __DIR__ . '/ecosystem-brokers.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'amqp' => amqpWorkload(),
+    'sqs' => sqsWorkload(),
     'imap' => imapWorkload(),
     'pop3' => pop3Workload(),
     'jwt-jws' => jwtJwsWorkload(),
