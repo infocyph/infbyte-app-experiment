@@ -179,6 +179,7 @@ jobs:
           - {scenario: ecosystem-http-pool, backend: pgsql}
           - {scenario: ecosystem-grpc-inbound, backend: pgsql}
           - {scenario: ecosystem-validation-casts, backend: pgsql}
+          - {scenario: ecosystem-validation-cast-composition, backend: pgsql}
           - {scenario: ecosystem-validation-sanitizers, backend: pgsql}
           - {scenario: ecosystem-http-transfer, backend: pgsql}
           - {scenario: ecosystem-http-retry-safety, backend: pgsql}
@@ -209,6 +210,7 @@ jobs:
           - {scenario: ecosystem-crypto-key-lifecycle, backend: pgsql}
           - {scenario: ecosystem-config-reference, backend: pgsql}
           - {scenario: ecosystem-fence-remix, backend: pgsql}
+          - {scenario: ecosystem-remix-composition, backend: pgsql}
           - {scenario: ecosystem-di-contextual, backend: pgsql}
           - {scenario: ecosystem-di-factories, backend: pgsql}
           - {scenario: ecosystem-di-graph-failures, backend: pgsql}
@@ -244,6 +246,7 @@ jobs:
           - {scenario: ecosystem-array-set-contracts, backend: pgsql}
           - {scenario: ecosystem-array-dto-guard, backend: pgsql}
           - {scenario: ecosystem-array-helper-boundaries, backend: pgsql}
+          - {scenario: ecosystem-collection-ownership, backend: pgsql}
           - {scenario: ecosystem-config-mutation-lifecycle, backend: pgsql}
           - {scenario: ecosystem-di-environment, backend: pgsql}
           - {scenario: ecosystem-sftp-trust, backend: pgsql}

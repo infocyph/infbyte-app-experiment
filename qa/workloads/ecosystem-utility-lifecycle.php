@@ -167,3 +167,90 @@ function fenceRemixWorkload(): void
     verify(measure(static fn(): int => 42, $elapsed) === 42 && is_float($elapsed) && $elapsed >= 0, 'Measure contract failed.');
     echo "Fence identity, requirements, limits/reset and Remix macros, callbacks and retry boundaries passed\n";
 }
+
+
+final class LabConditionalRecord
+{
+    use \Infocyph\InterMix\Remix\ConditionableTappable;
+
+    public int $value = 0;
+
+    public function increase(int $amount): int
+    {
+        return $this->value += $amount;
+    }
+
+    public function positive(): bool
+    {
+        return $this->value > 0;
+    }
+}
+
+final class LabMacroMixSource
+{
+    /** @Macro("sourceValue") */
+    public function read(): int
+    {
+        return 42;
+    }
+
+    protected static function double(int $value): int
+    {
+        return $value * 2;
+    }
+
+    private function hidden(): int
+    {
+        return 99;
+    }
+}
+
+function remixCompositionWorkload(): void
+{
+    $record = new LabConditionalRecord();
+    verify($record->when(false)->increase(10) === $record && $record->value === 0, 'False proxy invoked target.');
+    verify($record->unless()->positive()->increase(3) === 3, 'Deferred inverted predicate failed.');
+    verify($record->when()->positive()->increase(4) === 7, 'Deferred positive predicate failed.');
+    verify($record->when()->value->increase(1) === 8, 'Deferred property predicate failed.');
+    $record->when(false)->value = 100;
+    $record->when(true)->value = 9;
+    verify($record->value === 9 && isset($record->when(true)->value) && !isset($record->when(false)->value), 'Conditional property access failed.');
+    $proxy = $record->when(true);
+    unset($proxy->value);
+    verify($record->value === 9, 'Conditional proxy deleted target property.');
+    verify($record->tap()->increase(2) === $record && $record->value === 11, 'Tap lost target identity.');
+    verify($record->when(static fn(LabConditionalRecord $r): bool => $r->positive(), static fn(LabConditionalRecord $r): int => $r->increase(1)) === 12, 'Closure predicate failed.');
+    verify($record->unless(true, static fn() => throw new LogicException('Wrong branch'), static fn(LabConditionalRecord $r): int => $r->increase(2)) === 14, 'Unless default branch failed.');
+
+    $source = new LabMacroMixSource();
+    LabMacroRecord::loadMacrosFromConfig(['double' => static fn(int $value): int => $value + 1]);
+    LabMacroRecord::mix($source, replace: false);
+    verify(LabMacroRecord::double(4) === 5 && !LabMacroRecord::hasMacro('hidden'), 'Non-replacing mix changed registry.');
+    LabMacroRecord::mix($source, replace: true);
+    LabMacroRecord::loadMacrosFromAnnotations($source);
+    verify(LabMacroRecord::double(4) === 8 && LabMacroRecord::sourceValue() === 42 && LabMacroRecord::hasMacro('read'), 'Mixin or annotation registration failed.');
+    $before = LabMacroRecord::getMacros();
+    expectFailure(static fn() => LabMacroRecord::mix(LabMacroMixSource::class), InvalidArgumentException::class, 'Unbound instance mixin accepted.');
+    expectFailure(static fn() => LabMacroRecord::loadMacrosFromAnnotations(LabMacroMixSource::class), InvalidArgumentException::class, 'Unbound annotation accepted.');
+    verify(LabMacroRecord::getMacros() === $before, 'Rejected mixin partially changed registry.');
+    foreach (array_keys($before) as $name) {
+        LabMacroRecord::removeMacro($name);
+    }
+    verify(LabMacroRecord::getMacros() === [], 'Macro registry cleanup failed.');
+
+    LabFenceLimit::reset();
+    LabFenceLimit::setLimit(3);
+    LabFenceLimit::instance('one');
+    LabFenceLimit::clearInstances();
+    foreach (['one', 'two', 'three'] as $key) {
+        LabFenceLimit::instance($key);
+    }
+    verify(count(LabFenceLimit::getInstances()) === 3 && LabFenceLimit::getKeys() === ['one', 'two', 'three'], 'Clear changed override or ordering.');
+    LabFenceLimit::reset();
+    foreach ([['classes' => 'invalid'], ['extensions' => [123]]] as $constraints) {
+        expectFailure(static fn() => LabFenceLimit::instance('bad', $constraints), InvalidArgumentException::class, 'Malformed requirement accepted.');
+    }
+    expectFailure(static fn() => LabFenceLimit::instance('bad', ['extensions' => ['lab_missing_extension']]), RequirementException::class, 'Missing extension accepted.');
+    verify(LabFenceLimit::countInstances() === 0, 'Invalid requirements published an instance.');
+    echo "Conditional and tap proxies, macro mix and annotation atomicity, Fence requirement and override lifecycle passed\n";
+}

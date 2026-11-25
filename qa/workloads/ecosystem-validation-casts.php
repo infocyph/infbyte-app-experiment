@@ -156,3 +156,65 @@ function validationSanitizersWorkload(): void
     }
     echo count($cases) . " sanitizer input contracts, optional parameters, pipeline churn and nested overlap passed\n";
 }
+
+
+enum LabUnbackedState
+{
+    case Ready;
+}
+
+function validationCastCompositionWorkload(): void
+{
+    $schema = [
+        'rows.*.quantity' => 'required|string',
+        'rows.*.label' => 'required|string',
+        'state' => 'required|string',
+        'payload' => 'required|string',
+        'object' => 'required|string',
+        'raw' => 'required|string',
+    ];
+    $builder = Validator::make($schema)->setCasts([
+        'rows.0.quantity' => ['integer', static fn(int $n): int => $n + 1],
+        'rows.*.quantity' => ['integer', static fn(int $n): int => $n * 2],
+        'rows.*.label' => ['trim', 'lowercase'],
+        'state' => LabUnbackedState::class,
+        'payload' => 'array',
+        'object' => ['json', 'object'],
+        'raw' => 'json',
+    ])->stripUnknown();
+    $input = ['rows' => [['quantity' => '2', 'label' => ' A ', 'private' => 1], ['quantity' => '3', 'label' => ' B ']], 'state' => 'Ready', 'payload' => '[0,false,null]', 'object' => '{"value":42}', 'raw' => 'null'];
+    foreach ([$builder, new CompiledValidator($builder)] as $validator) {
+        $result = $validator->validate($input);
+        verify($result->passes(), 'Valid composition rejected.');
+        $typed = $result->typed();
+        verify($typed['rows'] === [['quantity' => 6, 'label' => 'a'], ['quantity' => 6, 'label' => 'b']], 'Direct and wildcard cast order or stripping mismatch.');
+        verify($typed['state'] === LabUnbackedState::Ready && $typed['payload'] === [0, false, null] && $typed['object'] instanceof stdClass && $typed['object']->value === 42 && $typed['raw'] === null, 'Compound cast projection mismatch.');
+        verify($result->safe()['rows'][0]['quantity'] === '2' && $input['rows'][0]['private'] === 1, 'Typed projection changed original data.');
+        foreach (['state' => 'Unknown', 'object' => '{bad', 'raw' => '{bad'] as $field => $value) {
+            $invalid = $input;
+            $invalid[$field] = $value;
+            expectFailure(static fn() => $validator->validate($invalid)->typed(), CastException::class, 'Invalid compound cast accepted.');
+        }
+        verify($validator->validate($input)->typed()['rows'] === $typed['rows'], 'Cast error contaminated subsequent result.');
+    }
+    $caster = \Infocyph\ReqShield\Support\InputCaster::class;
+    foreach ([true, 1, 1.0, ' YES ', 'on'] as $input) {
+        verify($caster::tryBoolean($input) === true, 'True cast rejected.');
+    }
+    foreach ([false, 0, 0.0, '', ' OFF ', 'no'] as $input) {
+        verify($caster::tryBoolean($input) === false, 'False cast rejected.');
+    }
+    foreach ([null, [], 2, 'unknown'] as $input) {
+        verify($caster::tryBoolean($input) === null, 'Ambiguous boolean accepted.');
+    }
+    verify($caster::tryInteger((string) PHP_INT_MAX) === PHP_INT_MAX && $caster::tryInteger((string) PHP_INT_MIN) === PHP_INT_MIN, 'Integer limits rejected.');
+    foreach ([INF, NAN, 1.5, (float) PHP_INT_MAX, '9223372036854775808'] as $input) {
+        verify($caster::tryInteger($input) === null, 'Nonrepresentable integer accepted.');
+    }
+    verify($caster::tryFloat('1e9999') === null && $caster::tryFloat(INF) === null && $caster::tryFloat('12.5') === 12.5, 'Float finiteness mismatch.');
+    $date = new DateTime('2026-01-01T00:00:00+00:00');
+    $immutable = $caster::tryDateTimeImmutable($date);
+    $date->modify('+1 day');
+    verify($immutable instanceof DateTimeImmutable && $immutable->format('Y-m-d') === '2026-01-01', 'Date conversion retained mutable ownership.');
+    echo "Direct/wildcard compound casts, enum/array/object/JSON projection and strict caster domains passed\n";
+}

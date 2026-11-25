@@ -479,3 +479,7 @@ I: three independent engineering-only lanes exercise reference changed-only with
 ## B140 — Shared OTP factor replay and MariaDB parity
 
 I: extend the eight dedicated Redis/Valkey/file/PHP-files/SQLite/PostgreSQL/MySQL/MariaDB lanes with MobileOTP monotonic replay, counter OCRA one-winner/older-counter rejection and generation isolation, challenge OCRA one-winner/distinct-message independence and documented replay-TTL constraints. Each race uses twelve processes. Correct the enrollment fixture to provide the mandatory integrity key and MariaDB fixture endpoint to port 3307. Volatile Memcached is not used for durable moving-factor state; native Scylla integration already exists and driver qualification is pending. 428 routine rows; hosted qualification pending (SEC, DATA, EXEC-03).
+
+## B141 — Collection, Remix and compound validation contracts
+
+I: three independent lanes exercise collection presence and ownership through array/property access, iterator and JSON import, immutable pipelines; InterMix conditional and tap proxies, annotation/config mixins, rejection atomicity and Fence override/requirement lifecycle; ReqShield ordered direct/wildcard cast composition, enum/array/object/JSON projection, malformed values and strict scalar cast boundaries. 431 routine rows; hosted qualification pending (TYPE, DATA, MEM, EXEC-03). Existing tests retained; upstream repairs deferred.

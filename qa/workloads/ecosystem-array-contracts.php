@@ -229,3 +229,38 @@ function configMutationLifecycleWorkload(): void
     verify($config->restore('release') && $config->all() === $initial, 'Old release restoration failed.');
     echo "Typed configuration reads, cached mutation, read-only protection, export, reload rejection and restoration passed\n";
 }
+
+
+function collectionOwnershipWorkload(): void
+{
+    $input = ['tenant' => ['name' => 'alpha', 'nil' => null, 'flag' => false], 'orders' => [1, 2]];
+    $collection = \Infocyph\ArrayKit\Collection\Collection::from($input);
+    verify(isset($collection['tenant.nil']) && $collection['tenant.nil'] === null, 'Null key presence lost.');
+    verify($collection->has(['tenant.nil', 'tenant.flag']) && $collection->hasAny(['missing', 'tenant.flag']) && !$collection->hasAny(['missing']), 'Collection presence mismatch.');
+    verify(iterator_to_array($collection) === $input && $collection() === $input && $collection->items() === $input, 'Collection projections diverged.');
+    $copy = $collection->immutable();
+    $copy['tenant.name'] = 'beta';
+    unset($copy['tenant.nil']);
+    $copy->status = 'ready';
+    $copy[] = 'tail';
+    verify($copy->get('tenant.name') === 'beta' && !$copy->has('tenant.nil') && $copy->status === 'ready' && $copy[0] === 'tail', 'Copy mutation mismatch.');
+    verify($collection->all() === $input, 'Copy mutated original array.');
+    $copy->clear();
+    verify($copy->isEmpty() && count($collection) === 2, 'Clear crossed ownership.');
+    $source = static function (): Generator { yield 'a' => 1; yield 'b' => 2; };
+    $from = \Infocyph\ArrayKit\Collection\Collection::make($source());
+    verify($from->all() === ['a' => 1, 'b' => 2], 'Traversable import lost keys.');
+    $from->merge(new ArrayIterator(['a' => 3, 'c' => 4]));
+    verify($from->all() === ['a' => 3, 'b' => 2, 'c' => 4], 'Merge precedence mismatch.');
+    $json = new class implements JsonSerializable {
+        public function jsonSerialize(): array { return ['receipt' => 42]; }
+    };
+    verify(\Infocyph\ArrayKit\Collection\Collection::make($json)->all() === ['receipt' => 42], 'JSON serializable import failed.');
+    $nested = \Infocyph\ArrayKit\Collection\Collection::make(['record' => $json]);
+    verify($nested->jsonSerialize() === ['record' => ['receipt' => 42]], 'JSON projection failed.');
+    $numbers = \Infocyph\ArrayKit\Collection\Collection::make([1, 2, 3, 4]);
+    verify($numbers->immutableProcess()->filter(static fn(int $n): bool => $n > 2)->map(static fn(int $n): int => $n * 2)->all() === [2 => 6, 3 => 8], 'Immutable pipeline changed keys or values.');
+    verify($numbers->all() === [1, 2, 3, 4], 'Immutable pipeline mutated source.');
+    expectFailure(static fn() => $numbers->labUnknownMethod(), BadMethodCallException::class, 'Unknown collection method accepted.');
+    echo "Collection array/property access, presence, projections, copy, iterable import, merge and immutable pipeline passed\n";
+}
