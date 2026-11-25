@@ -110,6 +110,7 @@ jobs:
           - {scenario: db-query-cache-overlap, backend: mysql}
           - {scenario: db-query-cache-overlap, backend: mariadb}
           - {scenario: db-query-cache-overlap, backend: sqlite}
+          - {scenario: db-query-cache-overlap, backend: mssql, php: '8.4'}
           - {scenario: db-query-cache-race, backend: sqlite}
           - {scenario: db-stream, backend: mysql}
           - {scenario: db-stream, backend: mssql, php: '8.4'}

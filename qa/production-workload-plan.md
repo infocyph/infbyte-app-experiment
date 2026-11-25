@@ -493,3 +493,7 @@ I: extend the existing PostgreSQL overlap lane to two independent MySQL/MariaDB 
 ## B110 — SQLite WAL in-flight cache publication
 
 I: an additional SQLite job enables native WAL before creating the fixture. A connection-local SQLite SQL function receives the selected old balance and blocks inside the actual query until another process commits the transfer. The writer requires the SQL callback marker before mutating, then reconciles balances and releases the old reader. Fresh process must observe 125 and a warm cache hit without extra SQL. No synthetic query result or sleep-based overlap. 367 routine rows; hosted qualification pending (DATA, OPS, EXEC-03). SQL Server overlap remains open.
+
+## B111 — SQL Server row-versioned in-flight cache publication
+
+I: real SQL Server/ODBC lane enables READ_COMMITTED_SNAPSHOT and verifies the database option. A separate transaction holds an exclusive gate-row lock; the cached query reads the balance through row versioning and uses a correlated READCOMMITTEDLOCK gate lookup. Require DMV evidence of the reader blocked on a SQL lock, then commit an independent transfer, release the gate by rollback, and require the old snapshot and fresh/warm cache generations to reconcile. All five SQL drivers now have a deterministic overlap scenario, with native mechanism differences documented. 368 routine rows; hosted qualification pending (DATA, OPS, EXEC-03). No upstream changes.
