@@ -107,3 +107,5 @@ B31 adds real IMAP and POP3 mailbox acceptance; TLS/IDLE remain open.
 B32 adds RabbitMQ and SQS-compatible integration using documented application-owned backend boundaries; not a production AWS or full AMQP adapter certification.
 
 B33 adds explicit 256-mask Foundation topology qualification and shared-package lifecycle; specialist driver permutations remain open.
+
+B34 adds actual Swoole PHP 8.5 and OpenSwoole PHP 8.6 browser runtime acceptance (fused/sharded); no native fallback.

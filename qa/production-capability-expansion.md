@@ -143,3 +143,7 @@ I: real RabbitMQ and ElasticMQ SQS-compatible services using application-owned a
 ## B33 — Foundation module selection and lifecycle
 
 I: eight Gray-code shards × 32 distinct masks cover all 256 explicit optional-feature selections with default specialist dependencies inactive, using real module enable/disable, exact selected topology, production config validation, release compilation, readiness and manifest digest. Separate lifecycle lane checks shared OTP ownership when MFA is removed while passkey remains enabled, blocked removal of enabled feature, idempotent activation, all-to-core removal and reinstall, and no-dev dependency isolation. This is selection topology, not all conditional driver or business-operation permutations; existing specialized business workloads remain mandatory. Hosted verification pending.
+
+## B34 — actual Swoole-family host acceptance
+
+I: four new browser workload jobs (Swoole PHP 8.5 and OpenSwoole PHP 8.6 × fused/sharded), with actual extension checks, explicit Runwire SWOOLE host selection, existing 200 concurrent browser operations, host replacement and session/HTTP invariants. PHP 8.5 for Swoole follows Foundation's documented upstream 8.6 extension compilation limitation; no fake host or native fallback. RoadRunner, FrankenPHP and other separately supported direct adapters remain open. Hosted verification pending.

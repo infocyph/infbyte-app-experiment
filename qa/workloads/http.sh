@@ -35,8 +35,15 @@ stop_host() {
 }
 trap stop_host EXIT
 start_host() {
-  if [[ "$HOST_MODE" == native ]]; then
-    php infbyte serve --runtime=native --workers=4 --host=127.0.0.1 --port=18781 >> "$EVIDENCE/host.log" 2>&1 &
+  if [[ "$HOST_MODE" != fpm ]]; then
+    local runtime=native
+    case "$HOST_MODE" in
+      native) ;;
+      swoole) php -r 'exit(extension_loaded("swoole") ? 0 : 1);'; runtime=swoole ;;
+      openswoole) php -r 'exit(extension_loaded("openswoole") ? 0 : 1);'; runtime=swoole ;;
+      *) echo "Unsupported host: $HOST_MODE" >&2; return 1 ;;
+    esac
+    php infbyte serve --runtime="$runtime" --workers=4 --host=127.0.0.1 --port=18781 >> "$EVIDENCE/host.log" 2>&1 &
     host=$!
   else
     cat > "$RUNNER_TEMP/lab-fpm.conf" <<CONF
