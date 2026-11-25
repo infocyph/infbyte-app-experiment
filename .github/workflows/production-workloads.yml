@@ -35,6 +35,7 @@ jobs:
           - {scenario: db-proxy-transaction, backend: pgsql}
           - {scenario: db-binlog-replica, backend: mysql}
           - {scenario: db-binlog-replica, backend: mariadb}
+          - {scenario: db-maxscale, backend: mariadb}
           - {scenario: db-serialization, backend: pgsql}
           - {scenario: db-lock-modes, backend: mysql}
           - {scenario: db-lock-modes, backend: mariadb}

@@ -437,3 +437,7 @@ I: extend the four existing native/FPM fused/sharded OAuth HTTP lanes with separ
 ## B106 — Actual TLS edge and isolated authentication pool
 
 I: fused/sharded FPM lanes compile the application, run real Nginx TLS reverse proxy with source-bound private origin access, enforce protected location ingress ACL, overwrite actual client IP and remove unmeasured JA4/ASN, separate ordinary versus dedicated protected FPM pool, and exercise login success/failure/challenge with shared risk state. No JA4 fabrication, third-party challenge provider or production network isolation certification. Also registers the Valkey service for B104's independent response-loss lane. 362 routine rows; hosted verification pending (SEC, REQUEST, OPS, EXEC-03).
+
+## B107 — MariaDB MaxScale read/write routing and reader outage
+
+I: extend the existing physical binlog replication fixture with a dedicated two-backend MaxScale deployment, separate read/write split and read-only connection listeners, real monitor state evidence, primary-affine transactions/savepoints/callbacks, reader loss with primary fallback, writes during outage and exact recovered reader data. Uses the documented MaxScale container registry and no automatic transaction replay; primary election remains separate. 363 routine rows; hosted qualification pending (DATA, OPS, EXEC-03).

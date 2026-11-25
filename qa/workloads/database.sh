@@ -22,7 +22,7 @@ case "$SCENARIO" in
   db-proxy-mysql) bash "$GITHUB_WORKSPACE/qa/workloads/database-mysql-proxy.sh" ;;
   db-migration-fault|db-connection-loss) php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-proxy-*) bash "$GITHUB_WORKSPACE/qa/workloads/database-proxy.sh" ;;
-  db-binlog-replica) bash "$GITHUB_WORKSPACE/qa/workloads/database-binlog.sh" ;;
+  db-binlog-replica|db-maxscale) bash "$GITHUB_WORKSPACE/qa/workloads/database-binlog.sh" ;;
   db-driver|db-relations-advanced)
     php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-relations) php "$probe" relations | tee "$EVIDENCE/database.log" ;;
