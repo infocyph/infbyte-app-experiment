@@ -78,8 +78,11 @@ require __DIR__ . '/ecosystem-cache-tls.php';
 require __DIR__ . '/ecosystem-route-boundaries.php';
 require __DIR__ . '/ecosystem-counter-otp-contracts.php';
 
+require __DIR__ . '/ecosystem-module-dependencies.php';
+
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'conditional-modules' => conditionalModulesWorkload(),
     'cache-tls' => cacheTlsWorkload(),
     'counter-tls-seed' => counterTlsWorkload('seed'),
     'counter-tls-offline' => counterTlsWorkload('offline'),

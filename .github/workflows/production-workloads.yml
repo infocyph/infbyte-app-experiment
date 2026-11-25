@@ -287,6 +287,7 @@ jobs:
           - {scenario: ecosystem-module-6, backend: pgsql}
           - {scenario: ecosystem-module-7, backend: pgsql}
           - {scenario: ecosystem-module-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-conditional-modules, backend: pgsql}
           - {scenario: ecosystem-amqp, backend: pgsql}
           - {scenario: ecosystem-sqs, backend: pgsql}
           - {scenario: ecosystem-imap, backend: pgsql}
