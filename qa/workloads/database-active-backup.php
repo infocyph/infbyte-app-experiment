@@ -102,3 +102,40 @@ function activeBackupVerify(Connection $live): void
     }
     echo json_encode(['restored' => $actual, 'live' => $current], JSON_THROW_ON_ERROR), PHP_EOL;
 }
+
+function physicalBackupSeed(Connection $db): void
+{
+    activeBackupSeed($db);
+    $db->statement('CREATE TABLE lab_backup_padding (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)');
+    $db->statement('ALTER TABLE lab_backup_padding ALTER COLUMN payload SET STORAGE EXTERNAL');
+    $db->statement("INSERT INTO lab_backup_padding SELECT i, repeat(md5(i::text), 256) FROM generate_series(1, 8192) AS i");
+    check((int) $db->scalar("SELECT pg_total_relation_size('lab_backup_padding')") >= 64 * 1024 * 1024, 'Physical backup fixture is too small for controlled overlap.');
+}
+
+function physicalBackupWait(Connection $db): void
+{
+    waitFor(static fn(): bool => (int) $db->scalar(
+        "SELECT COUNT(*) FROM pg_stat_progress_basebackup WHERE phase = 'streaming database files'",
+    ) === 1, 'pg_basebackup did not enter physical file streaming.', 40);
+}
+
+function physicalBackupExpected(Connection $db): void
+{
+    $digest = activeBackupDigest($db->getPdo());
+    check($digest['lab_backup_orders']['count'] === 260 && $digest['lab_backup_ledger']['count'] === 260, 'Physical backup writers did not reconcile.');
+    check((int) $db->scalar('SELECT COUNT(*) FROM pg_stat_progress_basebackup') === 1, 'Physical backup finished before concurrent commits were confirmed.');
+    check(file_put_contents(getenv('LAB_BACKUP_ROOT') . '/physical-expected.json', json_encode($digest, JSON_THROW_ON_ERROR), LOCK_EX) !== false, 'Physical backup digest evidence unavailable.');
+}
+
+function physicalBackupVerify(): void
+{
+    $restored = new Connection(config(['port' => 5435, 'timeout' => 5]));
+    $expected = json_decode((string) file_get_contents(getenv('LAB_BACKUP_ROOT') . '/physical-expected.json'), true, flags: JSON_THROW_ON_ERROR);
+    check(activeBackupDigest($restored->getPdo()) === $expected, 'Standalone physical recovery did not include all confirmed commits.');
+    check(!(bool) $restored->scalar('SELECT pg_is_in_recovery()'), 'Restored instance remained a standby.');
+    check((int) $restored->scalar('SELECT COUNT(*) FROM lab_backup_padding') === 8192, 'Physical padding relation lost rows.');
+    check((int) $restored->scalar('SELECT COUNT(*) FROM lab_backup_orders o JOIN lab_backup_ledger l ON l.id = o.id WHERE o.amount = l.debit AND o.amount = l.credit') === 260, 'Recovered ledger does not match order effects.');
+    activeBackupRows($restored, 261, 261);
+    check((int) $restored->scalar('SELECT COUNT(*) FROM lab_backup_ledger') === 261, 'Standalone recovered database rejected new writes.');
+    echo json_encode(['recovered' => $expected, 'post_recovery_write' => true], JSON_THROW_ON_ERROR), PHP_EOL;
+}

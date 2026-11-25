@@ -85,6 +85,7 @@ jobs:
           - {scenario: db-replica-fault, backend: pgsql}
           - {scenario: db-primary-promotion, backend: pgsql}
           - {scenario: db-active-backup, backend: pgsql}
+          - {scenario: db-physical-backup, backend: pgsql}
           - {scenario: db-schema, backend: mysql}
           - {scenario: db-schema, backend: mssql, php: '8.4'}
           - {scenario: db-schema, backend: mariadb}
