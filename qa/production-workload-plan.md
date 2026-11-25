@@ -880,3 +880,7 @@ I: 24 independently runnable lanes on native/FPM/RoadRunner/FrankenPHP/Swoole/Op
 ## B205 — TalkingBytes real HTTP retry and connection-loss matrix
 
 I: 36 independently runnable TLS wire lanes: seven default retry and six terminal statuses, ten method/idempotency/unsafe-opt-in contracts, seven Retry-After and attempt-budget variants, four real socket-loss retry policies, and cancellation before I/O/during sliced backoff. Independent peer records method, binary payload digest, key consistency and exact request count. Public sleeper injection records requested delays without wall-clock jitter; other transport and response behavior remains real. CORE-01, REQUEST, DATA, SEC, EXEC-03: source and dispatch reviewed; hosted execution pending; no vendor changes. 1577 routine rows.
+
+## B206 — Remote archive actual outage and recovery
+
+I: 27 independently runnable lanes across the nine existing remote services (S3, both SFTP drivers, FTP, WebDAV, GridFS, AsyncAWS S3, Azure-compatible, GCS-compatible). Establish live source and archive controls; hold a local source-add, prepared remote archive save or localized remote archive extraction across actual service stop; observe typed rejection and destroy the object before restart. Fresh process independently verifies prior archive, source, existing target and foreign tenant, then publishes a fresh ZIP and verifies native ZIP contents and extracted digest manifest. Provider fixtures are not actual cloud services. CORE-01, DATA, SEC, EXEC-03: source/wiring reviewed; hosted runtime pending. 1604 routine rows.

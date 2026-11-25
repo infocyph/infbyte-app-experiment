@@ -269,7 +269,7 @@ elif [[ "$SCENARIO" == ecosystem-sftp-publication-fault || "$SCENARIO" == ecosys
   done
   test "$ready" = 1
   timeout 90s php "$probe" sftp-publication-recover | tee "$EVIDENCE/sftp-recovery.log"
-elif [[ "$SCENARIO" == *-outage && "$provision" != "$SCENARIO" ]]; then
+elif [[ ( "$SCENARIO" == *-outage || "$SCENARIO" == *-archive-outage-* ) && "$provision" != "$SCENARIO" ]]; then
   probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
   export LAB_STORAGE_BACKEND="${provision#ecosystem-}"
   service=""
@@ -277,8 +277,8 @@ elif [[ "$SCENARIO" == *-outage && "$provision" != "$SCENARIO" ]]; then
     ftp) port=12121 ;;
     webdav) port=18085 ;;
     gridfs) service=lab-mongo; port=27017 ;;
-    sftp2) service=lab-sftp; port=12222 ;;
-    async-s3) service=lab-s3; port=19000 ;;
+    sftp|sftp2) service=lab-sftp; port=12222 ;;
+    s3|async-s3) service=lab-s3; port=19000 ;;
     azure) service=lab-azure; port=11000 ;;
     gcs) service=lab-gcs; port=14443 ;;
     *) exit 1 ;;
@@ -291,7 +291,20 @@ elif [[ "$SCENARIO" == *-outage && "$provision" != "$SCENARIO" ]]; then
     return 1
   }
   ready_port
-  timeout 90s php "$probe" storage-outage-seed | tee "$EVIDENCE/storage-seed.log"
+  if [[ "$SCENARIO" == *-archive-outage-* ]]; then
+    contract="${SCENARIO##*-}"
+    timeout 90s php "$probe" archive-outage-phase seed "$contract" | tee "$EVIDENCE/storage-seed.log"
+    timeout 180s php "$probe" archive-outage-phase hold "$contract" > "$EVIDENCE/archive-held.log" 2>&1 &
+    worker=$!
+    for attempt in {1..300}; do
+      [[ -f "$EVIDENCE/archive-outage/prepared" ]] && break
+      kill -0 "$worker"
+      sleep 0.1
+    done
+    test -f "$EVIDENCE/archive-outage/prepared"
+  else
+    timeout 90s php "$probe" storage-outage-seed | tee "$EVIDENCE/storage-seed.log"
+  fi
   if [[ -n "$service" ]]; then
     docker stop -t 10 "$service" >/dev/null
   else
@@ -299,7 +312,16 @@ elif [[ "$SCENARIO" == *-outage && "$provision" != "$SCENARIO" ]]; then
     wait "$storage_peer" || :
   fi
   if timeout 2 bash -c "exec 3<>/dev/tcp/127.0.0.1/$port" 2>/dev/null; then exit 1; fi
-  timeout 120s php "$probe" storage-outage-denied | tee "$EVIDENCE/storage-denied.log"
+  if [[ "$SCENARIO" == *-archive-outage-* ]]; then
+    touch "$EVIDENCE/archive-outage/offline"
+    result=0
+    wait "$worker" || result=$?
+    cat "$EVIDENCE/archive-held.log"
+    test "$result" = 0
+    test -s "$EVIDENCE/archive-outage/rejected"
+  else
+    timeout 120s php "$probe" storage-outage-denied | tee "$EVIDENCE/storage-denied.log"
+  fi
   if [[ -n "$service" ]]; then
     docker start "$service" >/dev/null
   else
@@ -314,13 +336,13 @@ elif [[ "$SCENARIO" == *-outage && "$provision" != "$SCENARIO" ]]; then
         sleep 1
       done
       docker exec lab-mongo mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' | grep -qx 1 ;;
-    async-s3)
+    s3|async-s3)
       for attempt in {1..60}; do
         if curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null; then break; fi
         sleep 1
       done
       curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null ;;
-    sftp2)
+    sftp|sftp2)
       for attempt in {1..60}; do
         if ssh-keyscan -T 2 -p 12222 127.0.0.1 >/dev/null 2>&1; then break; fi
         sleep 1
@@ -333,7 +355,11 @@ elif [[ "$SCENARIO" == *-outage && "$provision" != "$SCENARIO" ]]; then
       done
       curl -fsS --max-time 2 'http://127.0.0.1:14443/storage/v1/b?project=experiment' >/dev/null ;;
   esac
-  timeout 90s php "$probe" storage-outage-recover | tee "$EVIDENCE/storage-recovery.log"
+  if [[ "$SCENARIO" == *-archive-outage-* ]]; then
+    timeout 120s php "$probe" archive-outage-phase recover "$contract" | tee "$EVIDENCE/storage-recovery.log"
+  else
+    timeout 90s php "$probe" storage-outage-recover | tee "$EVIDENCE/storage-recovery.log"
+  fi
 elif [[ "$SCENARIO" == ecosystem-s3-outage || "$SCENARIO" == ecosystem-sftp-outage ]]; then
   probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
   if [[ "$SCENARIO" == ecosystem-s3-outage ]]; then

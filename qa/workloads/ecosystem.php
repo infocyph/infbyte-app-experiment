@@ -57,6 +57,7 @@ require __DIR__ . '/ecosystem-brokers.php';
 require __DIR__ . '/ecosystem-invalidation.php';
 require __DIR__ . '/ecosystem-storage-adapters.php';
 require __DIR__ . '/ecosystem-remote-archive.php';
+require __DIR__ . '/ecosystem-archive-outage.php';
 require __DIR__ . '/ecosystem-cache-ha.php';
 require __DIR__ . '/ecosystem-otp-boundaries.php';
 require __DIR__ . '/ecosystem-security-lifecycle.php';
@@ -341,6 +342,7 @@ match ($argv[1] ?? '') {
     'sftp-publication-interrupt' => sftpPublicationFaultWorkload('interrupt'),
     'sftp-publication-recover' => sftpPublicationFaultWorkload('recover'),
     's3-publication-fault' => s3PublicationFaultWorkload(),
+    'archive-outage-phase' => archiveOutagePhase((string) ($argv[2] ?? ''), (string) ($argv[3] ?? '')),
     'storage-outage-seed' => storageOutageWorkload('seed'),
     'storage-outage-denied' => storageOutageWorkload('denied'),
     'storage-outage-recover' => storageOutageWorkload('recover'),

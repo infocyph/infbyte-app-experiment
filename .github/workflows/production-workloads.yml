@@ -1420,6 +1420,33 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-s3-archive-outage-source, backend: pgsql}
+          - {scenario: ecosystem-s3-archive-outage-save, backend: pgsql}
+          - {scenario: ecosystem-s3-archive-outage-extract, backend: pgsql}
+          - {scenario: ecosystem-sftp-archive-outage-source, backend: pgsql}
+          - {scenario: ecosystem-sftp-archive-outage-save, backend: pgsql}
+          - {scenario: ecosystem-sftp-archive-outage-extract, backend: pgsql}
+          - {scenario: ecosystem-sftp2-archive-outage-source, backend: pgsql}
+          - {scenario: ecosystem-sftp2-archive-outage-save, backend: pgsql}
+          - {scenario: ecosystem-sftp2-archive-outage-extract, backend: pgsql}
+          - {scenario: ecosystem-ftp-archive-outage-source, backend: pgsql}
+          - {scenario: ecosystem-ftp-archive-outage-save, backend: pgsql}
+          - {scenario: ecosystem-ftp-archive-outage-extract, backend: pgsql}
+          - {scenario: ecosystem-webdav-archive-outage-source, backend: pgsql}
+          - {scenario: ecosystem-webdav-archive-outage-save, backend: pgsql}
+          - {scenario: ecosystem-webdav-archive-outage-extract, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-outage-source, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-outage-save, backend: pgsql}
+          - {scenario: ecosystem-gridfs-archive-outage-extract, backend: pgsql}
+          - {scenario: ecosystem-async-s3-archive-outage-source, backend: pgsql}
+          - {scenario: ecosystem-async-s3-archive-outage-save, backend: pgsql}
+          - {scenario: ecosystem-async-s3-archive-outage-extract, backend: pgsql}
+          - {scenario: ecosystem-azure-archive-outage-source, backend: pgsql}
+          - {scenario: ecosystem-azure-archive-outage-save, backend: pgsql}
+          - {scenario: ecosystem-azure-archive-outage-extract, backend: pgsql}
+          - {scenario: ecosystem-gcs-archive-outage-source, backend: pgsql}
+          - {scenario: ecosystem-gcs-archive-outage-save, backend: pgsql}
+          - {scenario: ecosystem-gcs-archive-outage-extract, backend: pgsql}
           - {scenario: ecosystem-http-retry-matrix-status-408, backend: pgsql}
           - {scenario: ecosystem-http-retry-matrix-status-425, backend: pgsql}
           - {scenario: ecosystem-http-retry-matrix-status-429, backend: pgsql}
