@@ -271,3 +271,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B55 — Pathwise lifecycle
 - [x] Index/retention/deduplication, archive boundaries and live watcher scenarios.
 - [ ] Hosted qualification and remote interruption/remaining adapter contracts.
+
+## B56 — sequence and contextual contracts
+- [x] UID provider boundary and InterMix contextual/tagged scenarios.
+- [ ] Hosted qualification and remaining utility variants.

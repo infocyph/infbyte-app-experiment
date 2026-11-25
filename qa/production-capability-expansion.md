@@ -231,3 +231,7 @@ I: independent audit lane checks normalized job identities, fused/sharded-only r
 ## B55 — Pathwise indexing, retention, archive and watcher lifecycle
 
 I: three independent lanes: 120-file exact checksum index, stream iteration, preview/apply retention and actual hard-link deduplication; bounded ZIP extraction rejects traversal and oversized entries before mutating existing destination and accepts a valid archive; independent child-process file changes observed by live watcher and final snapshot. These exercise local storage, not remote interruption or all archive/ownership variants. FLOW-02: no skipped or weakened gates; DATA/OPS: disposable files and child reaped; hosted verification pending.
+
+## B56 — utility provider and contextual resolution boundaries
+
+I: two lanes cover UID in-memory domain capacity, shared real Redis PSR-16 sequence replacement, lost/regressed/malformed/exhausted state and callback boundaries; InterMix contextual class/reference/literal selection and tagged iteration in dynamic and strict compiled graphs, invalid binding configuration. No internal state reflection or clock sleeps. FLOW-02/COMPAT: public contracts remain mandatory. Hosted verification pending.
