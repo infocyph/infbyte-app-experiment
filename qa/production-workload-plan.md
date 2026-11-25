@@ -677,3 +677,7 @@ I: 20 independent jobs: three SQL messaging contracts across five drivers, five 
 ## B156 — Crypto rotation, challenge lifecycle and conditional validation
 
 I: 21 independent jobs: two OTP contracts across eight real authentication-state stores; AES-GCM and XChaCha envelope and protected-file rotation; multi-affix/digit options and conditional rule/exclusion reuse. TOTP rotation is an explicit lab application selection policy, not a new library orchestration API. Real durable state and independent peers, stable ciphertext provenance and no output mutation on rejection. SEC, DATA, TYPE, EXEC-03: source/matrix/dispatcher reviewed; hosted qualification pending. 718 routine rows; no upstream changes.
+
+## B157 — Utility and DI persistence contracts; engineering diagnostics
+
+I: 21 production rows and one separate engineering lane. Seven-store additional DI persistent cache parity, nine-store twelve-process independent warm cache reuse and release generation isolation; ArrayKit interleaved one-shot replay, bounded factory pipelines and replayed source failure, list/map config merge and resilient namespace corruption; oversized UID numeric ordering. PHPProbe syntax parallel/sequential, exclusions, timeout validation and SARIF remains separate engineering-only. CORE-01, TYPE, DATA, MEM, OPS-02, EXEC-03: source/matrix/dispatcher reviewed; hosted qualification pending. 739 routine rows; 11 PHPProbe modes; no upstream changes.

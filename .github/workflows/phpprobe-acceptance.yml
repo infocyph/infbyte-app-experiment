@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [syntax-graph, reference, duplicates, comments, config-check, changed-only, graph-api, reference-scope, duplicate-cache, comment-options]
+        mode: [syntax-graph, reference, duplicates, comments, config-check, changed-only, graph-api, reference-scope, duplicate-cache, comment-options, syntax-options]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

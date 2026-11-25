@@ -77,6 +77,7 @@ require __DIR__ . '/ecosystem-value-crypto.php';
 require __DIR__ . '/ecosystem-array-contracts.php';
 require __DIR__ . '/ecosystem-di-factories.php';
 require __DIR__ . '/ecosystem-di-runtime-contracts.php';
+require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-grpc-inbound.php';
 require __DIR__ . '/ecosystem-validation-casts.php';
 require __DIR__ . '/ecosystem-remote-jwks.php';
@@ -314,6 +315,23 @@ match ($argv[1] ?? '') {
     'file-key-rotation' => fileKeyRotationContracts(),
     'validation-affix-digits' => validationAffixDigitsContracts(),
     'validation-conditional' => validationConditionalContracts(),
+    'di-cache-parity-valkey' => diCacheWorkload('valkey'),
+    'di-cache-parity-memcached' => diCacheWorkload('memcached'),
+    'di-cache-parity-file' => diCacheWorkload('file'),
+    'di-cache-parity-phpfiles' => diCacheWorkload('phpfiles'),
+    'di-cache-parity-pdo' => diCacheWorkload('pdo'),
+    'di-cache-process-redis' => diCacheProcessContracts('redis'),
+    'di-cache-process-valkey' => diCacheProcessContracts('valkey'),
+    'di-cache-process-memcached' => diCacheProcessContracts('memcached'),
+    'di-cache-process-file' => diCacheProcessContracts('file'),
+    'di-cache-process-phpfiles' => diCacheProcessContracts('phpfiles'),
+    'di-cache-process-sqlite' => diCacheProcessContracts('sqlite'),
+    'di-cache-process-pdo' => diCacheProcessContracts('pdo'),
+    'lazy-replay' => lazyReplayContracts(),
+    'lazy-factory' => lazyFactoryContracts(),
+    'config-merge-contracts' => configMergeContracts(),
+    'config-resilience' => configResilienceContracts(),
+    'uid-ordering' => uidOrderingContracts(),
     'otp-enrollment' => otpEnrollmentWorkload(),
     'scylla' => scyllaWorkload(),
     'redis-failover-seed' => redisFailoverWorkload(true),

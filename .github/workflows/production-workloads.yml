@@ -452,6 +452,27 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-di-cache-parity-valkey, backend: pgsql}
+          - {scenario: ecosystem-di-cache-parity-memcached, backend: pgsql}
+          - {scenario: ecosystem-di-cache-parity-file, backend: pgsql}
+          - {scenario: ecosystem-di-cache-parity-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-di-cache-parity-pdo, backend: pgsql}
+          - {scenario: ecosystem-di-cache-parity-pdo, backend: mysql}
+          - {scenario: ecosystem-di-cache-parity-pdo, backend: mariadb}
+          - {scenario: ecosystem-di-cache-process-redis, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-valkey, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-memcached, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-file, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-sqlite, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-pdo, backend: pgsql}
+          - {scenario: ecosystem-di-cache-process-pdo, backend: mysql}
+          - {scenario: ecosystem-di-cache-process-pdo, backend: mariadb}
+          - {scenario: ecosystem-lazy-replay, backend: pgsql}
+          - {scenario: ecosystem-lazy-factory, backend: pgsql}
+          - {scenario: ecosystem-config-merge-contracts, backend: pgsql}
+          - {scenario: ecosystem-config-resilience, backend: pgsql}
+          - {scenario: ecosystem-uid-ordering, backend: pgsql}
           - {scenario: ecosystem-otp-challenge-replacement-redis, backend: pgsql}
           - {scenario: ecosystem-otp-challenge-replacement-valkey, backend: pgsql}
           - {scenario: ecosystem-otp-challenge-replacement-file, backend: pgsql}

@@ -267,6 +267,21 @@ PHP
     printf '%s\n' '<?php final class PolicyFixture { public const TEXT = "// SECURITY(auth): text"; }' > src/Policy.php
     expect_exit 0 comment-clean.json comments --json --policy=strict --doc-mode=parser --fail-on=info src
     ;;
+syntax-options)
+    mkdir -p src/ignored other
+    printf '%s\n' '<?php final class ValidFixture {}' > src/Valid.php
+    printf '%s\n' '<?php function invalid( {' > src/Broken.php
+    printf '%s\n' '<?php function excluded( {' > src/ignored/Excluded.php
+    printf '%s\n' '<?php final class SecondFixture {}' > other/Second.php
+    expect_exit 1 syntax-sequential.json syntax --json --parallel=1 --exclude=src/ignored src other
+    expect_exit 1 syntax-parallel.json syntax --json --parallel=4 --exclude=src/ignored src other
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$b=json_decode(file_get_contents($argv[2]),true,flags:JSON_THROW_ON_ERROR);foreach([$a,$b] as $x){if($x["files_checked"]!==3||count($x["failures"])!==1||$x["failures"][0]["file"]!=="src/Broken.php")exit(1);}' "$evidence/syntax-sequential.json" "$evidence/syntax-parallel.json"
+    expect_exit 1 syntax-sarif.json syntax --format=sarif --exclude=src/ignored src other
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);if($a["version"]!=="2.1.0"||count($a["runs"][0]["results"])!==1)exit(1);' "$evidence/syntax-sarif.json"
+    expect_exit 2 syntax-invalid-timeout.txt syntax --timeout=0 src
+    expect_exit 0 syntax-clean.json syntax --json --exclude=src/ignored --exclude=src/Broken.php src other
+    php -r '$a=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);if($a["files_checked"]!==2||$a["failures"]!==[])exit(1);' "$evidence/syntax-clean.json"
+    ;;
 config-check)
     expect_exit 0 presets.txt presets
     expect_exit 0 preset.json preset standard

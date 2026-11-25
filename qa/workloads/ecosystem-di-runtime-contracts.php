@@ -11,13 +11,19 @@ use Infocyph\InterMix\DI\Support\LifetimeEnum;
 use Infocyph\InterMix\DI\Support\TraceLevelEnum;
 use Infocyph\InterMix\Exceptions\ContainerException;
 
-function diCacheWorkload(): void
+function diCacheWorkload(?string $selectedBackend = null): void
 {
     $options = new CacheOptions(allowObjects: false, allowClosures: false, failOpen: false);
-    foreach (['redis', 'sqlite'] as $backend) {
-        $pool = static fn(): Cache => $backend === 'redis'
-            ? Cache::redis('di-definition-contract', options: $options)
-            : Cache::sqlite('di-definition-contract', evidenceDirectory() . '/di-cache.sqlite', $options);
+    foreach ($selectedBackend === null ? ['redis', 'sqlite'] : [$selectedBackend] as $backend) {
+        $root = evidenceDirectory() . '/di-cache-parity';
+        if ($selectedBackend !== null) {
+            verify(mkdir($root, 0700), 'DI cache root unavailable.');
+        }
+        $pool = static fn(): Cache => $selectedBackend !== null
+            ? sharedAtomicCache($backend, 'di-definition-contract', $root, $options)
+            : ($backend === 'redis'
+                ? Cache::redis('di-definition-contract', options: $options)
+                : Cache::sqlite('di-definition-contract', evidenceDirectory() . '/di-cache.sqlite', $options));
         verify($pool()->set('unrelated', 'preserve'), 'Independent cache sentinel unavailable.');
         $build = static function (string $generation, ?string $environment, string $value, int &$calls) use ($pool): ContainerBuilder {
             $builder = ContainerBuilder::create('di-contract-' . bin2hex(random_bytes(4)))
