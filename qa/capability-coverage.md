@@ -267,3 +267,7 @@ I: two independent lanes with native PHP reference membership/sort, adaptive inp
 ## B87 — InterMix persistent definition cache and runtime attribute diagnostics
 
 I: independent real Redis and SQLite cache pools validate explicit singleton eligibility, bulk warmup, null/array persistence across builders, environment/generation isolation, non-persistence of objects and unrelated key retention. Another lane exercises custom property resolvers, explicit method arguments, dynamic/compiled dependency ownership and diagnostic graph/trace lifecycle. Actual startup preload, further attribute and cache outage variants remain open. 299 routine rows; hosted verification pending.
+
+## B88 — ReqShield option and nested error contracts
+
+I: two independent lanes exercise IP family/scope, UUID range/list/exclusion/variant, decimal precision, absolute path and upload bounds, invalid option constructors, targeted/all nested distinct isolation, mutable/compiled reuse, custom messages, typed failure metadata, JSON/API/problem projections and validation exceptions. Remaining locale and rule-option permutations stay open. 301 routine rows; hosted verification pending.

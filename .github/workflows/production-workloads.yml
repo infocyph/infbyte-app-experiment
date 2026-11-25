@@ -170,6 +170,8 @@ jobs:
           - {scenario: ecosystem-cache-outage, backend: pgsql}
           - {scenario: ecosystem-invalidation-processes, backend: pgsql}
           - {scenario: ecosystem-validation-rules, backend: pgsql}
+          - {scenario: ecosystem-validation-options, backend: pgsql}
+          - {scenario: ecosystem-validation-nested-errors, backend: pgsql}
           - {scenario: ecosystem-validation-database, backend: mysql}
           - {scenario: ecosystem-validation-database, backend: pgsql}
           - {scenario: ecosystem-validation-database, backend: sqlite}

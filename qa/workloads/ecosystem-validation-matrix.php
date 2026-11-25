@@ -225,3 +225,77 @@ function validationDatabaseWorkload(): void
     expectFailure(static fn() => $builder->validate($valid), DatabaseValidationException::class, 'Database failure converted to ordinary invalid input.');
     echo "Real database batching, correlation, ignore/soft-delete and provider failure passed\n";
 }
+
+
+function validationOptionsWorkload(): void
+{
+    foreach ([
+        ['IPv4 public', 'ip:v4,public', '8.8.8.8', '10.0.0.1'],
+        ['IPv6 private', 'ip:v6,private', 'fd00::1', '2001:4860:4860::8888'],
+        ['IPv6 public', 'ip:v6,public', '2001:4860:4860::8888', 'fd00::1'],
+        ['IPv4 family', 'ip:ipv4', '127.0.0.1', '::1'],
+        ['IPv6 family', 'ip:ipv6', '::1', '127.0.0.1'],
+        ['UUID range', 'uuid:2-4', '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-11d4-a716-446655440000'],
+        ['UUID list', 'uuid:135', '550e8400-e29b-31d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440000'],
+        ['UUID exclusion', 'uuid:!4', '550e8400-e29b-51d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440000'],
+        ['UUID variant', 'uuid:4', '550E8400-E29B-41D4-A716-446655440000', '550e8400-e29b-41d4-0716-446655440000'],
+        ['decimal exact', 'decimal:2', '1.20', '1.2'],
+        ['decimal zero', 'decimal:0', '12', '12.0'],
+        ['decimal range', 'decimal:1,3', '-1.234', '1.2345'],
+        ['absolute path', 'path:absolute', '/reports/file.txt', 'reports/file.txt'],
+        ['upload length', 'upload_id:8', 'abc_1234', 'abc_12345'],
+    ] as [$name, $rule, $positive, $negative]) {
+        validationPair($name, $rule, ['v' => $positive], ['v' => $negative]);
+    }
+    foreach ([
+        static fn() => new \Infocyph\ReqShield\Rules\Ip('v4', 'v6'),
+        static fn() => new \Infocyph\ReqShield\Rules\Ip('public', 'private'),
+        static fn() => new \Infocyph\ReqShield\Rules\Ip('unknown'),
+        static fn() => new \Infocyph\ReqShield\Rules\Decimal(-1),
+        static fn() => new \Infocyph\ReqShield\Rules\Decimal(3, 1),
+    ] as $invalid) {
+        expectFailure($invalid, InvalidArgumentException::class, 'Invalid rule options accepted.');
+    }
+    echo "Rule option boundaries and incompatible configuration rejected\n";
+}
+
+function validationNestedErrorsWorkload(): void
+{
+    $valid = ['groups' => [
+        ['members' => [['email' => 'a@example.test'], ['email' => 'b@example.test']]],
+        ['members' => [['email' => 'a@example.test']]],
+    ]];
+    $invalid = $valid;
+    $invalid['groups'][0]['members'][1]['email'] = 'a@example.test';
+    foreach (['targeted', 'all'] as $mode) {
+        $builder = Validator::make(['groups.*.members.*.email' => 'required|email|distinct'])
+            ->setNestedFlattenMode($mode)
+            ->setFailFast(false);
+        foreach ([$builder, new CompiledValidator($builder)] as $validator) {
+            verify($validator->validate($valid)->passes(), 'Independent nested wildcard groups collided.');
+            $result = $validator->validate($invalid);
+            verify($result->fails() && $result->hasError('groups.0.members.1.email'), 'Nested sibling duplicate was not rejected.');
+            verify(!$result->hasError('groups.1.members.0.email'), 'Distinct escaped its wildcard group.');
+            verify($validator->validate($valid)->passes(), 'Nested validation retained previous failure.');
+        }
+    }
+    $builder = Validator::make(['quantity' => 'required|integer|min:3'])
+        ->setFailFast(false)
+        ->setCustomMessages(['quantity.min' => 'Quantity below minimum.']);
+    foreach ([$builder, new CompiledValidator($builder)] as $validator) {
+        $result = $validator->validate(['quantity' => 1]);
+        verify($result->fails() && $result->first('quantity') === 'Quantity below minimum.', 'Custom message not resolved.');
+        verify($result->errorFieldCount() === 1 && $result->errorMessageCount() === 1, 'Error counts disagree.');
+        $flat = $result->toFlatErrors();
+        verify(count($flat) === 1 && $flat[0]['field'] === 'quantity' && $flat[0]['value'] === 1, 'Flat failure metadata lost.');
+        verify($result->toApiErrors()['failures'] === $flat, 'API failure projection differs.');
+        $jsonApi = $result->toJsonApiErrors(409)['errors'][0];
+        verify($jsonApi['status'] === '409' && $jsonApi['source']['pointer'] === '/data/attributes/quantity', 'JSON API status/pointer mismatch.');
+        $problem = $result->toProblemJson(status: 400);
+        verify($problem['status'] === 400 && $problem['detail'] === $result->firstError() && $problem['failures'] === $flat, 'Problem response lost errors.');
+        verify(json_decode($result->toJson(), true, flags: JSON_THROW_ON_ERROR) === $result->errors(), 'JSON errors diverged.');
+        expectFailure(static fn() => $result->throw(), \Infocyph\ReqShield\Exceptions\ValidationException::class, 'Failed result did not throw.');
+        verify($validator->validate(['quantity' => 3])->passes(), 'Result error state leaked into next validation.');
+    }
+    echo "Nested distinct scope, mutable/compiled traversal, custom messages and error projections verified\n";
+}

@@ -124,6 +124,8 @@ match ($argv[1] ?? '') {
     'cache-outage' => cacheOutageWorkload(),
     'invalidation-processes' => invalidationProcessesWorkload(),
     'validation-rules' => validationRulesWorkload(),
+    'validation-options' => validationOptionsWorkload(),
+    'validation-nested-errors' => validationNestedErrorsWorkload(),
     'validation-database' => validationDatabaseWorkload(),
     'otp-backends' => otpBackendsWorkload(),
     'otp-drift' => otpDriftWorkload(),
