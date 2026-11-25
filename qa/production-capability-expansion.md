@@ -561,3 +561,7 @@ I: two independent fused/sharded FPM lanes use an actual HAProxy 3.2 TLS termina
 ## B137 — Shared Runwire worker byte-budget conservation
 
 I: a no-dev consumer lane adapts the published runtime's HTTP/1 socket-level budget contract into repeated shared-budget waves on both SelectLoop and the selected native loop. Two actual partial uploads compete for one 1024-byte ceiling, retained body bytes must be charged, and abort/discard must return the budget to zero. Independent complete, early response and premature EOF cases require exact body conservation or no retained bytes. This uses the runtime's internal budget accounting as a diagnostic witness, not a public API coverage claim. Host-specific and multiplexed aggregate budgets remain open. 426 routine rows; hosted qualification pending (MEM, REQUEST, OPS, EXEC-03).
+
+## B138 — OpenSSH SFTP rename settlement uncertainty
+
+I: independent loopback OpenSSH subsystem fixture forwards actual SFTP v3 packets to the native sftp-server. A bounded relay withholds the specific fixture rename request before forwarding, or observes the native success status then closes the channel without forwarding it. Both cases require Flysystem/Pathwise failure, explicit independent source/target reconciliation, tenant isolation and healthy fresh client; only the not-applied case is retried. Fixed fixture paths and one-shot markers detect automatic replay. No payload or password logging, no external target. 427 routine rows; hosted qualification pending (DATA, SEC, OPS, EXEC-03).

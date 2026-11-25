@@ -248,6 +248,7 @@ jobs:
           - {scenario: ecosystem-sftp-trust, backend: pgsql}
           - {scenario: ecosystem-sftp-outage, backend: pgsql}
           - {scenario: ecosystem-sftp-publication-fault, backend: pgsql}
+          - {scenario: ecosystem-sftp-rename-uncertain, backend: pgsql}
           - {scenario: ecosystem-s3-outage, backend: pgsql}
           - {scenario: ecosystem-s3-publication-fault, backend: pgsql}
           - {scenario: ecosystem-file-transactions, backend: pgsql}

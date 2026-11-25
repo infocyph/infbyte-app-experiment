@@ -248,3 +248,35 @@ function sftpPublicationFaultWorkload(string $phase): void
     verify($disk->read($final) === 'previous' && $foreign->read($final) === 'foreign', 'Recovery crossed publication or tenant boundary.');
     echo "Real interrupted staged SFTP upload, explicit cleanup, retry and publication reconciled\n";
 }
+
+function sftpRenameFaultWorkload(string $phase, string $mode): void
+{
+    putenv('LAB_STORAGE_BACKEND=sftp');
+    $context = storageOutageContext(false);
+    $disk = $context->filesystem();
+    $foreign = $context->filesystem('foreign');
+    $payload = str_repeat("receipt\0\xff\n", 4096);
+    verify(in_array($mode, ['before', 'after'], true), 'Unknown rename fault mode.');
+    $source = 'receipts/' . $mode . '-stage.bin';
+    $target = 'receipts/' . $mode . '-published.bin';
+    if ($phase === 'seed') {
+        $disk->write($source, $payload);
+        $foreign->write($target, 'foreign');
+        verify(!$disk->fileExists($target), 'Unexpected existing target.');
+        return;
+    }
+    if ($phase === 'fault') {
+        expectFailure(static fn() => $disk->move($source, $target), FilesystemException::class, 'Ambiguous SFTP move reported success.');
+        return;
+    }
+    verify($phase === 'recover', 'Unknown rename phase.');
+    if ($mode === 'before') {
+        verify($disk->read($source) === $payload && !$disk->fileExists($target), 'Withheld rename modified publication.');
+        $disk->move($source, $target);
+    }
+    verify(!$disk->fileExists($source) && $disk->read($target) === $payload, 'Rename reconciliation failed.');
+    verify($foreign->read($target) === 'foreign', 'Rename crossed tenant boundary.');
+    $disk->write('receipts/healthy-' . $mode, 'healthy');
+    verify($disk->read('receipts/healthy-' . $mode) === 'healthy', 'Fresh storage client failed.');
+    echo "SFTP $mode rename reconciliation passed\n";
+}

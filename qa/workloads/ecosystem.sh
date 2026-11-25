@@ -28,6 +28,7 @@ case "$SCENARIO" in
   ecosystem-amqp-tls) bash "$GITHUB_WORKSPACE/qa/workloads/broker-tls.sh" ;;
   ecosystem-amqp|ecosystem-sqs|ecosystem-amqp-dlq|ecosystem-sqs-fifo|ecosystem-sqs-redrive|ecosystem-amqp-ack-uncertain|ecosystem-amqp-wire-ack|ecosystem-sqs-ack-uncertain|ecosystem-sqs-wire-ack) bash "$GITHUB_WORKSPACE/qa/workloads/brokers.sh" ;;
   ecosystem-imap|ecosystem-pop3) bash "$GITHUB_WORKSPACE/qa/workloads/mailbox.sh" ;;
+  ecosystem-sftp-rename-uncertain) bash "$GITHUB_WORKSPACE/qa/workloads/sftp-rename.sh" ;;
   ecosystem-redis-cluster|ecosystem-mongodb|ecosystem-s3|ecosystem-sftp|ecosystem-sftp-trust|ecosystem-sftp-outage|ecosystem-sftp-publication-fault|ecosystem-s3-outage|ecosystem-s3-publication-fault|ecosystem-ftp|ecosystem-webdav|ecosystem-gridfs|ecosystem-sftp2|ecosystem-async-s3|ecosystem-azure|ecosystem-gcs|ecosystem-storage-local-modes) bash "$GITHUB_WORKSPACE/qa/workloads/remote-services.sh" ;;
   ecosystem-http-policy|ecosystem-http-pool|ecosystem-http-transfer|ecosystem-http-retry-safety|ecosystem-http-proxy) bash "$GITHUB_WORKSPACE/qa/workloads/http-policy.sh" ;;
   ecosystem-endurance) bash "$GITHUB_WORKSPACE/qa/workloads/endurance.sh" ;;
