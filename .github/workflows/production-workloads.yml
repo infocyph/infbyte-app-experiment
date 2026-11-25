@@ -732,6 +732,41 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
       php: ${{ matrix.php || '8.6' }}
 
+  ecosystem-residual:
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-foundation-risk-qualification-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-qualification-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-qualification-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-qualification-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-qualification-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-qualification-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-qualification-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-qualification-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-risk-qualification-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-risk-corruption-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-corruption-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-corruption-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-corruption-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-corruption-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-corruption-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-corruption-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-corruption-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-risk-corruption-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-risk-outage-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-outage-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-risk-outage-memcached, backend: pgsql}
+    uses: ./.github/workflows/production-worker.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+      php: ${{ matrix.php || '8.6' }}
+
   application:
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:

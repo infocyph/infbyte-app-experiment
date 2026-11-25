@@ -9,10 +9,10 @@ cleanup() {
 }
 trap cleanup EXIT
 case "$SCENARIO" in
-  ecosystem-cache-valkey-outage)
+  ecosystem-cache-valkey-outage|ecosystem-foundation-risk-outage-valkey)
     docker run -d --name lab-cache-fault -p 127.0.0.1:17389:6379 valkey/valkey:8 valkey-server --appendonly yes --appendfsync always
     ;;
-  ecosystem-cache-memcached-outage)
+  ecosystem-cache-memcached-outage|ecosystem-foundation-risk-outage-memcached)
     docker run -d --name lab-cache-fault -p 127.0.0.1:17389:11211 memcached:1.6
     ;;
   *)
@@ -22,8 +22,8 @@ esac
 ready() {
   for i in $(seq 1 30); do
     case "$SCENARIO" in
-      ecosystem-cache-valkey-outage) if docker exec lab-cache-fault valkey-cli ping | grep -qx PONG; then return; fi ;;
-      ecosystem-cache-memcached-outage) if php -r '$c=new Memcached();$c->addServer("127.0.0.1",17389);$v=$c->getVersion();exit(is_array($v)&&($v["127.0.0.1:17389"]??"0.0.0")!=="0.0.0"?0:1);'; then return; fi ;;
+      ecosystem-cache-valkey-outage|ecosystem-foundation-risk-outage-valkey) if docker exec lab-cache-fault valkey-cli ping | grep -qx PONG; then return; fi ;;
+      ecosystem-cache-memcached-outage|ecosystem-foundation-risk-outage-memcached) if php -r '$c=new Memcached();$c->addServer("127.0.0.1",17389);$v=$c->getVersion();exit(is_array($v)&&($v["127.0.0.1:17389"]??"0.0.0")!=="0.0.0"?0:1);'; then return; fi ;;
       *) if docker exec lab-cache-fault redis-cli ping | grep -qx PONG; then return; fi ;;
     esac
     sleep 1
