@@ -20,7 +20,55 @@ compile() {
   APP_ENV=production APP_DEBUG=false APP_CAPABILITIES= php infbyte app:ready
   php -r '$r=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);if (!is_file($r["manifest"]) || !hash_equals($r["manifest_sha256"],hash_file("sha256",$r["manifest"]))) exit(1);' "$RUNNER_TEMP/module-release.json"
 }
-if [[ "$SCENARIO" == ecosystem-module-lifecycle ]]; then
+if [[ "$SCENARIO" == ecosystem-module-conditional-* ]]; then
+  case "$SCENARIO" in
+    ecosystem-module-conditional-validation) dependent=security.validation; prerequisite=data.database; namespace=validation; patch="['database_connection'=>'primary']" ;;
+    ecosystem-module-conditional-mfa) dependent=security.mfa; prerequisite=security.crypto; namespace=auth; patch="['drivers'=>['mfa'=>'otp']]" ;;
+    ecosystem-module-conditional-messaging) dependent=execution.messaging; prerequisite=data.database; namespace=messaging; patch="['durable'=>['enabled'=>true]]" ;;
+    *) exit 1 ;;
+  esac
+  mutate disable "$dependent"
+  # Disable other consumers of the same prerequisite before manipulating it.
+  for feature in security.validation security.mfa execution.messaging; do
+    if [[ "$feature" != "$dependent" ]]; then mutate disable "$feature"; fi
+  done
+  mutate disable "$prerequisite"
+  original="config/$namespace.php"
+  test -f "$original"
+  cp "$original" "$original.lab-original"
+  trap 'mv "$original.lab-original" "$original"' EXIT
+  printf '<?php\nreturn array_replace_recursive(require __DIR__ . "/%s.php.lab-original", %s);\n' "$namespace" "$patch" > "$original"
+  php infbyte module:plan "$dependent" --json=1 > "$EVIDENCE/conditional-plan.json"
+  php -r '$p=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); if (!$p["applicable"] || !in_array($argv[2],$p["required"],true) || $p["effects"]["activate"]!==[]) exit(1);' "$EVIDENCE/conditional-plan.json" "$prerequisite"
+  unchanged() { sha256sum composer.json composer.lock config/modules.php; }
+  before="$(unchanged)"
+  if php infbyte module:enable "$dependent" --json=1 > "$EVIDENCE/blocked-enable.log" 2>&1; then
+    echo 'Conditional activation accepted without prerequisite' >&2; exit 1
+  fi
+  grep -F "$prerequisite" "$EVIDENCE/blocked-enable.log"
+  [[ "$(unchanged)" == "$before" ]]
+  mutate enable "$prerequisite"
+  mutate enable "$dependent"
+  php infbyte module:show "$dependent" --json=1 > "$EVIDENCE/conditional-enabled.json"
+  php -r '$p=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);$s=$p["states"][$argv[2]];if (!$s["enabled"] || !in_array($argv[3],$s["dependencies"],true)) exit(1);' "$EVIDENCE/conditional-enabled.json" "$dependent" "$prerequisite"
+  before="$(unchanged)"
+  for operation in disable remove; do
+    if php infbyte "module:$operation" "$prerequisite" --json=1 > "$EVIDENCE/blocked-$operation.log" 2>&1; then
+      echo 'Active dependent did not protect prerequisite' >&2; exit 1
+    fi
+    grep -F "$dependent" "$EVIDENCE/blocked-$operation.log"
+    [[ "$(unchanged)" == "$before" ]]
+  done
+  mutate disable "$dependent"
+  mutate disable "$prerequisite"
+  mv "$original.lab-original" "$original"
+  trap - EXIT
+  # Return to the normal all-feature topology, then compile and verify.
+  for feature in "${features[@]}"; do mutate enable "$feature"; done
+  selection "${features[@]}"
+  compile
+  echo "Conditional CLI lifecycle passed: $dependent -> $prerequisite"
+elif [[ "$SCENARIO" == ecosystem-module-lifecycle ]]; then
   # Disabled sibling must not cause shared OTP package removal while passkey stays enabled.
   mutate disable security.mfa
   mutate remove security.mfa

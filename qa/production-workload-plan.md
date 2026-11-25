@@ -549,3 +549,7 @@ I: independent single-worker HTTP/1 lanes use real partial uploads to hold two a
 ## B124 — Foundation conditional module dependency contracts
 
 I: the published no-dev consumer's actual Composer root constraints, installed package versions, configuration files and loaded extensions supply the public planner context. All eight combinations of database validation, OTP MFA and durable messaging are crossed with all 255 nonempty feature selections; expected prerequisite closure, activation blockers, disable/remove guards and side-effect-free planning are independently derived. Missing prerequisite package and extension snapshots, explicit passkey ownership, and unknown root ownership have additional checks. Simulated planner states do not represent actual package removal or live configuration mutation; those remain separate. 387 routine rows; hosted qualification pending (CONFIG, SEC, EXEC-03).
+
+## B125 — Live conditional specialist CLI transitions
+
+I: three independent no-dev consumer lanes alter actual source configuration, assert required prerequisite planning, blocked enable without prerequisite, enable in dependency order, blocked disable/removal with unchanged Composer and activation files, then restore original configuration, all-feature topology and compile a trusted release. Each lane isolates one conditional dependency; combined live service execution remains separate. 390 routine rows; hosted qualification pending (CONFIG, SEC, EXEC-03).
