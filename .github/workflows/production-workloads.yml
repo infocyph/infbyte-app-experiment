@@ -24,10 +24,12 @@ jobs:
           - {scenario: db-mysql-family-tls, backend: mariadb}
           - {scenario: db-sqlserver-tls, backend: mssql, php: '8.4'}
           - {scenario: db-migration-fault, backend: mysql}
+          - {scenario: db-migration-fault, backend: mariadb}
           - {scenario: db-migration-fault, backend: pgsql}
           - {scenario: db-migration-fault, backend: sqlite}
           - {scenario: db-proxy-mysql, backend: mysql}
           - {scenario: db-connection-loss, backend: mysql}
+          - {scenario: db-connection-loss, backend: mariadb}
           - {scenario: db-connection-loss, backend: pgsql}
           - {scenario: db-proxy-session, backend: pgsql}
           - {scenario: db-proxy-transaction, backend: pgsql}
@@ -35,11 +37,16 @@ jobs:
           - {scenario: db-binlog-replica, backend: mariadb}
           - {scenario: db-serialization, backend: pgsql}
           - {scenario: db-lock-modes, backend: mysql}
+          - {scenario: db-lock-modes, backend: mariadb}
           - {scenario: db-lock-modes, backend: pgsql}
           - {scenario: db-native-owner, backend: mysql}
+          - {scenario: db-native-owner, backend: mssql, php: '8.4'}
+          - {scenario: db-native-owner, backend: mariadb}
           - {scenario: db-native-owner, backend: pgsql}
           - {scenario: db-native-owner, backend: sqlite}
           - {scenario: db-callback-failure, backend: mysql}
+          - {scenario: db-callback-failure, backend: mssql, php: '8.4'}
+          - {scenario: db-callback-failure, backend: mariadb}
           - {scenario: db-callback-failure, backend: pgsql}
           - {scenario: db-callback-failure, backend: sqlite}
           - {scenario: db-driver, backend: mysql}
@@ -48,6 +55,8 @@ jobs:
           - {scenario: db-driver, backend: mariadb}
           - {scenario: db-driver, backend: mssql, php: '8.4'}
           - {scenario: db-relations, backend: mysql}
+          - {scenario: db-relations, backend: mssql, php: '8.4'}
+          - {scenario: db-relations, backend: mariadb}
           - {scenario: db-relations, backend: pgsql}
           - {scenario: db-relations, backend: sqlite}
           - {scenario: db-relations-advanced, backend: mysql}
@@ -56,41 +65,65 @@ jobs:
           - {scenario: db-relations-advanced, backend: mariadb}
           - {scenario: db-relations-advanced, backend: mssql, php: '8.4'}
           - {scenario: db-lock-wait, backend: mysql}
+          - {scenario: db-lock-wait, backend: mariadb}
           - {scenario: db-lock-wait, backend: pgsql}
           - {scenario: db-pool-lifecycle, backend: mysql}
+          - {scenario: db-pool-lifecycle, backend: mssql, php: '8.4'}
+          - {scenario: db-pool-lifecycle, backend: mariadb}
           - {scenario: db-pool-lifecycle, backend: pgsql}
           - {scenario: db-budgets, backend: mysql}
+          - {scenario: db-budgets, backend: mariadb}
           - {scenario: db-budgets, backend: pgsql}
           - {scenario: db-isolation, backend: mysql}
+          - {scenario: db-isolation, backend: mariadb}
           - {scenario: db-isolation, backend: pgsql}
           - {scenario: db-wal, backend: sqlite}
           - {scenario: db-replica-fault, backend: pgsql}
           - {scenario: db-schema, backend: mysql}
+          - {scenario: db-schema, backend: mssql, php: '8.4'}
+          - {scenario: db-schema, backend: mariadb}
           - {scenario: db-schema, backend: pgsql}
           - {scenario: db-schema, backend: sqlite}
           - {scenario: db-query, backend: mysql}
+          - {scenario: db-query, backend: mariadb}
           - {scenario: db-query, backend: pgsql}
           - {scenario: db-query, backend: sqlite}
           - {scenario: db-repository, backend: mysql}
+          - {scenario: db-repository, backend: mssql, php: '8.4'}
+          - {scenario: db-repository, backend: mariadb}
           - {scenario: db-repository, backend: pgsql}
           - {scenario: db-repository, backend: sqlite}
           - {scenario: db-query-cache, backend: mysql}
+          - {scenario: db-query-cache, backend: mssql, php: '8.4'}
+          - {scenario: db-query-cache, backend: mariadb}
           - {scenario: db-query-cache, backend: pgsql}
           - {scenario: db-query-cache, backend: sqlite}
           - {scenario: db-query-cache-race, backend: mysql}
+          - {scenario: db-query-cache-race, backend: mssql, php: '8.4'}
+          - {scenario: db-query-cache-race, backend: mariadb}
           - {scenario: db-query-cache-race, backend: pgsql}
+          - {scenario: db-query-cache-overlap, backend: pgsql}
           - {scenario: db-query-cache-race, backend: sqlite}
           - {scenario: db-stream, backend: mysql}
+          - {scenario: db-stream, backend: mssql, php: '8.4'}
+          - {scenario: db-stream, backend: mariadb}
           - {scenario: db-stream, backend: pgsql}
           - {scenario: db-stream, backend: sqlite}
           - {scenario: db-security, backend: mysql}
+          - {scenario: db-security, backend: mssql, php: '8.4'}
+          - {scenario: db-security, backend: mariadb}
           - {scenario: db-security, backend: pgsql}
           - {scenario: db-security, backend: sqlite}
           - {scenario: db-transactions, backend: mysql}
+          - {scenario: db-transactions, backend: mssql, php: '8.4'}
+          - {scenario: db-transactions, backend: mariadb}
           - {scenario: db-transactions, backend: pgsql}
           - {scenario: db-locking, backend: mysql}
+          - {scenario: db-locking, backend: mariadb}
           - {scenario: db-locking, backend: pgsql}
           - {scenario: db-pool, backend: mysql}
+          - {scenario: db-pool, backend: mssql, php: '8.4'}
+          - {scenario: db-pool, backend: mariadb}
           - {scenario: db-pool, backend: pgsql}
           - {scenario: db-replicas, backend: pgsql}
     uses: ./.github/workflows/production-worker.yml

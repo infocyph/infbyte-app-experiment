@@ -279,3 +279,7 @@ I: three independent lanes cover signed/unsigned numeric boundaries, all six rad
 ## B90 — OTP shared-state parity and archive lifecycle
 
 I: five additional OTP lanes exercise the existing twelve-process challenge/HOTP/TOTP replay and attempt-exhaustion contract on Redis, file, SQLite, PostgreSQL PDO and MySQL PDO; independent archive lane verifies filter membership, selected extraction, iterator/progress parity, encrypted ZIP interoperability with native libzip, incorrect password failure, and entry-count/total-size/ratio limits without destination mutation. 310 routine rows; hosted qualification pending.
+
+## B91 — SQL backend parity and in-flight query invalidation
+
+I: 20 additional MariaDB workload rows and 12 additional SQL Server rows reuse existing assertions, including schema, relations, repository, streaming, transactions and shared cache. SQL Server database initialization is moved to the shared dispatcher for applicable scenarios. Independent PostgreSQL overlap lane confirms actual server-side advisory-lock wait before a concurrent committed transfer, releases the reader only after commit, and checks fresh/warm cached results against the new generation. Remaining topology and driver-specific variations stay open. 343 routine matrix rows; hosted verification pending.

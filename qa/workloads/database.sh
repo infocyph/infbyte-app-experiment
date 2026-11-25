@@ -1,7 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 probe="$GITHUB_WORKSPACE/qa/workloads/database.php"
+if [[ "$SCENARIO" != db-sqlserver-tls ]]; then
+  if [[ "$DB_BACKEND" == mssql ]]; then
+    ready=0
+    for attempt in $(seq 1 60); do
+      if php -r 'try {$pdo=new PDO("sqlsrv:Server=127.0.0.1,1433;Database=master;Encrypt=yes;TrustServerCertificate=yes;LoginTimeout=2","sa","Experiment-Only-42!"); $pdo->exec("CREATE DATABASE experiment");} catch (PDOException $e) {fwrite(STDERR,$e->getMessage().PHP_EOL);exit(1);}'; then ready=1; break; fi
+      sleep 2
+    done
+    test "$ready" = 1
+  fi
+fi
 case "$SCENARIO" in
+  db-query-cache-overlap) bash "$GITHUB_WORKSPACE/qa/workloads/database-cache-overlap.sh" ;;
   db-query-cache-race) bash "$GITHUB_WORKSPACE/qa/workloads/database-cache-race.sh" ;;
   db-sqlserver-tls) bash "$GITHUB_WORKSPACE/qa/workloads/database-sqlserver-tls.sh" ;;
   db-tls) bash "$GITHUB_WORKSPACE/qa/workloads/database-tls.sh" ;;
@@ -12,14 +23,6 @@ case "$SCENARIO" in
   db-proxy-*) bash "$GITHUB_WORKSPACE/qa/workloads/database-proxy.sh" ;;
   db-binlog-replica) bash "$GITHUB_WORKSPACE/qa/workloads/database-binlog.sh" ;;
   db-driver|db-relations-advanced)
-    if [[ "$DB_BACKEND" == mssql ]]; then
-      ready=0
-      for attempt in $(seq 1 60); do
-        if php -r 'try {$pdo=new PDO("sqlsrv:Server=127.0.0.1,1433;Database=master;Encrypt=yes;TrustServerCertificate=yes;LoginTimeout=2","sa","Experiment-Only-42!"); $pdo->exec("CREATE DATABASE experiment");} catch (PDOException $e) {fwrite(STDERR,$e->getMessage().PHP_EOL);exit(1);}'; then ready=1; break; fi
-        sleep 2
-      done
-      test "$ready" = 1
-    fi
     php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-relations) php "$probe" relations | tee "$EVIDENCE/database.log" ;;
   db-schema|db-query|db-repository|db-query-cache|db-stream|db-security|db-lock-wait|db-pool-lifecycle|db-budgets|db-isolation|db-wal|db-lock-modes|db-native-owner|db-callback-failure)
