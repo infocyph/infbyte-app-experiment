@@ -103,6 +103,7 @@ match ($argv[1] ?? '') {
     'amqp-ack-uncertain' => brokerAcknowledgementWorkload('amqp'),
     'amqp-wire-ack' => brokerAcknowledgementWorkload('amqp-wire'),
     'sqs-ack-uncertain' => brokerAcknowledgementWorkload('sqs'),
+    'sqs-wire-ack' => brokerAcknowledgementWorkload('sqs-wire'),
     'amqp-tls-seed' => amqpTlsSeed(),
     'amqp-tls-recover' => amqpTlsRecover(),
     'sqs-redrive' => sqsRedriveWorkload(),

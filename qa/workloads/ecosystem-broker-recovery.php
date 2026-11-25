@@ -129,8 +129,9 @@ final class LabAcknowledgementUnknown extends RuntimeException {}
 
 function brokerAcknowledgementWorkload(string $provider): void
 {
-    $wire = $provider === 'amqp-wire';
-    $root = $wire ? (string) getenv('LAB_AMQP_FAULT_ROOT') : '';
+    $wire = in_array($provider, ['amqp-wire', 'sqs-wire'], true);
+    $sqs = in_array($provider, ['sqs', 'sqs-wire'], true);
+    $root = $wire ? (string) getenv($sqs ? 'LAB_SQS_FAULT_ROOT' : 'LAB_AMQP_FAULT_ROOT') : '';
     [$db, $serializer, , $clock] = messagingSetup();
     $db->statement('CREATE TABLE lab_job_attempts (id VARCHAR(100) PRIMARY KEY, attempts INTEGER NOT NULL)');
     $invoker = new \Infocyph\Omnibus\Handler\HandlerInvoker(new \Infocyph\Omnibus\Handler\HandlerMap([
@@ -152,14 +153,29 @@ function brokerAcknowledgementWorkload(string $provider): void
     $connection = null;
     $client = null;
     $url = null;
-    if ($provider === 'sqs') {
+    $faultClient = null;
+    if ($sqs) {
         $client = new SqsClient(['version' => 'latest', 'region' => 'us-east-1', 'endpoint' => 'http://127.0.0.1:19324',
             'credentials' => ['key' => 'fixture', 'secret' => 'fixture'], 'http' => ['connect_timeout' => 3, 'timeout' => 10]]);
         $url = $client->createQueue(['QueueName' => 'ack-contract'])['QueueUrl'];
+        if ($wire) {
+            $path = parse_url($url, PHP_URL_PATH);
+            verify(is_string($path) && $path !== '', 'Fixture queue URL has no path.');
+            $url = 'http://127.0.0.1:19324' . $path;
+            $faultClient = new SqsClient([
+                'version' => 'latest', 'region' => 'us-east-1', 'endpoint' => 'http://127.0.0.1:19324',
+                'credentials' => ['key' => 'fixture', 'secret' => 'fixture'], 'retries' => 0,
+                'http' => [
+                    'connect_timeout' => 3, 'timeout' => 10, 'expect' => false,
+                    'curl' => [CURLOPT_CONNECT_TO => ['127.0.0.1:19324:127.0.0.1:19325']],
+                ],
+            ]);
+        }
     }
-    $connect = static function (?Closure $fault = null) use ($provider, $serializer, $client, $url, &$connection, $wire) {
-        if ($provider === 'sqs') {
-            return new SqsTransport(new LabSqsBackend($client, $url, ackFault: $fault), $serializer);
+    $connect = static function (?Closure $fault = null) use ($sqs, $serializer, $client, $faultClient, $url, &$connection, $wire) {
+        if ($sqs) {
+            $selected = $wire && $fault !== null ? $faultClient : $client;
+            return new SqsTransport(new LabSqsBackend($selected, $url, ackFault: $fault), $serializer);
         }
         $port = $wire && $fault !== null ? 15673 : 15672;
         $connection = new \PhpAmqpLib\Connection\AMQPStreamConnection('127.0.0.1', $port, 'experiment', 'fixture-only-password', connection_timeout: 3.0, read_write_timeout: 5.0);
@@ -192,11 +208,18 @@ function brokerAcknowledgementWorkload(string $provider): void
             });
             $transport->send(new Envelope(new LabJob($phase, 42)), 'ack-contract');
             $worker = $consumer($transport);
-            $failureType = $wire ? \PhpAmqpLib\Exception\AMQPExceptionInterface::class : LabAcknowledgementUnknown::class;
+            $failureType = match ($provider) {
+                'amqp-wire' => \PhpAmqpLib\Exception\AMQPExceptionInterface::class,
+                'sqs-wire' => \Aws\Exception\AwsException::class,
+                default => LabAcknowledgementUnknown::class,
+            };
             expectFailure(static fn() => $worker->run('ack-contract', 1, 2.0), $failureType, 'Consumer concealed unknown settlement.');
             if ($wire) {
-                $expected = $phase === 'before' ? 'basic.ack withheld' : 'queue.declare-ok withheld after basic.ack';
-                verify(is_file($root . '/' . $phase) && trim((string) file_get_contents($root . '/' . $phase)) === $expected, 'Expected AMQP wire settlement fault was not observed.');
+                $expected = $sqs
+                    ? ($phase === 'before' ? 'DeleteMessage withheld' : 'DeleteMessage 200 response withheld')
+                    : ($phase === 'before' ? 'basic.ack withheld' : 'queue.declare-ok withheld after basic.ack');
+                verify(is_file($root . '/' . $phase) && trim((string) file_get_contents($root . '/' . $phase)) === $expected, 'Expected wire settlement fault was not observed.');
+                verify(!is_file($root . '/replayed-' . $phase), 'Ambiguous settlement was automatically replayed.');
             }
             verify($db->table('lab_job_effects')->where('id', '=', $phase)->count() === 1, 'Durable effect lost before settlement.');
             $disconnect();

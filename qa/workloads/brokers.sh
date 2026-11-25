@@ -12,7 +12,7 @@ case "$SCENARIO" in
     done
     docker exec lab-broker rabbitmq-diagnostics -q ping
     ;;
-  ecosystem-sqs|ecosystem-sqs-fifo|ecosystem-sqs-redrive|ecosystem-sqs-ack-uncertain)
+  ecosystem-sqs|ecosystem-sqs-fifo|ecosystem-sqs-redrive|ecosystem-sqs-ack-uncertain|ecosystem-sqs-wire-ack)
     docker run -d --name lab-broker -p 127.0.0.1:19324:9324 softwaremill/elasticmq-native:latest
     composer require aws/aws-sdk-php --no-interaction --prefer-dist --no-progress
     for i in $(seq 1 60); do
@@ -36,6 +36,19 @@ if [[ "$SCENARIO" == ecosystem-amqp-wire-ack ]]; then
   test -f "$LAB_AMQP_FAULT_ROOT/ready"
   timeout 90s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" amqp-wire-ack | tee "$EVIDENCE/ecosystem.log"
   cat "$LAB_AMQP_FAULT_ROOT/before" "$LAB_AMQP_FAULT_ROOT/after" > "$EVIDENCE/amqp-wire-faults.txt"
+elif [[ "$SCENARIO" == ecosystem-sqs-wire-ack ]]; then
+  export LAB_SQS_FAULT_ROOT="$(mktemp -d "$RUNNER_TEMP/sqs-wire.XXXXXXXX")"
+  python3 "$GITHUB_WORKSPACE/qa/workloads/sqs-ack-peer.py" "$LAB_SQS_FAULT_ROOT" > "$EVIDENCE/sqs-wire.log" 2>&1 &
+  peer=$!
+  trap 'kill "$peer" 2>/dev/null || :; wait "$peer" 2>/dev/null || :; rm -rf "$LAB_SQS_FAULT_ROOT"; docker rm -f lab-broker >/dev/null 2>&1 || :' EXIT
+  for attempt in {1..100}; do
+    [[ -f "$LAB_SQS_FAULT_ROOT/ready" ]] && break
+    kill -0 "$peer"
+    sleep 0.1
+  done
+  test -f "$LAB_SQS_FAULT_ROOT/ready"
+  timeout 90s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" sqs-wire-ack | tee "$EVIDENCE/ecosystem.log"
+  cat "$LAB_SQS_FAULT_ROOT/before" "$LAB_SQS_FAULT_ROOT/after" > "$EVIDENCE/sqs-wire-faults.txt"
 else
   php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosystem-}" | tee "$EVIDENCE/ecosystem.log"
 fi

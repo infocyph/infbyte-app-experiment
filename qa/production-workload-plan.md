@@ -517,3 +517,7 @@ I: pinned-host real SFTP v3 upload with an 8 MiB disposable source, a stream-con
 ## B116 — AMQP wire-level settlement ambiguity
 
 I: isolated plaintext AMQP 0-9-1 frame relay forwards real RabbitMQ traffic without logging authentication or message contents. Withhold basic.ack before forwarding, or forward basic.ack then withhold the broker's subsequent ordered queue.declare-ok response. Require actual transport exception and exact relay markers, then use an independent direct client to verify redelivery only for the unsettled message, single durable SQL effect per identity and no handler-failure misclassification. AMQP basic.ack is asynchronous; queue.declare-ok is an ordering barrier, not a native acknowledgement response. 373 routine rows; hosted qualification pending (DATA, OPS, EXEC-03).
+
+## B117 — SQS-compatible wire-level delete settlement ambiguity
+
+I: local HTTP fault relay connected through cURL CONNECT_TO retains the real SDK's origin URL and request signature. Supports AWS JSON and Query DeleteMessage dispatch, drops the complete request before forwarding or withholds an actual HTTP 200 origin response, and marks duplicate fault requests. SDK retries disabled for the faulted client; direct replacement consumer reconciles visibility-timeout redelivery versus settled absence and verifies one durable SQL effect per identity. No real AWS exactly-once or provider availability claim. 374 routine rows; hosted qualification pending (DATA, OPS, EXEC-03).
