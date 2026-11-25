@@ -1,4 +1,4 @@
-# Consolidated remaining implementation register (B65)
+# Consolidated remaining implementation register (B66)
 
 This is a conservative, current gap register, not an exhaustive certification. `I` means a scenario is committed, not passed. Historical open rows in the append-only expansion register are not automatically closed by later work. Phase 1 ends only when every applicable documented capability and public production contract has an independently executable scenario or a justified explicit exclusion. Hosted failures remain required and upstream repairs are deferred.
 
@@ -23,7 +23,7 @@ This is a conservative, current gap register, not an exhaustive certification. `
 
 ## Inventory and closure rules
 
-- The independent `ecosystem-api-inventory` lane checks unique normalized workflow matrix rows, fused/sharded-only routing, dispatcher branches and referenced scripts. It emits actual installed package versions and lexical named type/public method declarations in `public-api-inventory.json` without instantiating vendor classes. The inventory is not a method-level coverage report and does not infer inheritance, options, semantics or dynamically dispatched APIs.
+- The independent `ecosystem-api-inventory` lane checks unique normalized workflow matrix rows across the database, ecosystem and application shards (each capped at 256), fused/sharded-only routing, dispatcher branches and referenced scripts. It emits actual installed package versions and lexical named type/public method declarations in `public-api-inventory.json` without instantiating vendor classes. The inventory is not a method-level coverage report and does not infer inheritance, options, semantics or dynamically dispatched APIs.
 - A public production contract is closed only by an explicit scenario with a stable assertion, relevant backend/host variants and relevant failure/concurrency behavior. Constructors/accessors and equivalent implementation paths can share evidence; unsupported capabilities must be explicitly excluded with source justification.
 - Keep engineering-only tooling distinct from the published no-dev runtime. Cloud emulators are not provider certification; hosted synthetic load is not a production capacity or availability guarantee.
 - Reconcile this register against the emitted published API inventory and documentation at every dependency change. Do not mark all implementation complete on job count or source-name matching.

@@ -2,171 +2,34 @@ name: Production workload laboratory
 on:
   push:
     branches: [main]
-    paths: ['qa/**', '.github/workflows/production-workloads.yml']
+    paths: ['qa/**', '.github/workflows/production-workloads.yml', '.github/workflows/production-worker.yml']
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  workload:
-    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'default' }} / PHP ${{ matrix.php || '8.6' }}"
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+  database:
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {scenario: ecosystem-wire-outbound-h3, backend: pgsql}
-          - {scenario: ecosystem-cache-tls, backend: pgsql}
-          - {scenario: ecosystem-http-pool, backend: pgsql}
-          - {scenario: ecosystem-http-transfer, backend: pgsql}
-          - {scenario: ecosystem-auth-lifecycle, backend: mysql}
-          - {scenario: ecosystem-jwt-replay, backend: mysql}
-          - {scenario: ecosystem-auth-lifecycle, backend: pgsql}
-          - {scenario: ecosystem-jwt-replay, backend: pgsql}
-          - {scenario: ecosystem-amqp-dlq, backend: pgsql}
-          - {scenario: ecosystem-sqs-fifo, backend: pgsql}
           - {scenario: db-commit-uncertain, backend: pgsql}
           - {scenario: db-tls, backend: pgsql}
           - {scenario: db-mysql-family-tls, backend: mysql}
           - {scenario: db-mysql-family-tls, backend: mariadb}
-          - {scenario: ecosystem-remote-jwks, backend: pgsql}
-          - {scenario: ecosystem-uid-provider-boundaries, backend: pgsql}
-          - {scenario: ecosystem-di-contextual, backend: pgsql}
-          - {scenario: ecosystem-file-index-retention, backend: pgsql}
-          - {scenario: ecosystem-archive-security, backend: pgsql}
-          - {scenario: ecosystem-file-watch, backend: pgsql}
-          - {scenario: ecosystem-api-inventory, backend: pgsql}
-          - {scenario: ecosystem-recovery, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-recovery, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-release-cutover, backend: mysql, matcher: fused}
-          - {scenario: ecosystem-release-cutover, backend: mysql, matcher: sharded}
-          - {scenario: ecosystem-release-cutover, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-release-cutover, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-tenants, backend: mysql, matcher: fused}
-          - {scenario: ecosystem-tenants, backend: mysql, matcher: sharded}
-          - {scenario: ecosystem-tenants, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-tenants, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-http-representations, backend: pgsql}
-          - {scenario: ecosystem-http-signatures, backend: pgsql}
-          - {scenario: ecosystem-uid-families, backend: pgsql}
-          - {scenario: ecosystem-array-transforms, backend: pgsql}
-          - {scenario: ecosystem-di-environment, backend: pgsql}
-          - {scenario: ecosystem-sftp-trust, backend: pgsql}
-          - {scenario: ecosystem-file-transactions, backend: pgsql}
-          - {scenario: ecosystem-mailbox-tls, backend: pgsql}
-          - {scenario: ecosystem-mailbox-idle, backend: pgsql}
-          - {scenario: ecosystem-cache-outage, backend: pgsql}
-          - {scenario: ecosystem-invalidation-processes, backend: pgsql}
-          - {scenario: ecosystem-validation-rules, backend: pgsql}
-          - {scenario: ecosystem-validation-database, backend: mysql}
-          - {scenario: ecosystem-validation-database, backend: pgsql}
-          - {scenario: ecosystem-validation-database, backend: sqlite}
-          - {scenario: ecosystem-otp-durable, backend: mysql}
-          - {scenario: ecosystem-otp-durable, backend: pgsql}
-          - {scenario: ecosystem-otp-backends, backend: mysql}
-          - {scenario: ecosystem-otp-backends, backend: pgsql}
-          - {scenario: ecosystem-otp-drift, backend: pgsql}
-          - {scenario: ecosystem-supervisor, backend: pgsql}
-          - {scenario: ecosystem-http-framing, backend: pgsql}
           - {scenario: db-migration-fault, backend: mysql}
           - {scenario: db-migration-fault, backend: pgsql}
           - {scenario: db-migration-fault, backend: sqlite}
           - {scenario: db-proxy-mysql, backend: mysql}
           - {scenario: db-connection-loss, backend: mysql}
           - {scenario: db-connection-loss, backend: pgsql}
-          - {scenario: ecosystem-wire-http3, backend: pgsql}
-          - {scenario: ecosystem-wire-mtls, backend: pgsql}
-          - {scenario: browser, backend: pgsql, host: roadrunner, matcher: fused}
-          - {scenario: browser, backend: pgsql, host: roadrunner, matcher: sharded}
-          - {scenario: browser, backend: pgsql, host: frankenphp, matcher: fused}
-          - {scenario: browser, backend: pgsql, host: frankenphp, matcher: sharded}
-          - {scenario: ecosystem-scylla, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-redis-failover, backend: pgsql}
-          - {scenario: ecosystem-storage-local-modes, backend: pgsql}
-          - {scenario: ecosystem-ftp, backend: pgsql}
-          - {scenario: ecosystem-webdav, backend: pgsql}
-          - {scenario: ecosystem-gridfs, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-sftp2, backend: pgsql}
-          - {scenario: ecosystem-async-s3, backend: pgsql}
-          - {scenario: ecosystem-azure, backend: pgsql}
-          - {scenario: ecosystem-gcs, backend: pgsql}
           - {scenario: db-proxy-session, backend: pgsql}
           - {scenario: db-proxy-transaction, backend: pgsql}
-          - {scenario: ecosystem-wire-tcp, backend: pgsql}
-          - {scenario: ecosystem-wire-unix, backend: pgsql}
-          - {scenario: ecosystem-wire-udp, backend: pgsql}
-          - {scenario: ecosystem-wire-websocket, backend: pgsql}
-          - {scenario: ecosystem-wire-http2, backend: pgsql}
-          - {scenario: ecosystem-invalidation-sql, backend: mysql}
-          - {scenario: ecosystem-invalidation-sql, backend: pgsql}
-          - {scenario: ecosystem-invalidation-stream, backend: pgsql}
-          - {scenario: browser, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
-          - {scenario: browser, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
-          - {scenario: browser, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
-          - {scenario: browser, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
-          - {scenario: ecosystem-module-0, backend: pgsql}
-          - {scenario: ecosystem-module-1, backend: pgsql}
-          - {scenario: ecosystem-module-2, backend: pgsql}
-          - {scenario: ecosystem-module-3, backend: pgsql}
-          - {scenario: ecosystem-module-4, backend: pgsql}
-          - {scenario: ecosystem-module-5, backend: pgsql}
-          - {scenario: ecosystem-module-6, backend: pgsql}
-          - {scenario: ecosystem-module-7, backend: pgsql}
-          - {scenario: ecosystem-module-lifecycle, backend: pgsql}
-          - {scenario: ecosystem-amqp, backend: pgsql}
-          - {scenario: ecosystem-sqs, backend: pgsql}
-          - {scenario: ecosystem-imap, backend: pgsql}
-          - {scenario: ecosystem-pop3, backend: pgsql}
-          - {scenario: ecosystem-jwt-jws, backend: pgsql}
-          - {scenario: ecosystem-jwe, backend: pgsql}
-          - {scenario: ecosystem-gateway, backend: pgsql}
-          - {scenario: ecosystem-response-cache, backend: pgsql}
-          - {scenario: ecosystem-throttle, backend: pgsql}
-          - {scenario: ecosystem-cookie-protection, backend: pgsql}
           - {scenario: db-binlog-replica, backend: mysql}
           - {scenario: db-binlog-replica, backend: mariadb}
-          - {scenario: ecosystem-uid-sequences, backend: pgsql}
-          - {scenario: ecosystem-closure, backend: pgsql}
-          - {scenario: ecosystem-config-layering, backend: pgsql}
-          - {scenario: ecosystem-pki, backend: pgsql}
-          - {scenario: ecosystem-crypto-algorithms, backend: pgsql}
-          - {scenario: ecosystem-validation-registry, backend: pgsql}
-          - {scenario: ecosystem-endurance, backend: mysql, matcher: fused}
-          - {scenario: ecosystem-endurance, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-http-policy, backend: pgsql}
-          - {scenario: ecosystem-redis-cluster, backend: pgsql}
-          - {scenario: ecosystem-mongodb, backend: pgsql, php: '8.4'}
-          - {scenario: ecosystem-s3, backend: pgsql}
-          - {scenario: ecosystem-sftp, backend: pgsql}
-          - {scenario: ecosystem-connected, backend: mysql, matcher: fused}
-          - {scenario: ecosystem-connected, backend: mysql, matcher: sharded}
-          - {scenario: ecosystem-connected, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-connected, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-routing, backend: pgsql, matcher: fused}
-          - {scenario: ecosystem-routing, backend: pgsql, matcher: sharded}
-          - {scenario: ecosystem-coroutines, backend: pgsql}
-          - {scenario: ecosystem-async-files, backend: pgsql}
-          - {scenario: ecosystem-pathwise-upload, backend: pgsql}
-          - {scenario: ecosystem-pathwise-download, backend: pgsql}
-          - {scenario: ecosystem-mail-mime, backend: pgsql}
-          - {scenario: ecosystem-omnibus-workflow, backend: pgsql}
-          - {scenario: ecosystem-omnibus-workflow, backend: mysql}
-          - {scenario: ecosystem-omnibus-redis, backend: pgsql}
-          - {scenario: ecosystem-omnibus-redis, backend: mysql}
-          - {scenario: ecosystem-cache-tier, backend: pgsql}
-          - {scenario: ecosystem-cache-local, backend: pgsql}
-          - {scenario: ecosystem-cache-integrity, backend: pgsql}
-          - {scenario: ecosystem-cache-race, backend: pgsql}
-          - {scenario: ecosystem-otp-race, backend: pgsql}
-          - {scenario: ecosystem-otp-recovery, backend: pgsql}
-          - {scenario: ecosystem-validation, backend: pgsql}
-          - {scenario: ecosystem-crypto-file, backend: pgsql}
-          - {scenario: ecosystem-crypto-envelope, backend: pgsql}
-          - {scenario: ecosystem-core-lifecycle, backend: pgsql}
-          - {scenario: ecosystem-intermix, backend: pgsql}
-          - {scenario: ecosystem-array-config, backend: pgsql}
-          - {scenario: ecosystem-array-stream, backend: pgsql}
-          - {scenario: ecosystem-uid-formats, backend: pgsql}
           - {scenario: db-serialization, backend: pgsql}
           - {scenario: db-lock-modes, backend: mysql}
           - {scenario: db-lock-modes, backend: pgsql}
@@ -219,6 +82,172 @@ jobs:
           - {scenario: db-pool, backend: mysql}
           - {scenario: db-pool, backend: pgsql}
           - {scenario: db-replicas, backend: pgsql}
+    uses: ./.github/workflows/production-worker.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+      php: ${{ matrix.php || '8.6' }}
+
+  ecosystem:
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-wire-outbound-h3, backend: pgsql}
+          - {scenario: ecosystem-cache-tls, backend: pgsql}
+          - {scenario: ecosystem-http-pool, backend: pgsql}
+          - {scenario: ecosystem-http-transfer, backend: pgsql}
+          - {scenario: ecosystem-auth-lifecycle, backend: mysql}
+          - {scenario: ecosystem-jwt-replay, backend: mysql}
+          - {scenario: ecosystem-auth-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-jwt-replay, backend: pgsql}
+          - {scenario: ecosystem-amqp-dlq, backend: pgsql}
+          - {scenario: ecosystem-sqs-fifo, backend: pgsql}
+          - {scenario: ecosystem-remote-jwks, backend: pgsql}
+          - {scenario: ecosystem-uid-provider-boundaries, backend: pgsql}
+          - {scenario: ecosystem-di-contextual, backend: pgsql}
+          - {scenario: ecosystem-file-index-retention, backend: pgsql}
+          - {scenario: ecosystem-archive-security, backend: pgsql}
+          - {scenario: ecosystem-file-watch, backend: pgsql}
+          - {scenario: ecosystem-api-inventory, backend: pgsql}
+          - {scenario: ecosystem-recovery, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-recovery, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-release-cutover, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-release-cutover, backend: mysql, matcher: sharded}
+          - {scenario: ecosystem-release-cutover, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-release-cutover, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-tenants, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-tenants, backend: mysql, matcher: sharded}
+          - {scenario: ecosystem-tenants, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-tenants, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-http-representations, backend: pgsql}
+          - {scenario: ecosystem-http-signatures, backend: pgsql}
+          - {scenario: ecosystem-uid-families, backend: pgsql}
+          - {scenario: ecosystem-array-transforms, backend: pgsql}
+          - {scenario: ecosystem-di-environment, backend: pgsql}
+          - {scenario: ecosystem-sftp-trust, backend: pgsql}
+          - {scenario: ecosystem-file-transactions, backend: pgsql}
+          - {scenario: ecosystem-mailbox-tls, backend: pgsql}
+          - {scenario: ecosystem-mailbox-idle, backend: pgsql}
+          - {scenario: ecosystem-cache-outage, backend: pgsql}
+          - {scenario: ecosystem-invalidation-processes, backend: pgsql}
+          - {scenario: ecosystem-validation-rules, backend: pgsql}
+          - {scenario: ecosystem-validation-database, backend: mysql}
+          - {scenario: ecosystem-validation-database, backend: pgsql}
+          - {scenario: ecosystem-validation-database, backend: sqlite}
+          - {scenario: ecosystem-otp-durable, backend: mysql}
+          - {scenario: ecosystem-otp-durable, backend: pgsql}
+          - {scenario: ecosystem-otp-backends, backend: mysql}
+          - {scenario: ecosystem-otp-backends, backend: pgsql}
+          - {scenario: ecosystem-otp-drift, backend: pgsql}
+          - {scenario: ecosystem-supervisor, backend: pgsql}
+          - {scenario: ecosystem-http-framing, backend: pgsql}
+          - {scenario: ecosystem-wire-http3, backend: pgsql}
+          - {scenario: ecosystem-wire-mtls, backend: pgsql}
+          - {scenario: ecosystem-scylla, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-redis-failover, backend: pgsql}
+          - {scenario: ecosystem-storage-local-modes, backend: pgsql}
+          - {scenario: ecosystem-ftp, backend: pgsql}
+          - {scenario: ecosystem-webdav, backend: pgsql}
+          - {scenario: ecosystem-gridfs, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-sftp2, backend: pgsql}
+          - {scenario: ecosystem-async-s3, backend: pgsql}
+          - {scenario: ecosystem-azure, backend: pgsql}
+          - {scenario: ecosystem-gcs, backend: pgsql}
+          - {scenario: ecosystem-wire-tcp, backend: pgsql}
+          - {scenario: ecosystem-wire-unix, backend: pgsql}
+          - {scenario: ecosystem-wire-udp, backend: pgsql}
+          - {scenario: ecosystem-wire-websocket, backend: pgsql}
+          - {scenario: ecosystem-wire-http2, backend: pgsql}
+          - {scenario: ecosystem-invalidation-sql, backend: mysql}
+          - {scenario: ecosystem-invalidation-sql, backend: pgsql}
+          - {scenario: ecosystem-invalidation-stream, backend: pgsql}
+          - {scenario: ecosystem-module-0, backend: pgsql}
+          - {scenario: ecosystem-module-1, backend: pgsql}
+          - {scenario: ecosystem-module-2, backend: pgsql}
+          - {scenario: ecosystem-module-3, backend: pgsql}
+          - {scenario: ecosystem-module-4, backend: pgsql}
+          - {scenario: ecosystem-module-5, backend: pgsql}
+          - {scenario: ecosystem-module-6, backend: pgsql}
+          - {scenario: ecosystem-module-7, backend: pgsql}
+          - {scenario: ecosystem-module-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-amqp, backend: pgsql}
+          - {scenario: ecosystem-sqs, backend: pgsql}
+          - {scenario: ecosystem-imap, backend: pgsql}
+          - {scenario: ecosystem-pop3, backend: pgsql}
+          - {scenario: ecosystem-jwt-jws, backend: pgsql}
+          - {scenario: ecosystem-jwe, backend: pgsql}
+          - {scenario: ecosystem-gateway, backend: pgsql}
+          - {scenario: ecosystem-response-cache, backend: pgsql}
+          - {scenario: ecosystem-throttle, backend: pgsql}
+          - {scenario: ecosystem-cookie-protection, backend: pgsql}
+          - {scenario: ecosystem-uid-sequences, backend: pgsql}
+          - {scenario: ecosystem-closure, backend: pgsql}
+          - {scenario: ecosystem-config-layering, backend: pgsql}
+          - {scenario: ecosystem-pki, backend: pgsql}
+          - {scenario: ecosystem-crypto-algorithms, backend: pgsql}
+          - {scenario: ecosystem-validation-registry, backend: pgsql}
+          - {scenario: ecosystem-endurance, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-endurance, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-http-policy, backend: pgsql}
+          - {scenario: ecosystem-redis-cluster, backend: pgsql}
+          - {scenario: ecosystem-mongodb, backend: pgsql, php: '8.4'}
+          - {scenario: ecosystem-s3, backend: pgsql}
+          - {scenario: ecosystem-sftp, backend: pgsql}
+          - {scenario: ecosystem-connected, backend: mysql, matcher: fused}
+          - {scenario: ecosystem-connected, backend: mysql, matcher: sharded}
+          - {scenario: ecosystem-connected, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-connected, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-routing, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-routing, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-coroutines, backend: pgsql}
+          - {scenario: ecosystem-async-files, backend: pgsql}
+          - {scenario: ecosystem-pathwise-upload, backend: pgsql}
+          - {scenario: ecosystem-pathwise-download, backend: pgsql}
+          - {scenario: ecosystem-mail-mime, backend: pgsql}
+          - {scenario: ecosystem-omnibus-workflow, backend: pgsql}
+          - {scenario: ecosystem-omnibus-workflow, backend: mysql}
+          - {scenario: ecosystem-omnibus-redis, backend: pgsql}
+          - {scenario: ecosystem-omnibus-redis, backend: mysql}
+          - {scenario: ecosystem-cache-tier, backend: pgsql}
+          - {scenario: ecosystem-cache-local, backend: pgsql}
+          - {scenario: ecosystem-cache-integrity, backend: pgsql}
+          - {scenario: ecosystem-cache-race, backend: pgsql}
+          - {scenario: ecosystem-otp-race, backend: pgsql}
+          - {scenario: ecosystem-otp-recovery, backend: pgsql}
+          - {scenario: ecosystem-validation, backend: pgsql}
+          - {scenario: ecosystem-crypto-file, backend: pgsql}
+          - {scenario: ecosystem-crypto-envelope, backend: pgsql}
+          - {scenario: ecosystem-core-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-intermix, backend: pgsql}
+          - {scenario: ecosystem-array-config, backend: pgsql}
+          - {scenario: ecosystem-array-stream, backend: pgsql}
+          - {scenario: ecosystem-uid-formats, backend: pgsql}
+    uses: ./.github/workflows/production-worker.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+      php: ${{ matrix.php || '8.6' }}
+
+  application:
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: browser, backend: pgsql, host: roadrunner, matcher: fused}
+          - {scenario: browser, backend: pgsql, host: roadrunner, matcher: sharded}
+          - {scenario: browser, backend: pgsql, host: frankenphp, matcher: fused}
+          - {scenario: browser, backend: pgsql, host: frankenphp, matcher: sharded}
+          - {scenario: browser, backend: pgsql, host: swoole, matcher: fused, php: '8.5'}
+          - {scenario: browser, backend: pgsql, host: swoole, matcher: sharded, php: '8.5'}
+          - {scenario: browser, backend: pgsql, host: openswoole, matcher: fused, php: '8.6'}
+          - {scenario: browser, backend: pgsql, host: openswoole, matcher: sharded, php: '8.6'}
           - {scenario: cache-file, backend: pgsql}
           - {scenario: cache-phpfiles, backend: pgsql}
           - {scenario: cache-sqlite, backend: pgsql}
@@ -267,197 +296,13 @@ jobs:
           - {scenario: storage, backend: pgsql}
           - {scenario: oauth, backend: mysql}
           - {scenario: oauth, backend: pgsql}
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: experiment
-          POSTGRES_USER: experiment
-          POSTGRES_PASSWORD: experiment
-        ports: ['5432:5432']
-        options: --health-cmd "pg_isready -U experiment -d experiment" --health-interval 5s --health-timeout 5s --health-retries 15
-      mysql:
-        image: mysql:8.4
-        env:
-          MYSQL_DATABASE: experiment
-          MYSQL_USER: experiment
-          MYSQL_PASSWORD: experiment
-          MYSQL_ROOT_PASSWORD: experiment-root
-        ports: ['3306:3306']
-        options: --health-cmd "mysqladmin ping -h localhost --silent" --health-interval 5s --health-timeout 5s --health-retries 20
-      mariadb:
-        image: ${{ matrix.backend == 'mariadb' && 'mariadb:11.4' || '' }}
-        env:
-          MARIADB_DATABASE: experiment
-          MARIADB_USER: experiment
-          MARIADB_PASSWORD: experiment
-          MARIADB_ROOT_PASSWORD: experiment-root
-        ports: ['3307:3306']
-        options: --health-cmd "healthcheck.sh --connect --innodb_initialized" --health-interval 5s --health-timeout 5s --health-retries 20
-      mssql:
-        image: ${{ matrix.backend == 'mssql' && 'mcr.microsoft.com/mssql/server:2022-latest' || '' }}
-        env:
-          ACCEPT_EULA: 'Y'
-          MSSQL_PID: Developer
-          MSSQL_SA_PASSWORD: 'Experiment-Only-42!'
-        ports: ['1433:1433']
-      redis:
-        image: redis:8
-        ports: ['6379:6379']
-        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 15
-      valkey:
-        image: ${{ matrix.scenario == 'cache-valkey' && 'valkey/valkey:8' || '' }}
-        ports: ['6380:6379']
-        options: --health-cmd "valkey-cli ping" --health-interval 5s --health-timeout 5s --health-retries 15
-      memcached:
-        image: ${{ matrix.scenario == 'cache-memcached' && 'memcached:1.6' || '' }}
-        ports: ['11211:11211']
-      mailpit:
-        image: axllent/mailpit:latest
-        ports: ['1025:1025', '8025:8025']
-    env:
-      SCENARIO: ${{ matrix.scenario }}
-      HOST_MODE: ${{ matrix.host || 'worker' }}
-      LAB_MATCHER: ${{ matrix.matcher || 'fused' }}
-      DB_BACKEND: ${{ matrix.backend }}
-      PHP_SERIES: ${{ matrix.php || '8.6' }}
-      SOAK: ${{ matrix.scenario == 'http' && matrix.host == 'native' && matrix.backend == 'pgsql' && '1' || '0' }}
-      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php || '8.6' }}
-          extensions: pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, curl, mbstring, intl, sodium, zip, fileinfo, apcu, shmop, sysvsem${{ matrix.scenario == 'cache-memcached' && ', memcached' || '' }}${{ matrix.backend == 'mssql' && ', pdo_sqlsrv' || '' }}${{ matrix.host == 'swoole' && ', swoole' || '' }}${{ matrix.host == 'openswoole' && ', openswoole' || '' }}${{ matrix.scenario == 'ecosystem-ftp' && ', ftp' || '' }}${{ matrix.scenario == 'ecosystem-scylla' && ', cassandra' || '' }}${{ (matrix.scenario == 'ecosystem-wire-http3' || matrix.scenario == 'ecosystem-wire-outbound-h3') && ', quic' || '' }}
-          tools: composer:v2
-          ini-values: apc.enable_cli=1
-          coverage: none
-      - name: Provision Microsoft ODBC driver for SQL Server
-        if: matrix.backend == 'mssql'
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! odbcinst -q -d -n 'ODBC Driver 18 for SQL Server' >/dev/null 2>&1; then
-            . /etc/os-release
-            test "$ID" = ubuntu
-            curl -fsSL "https://packages.microsoft.com/config/ubuntu/$VERSION_ID/packages-microsoft-prod.deb" -o "$RUNNER_TEMP/packages-microsoft-prod.deb"
-            sudo dpkg -i "$RUNNER_TEMP/packages-microsoft-prod.deb"
-            sudo apt-get update
-            sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18
-          fi
-          odbcinst -q -d -n 'ODBC Driver 18 for SQL Server'
-      - name: Install MongoDB extension for the optional driver
-        if: matrix.scenario == 'ecosystem-mongodb' || matrix.scenario == 'ecosystem-gridfs'
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          extensions: mongodb, pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, curl, mbstring, intl, sodium, zip, fileinfo
-          tools: composer:v2
-          coverage: none
-      - name: Set up isolated runner paths
-        shell: bash
-        run: |
-          printf 'PROJECT=%s/production-app\nEVIDENCE=%s/workload-evidence\n' "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
-      - name: Install real published production application
-        shell: bash
-        run: |
-          set -euo pipefail
-          unset COMPOSER_NO_DEV
-          mkdir -p "$EVIDENCE"
-          composer create-project --no-dev --prefer-dist --no-interaction --no-progress infocyph/infbyte "$PROJECT" '^4.0'
-          cd "$PROJECT"
-          for feature in data.database data.filesystem security.crypto security.validation security.mfa security.passkey execution.messaging execution.communication; do
-            php infbyte module:install "$feature" --json=1 > "$EVIDENCE/install-$feature.json"
-            php -r '$r=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); if (($r["status"]??null)!=="complete") exit(1);' "$EVIDENCE/install-$feature.json"
-            php infbyte module:enable "$feature" --json=1
-          done
-          test ! -d vendor/infocyph/phpforge
-          test ! -e vendor/bin/pest
-          mkdir -p lab
-          cp "$GITHUB_WORKSPACE"/qa/workloads/*.php lab/
-          php -r '
-            $path="composer.json";
-            $config=json_decode(file_get_contents($path),true,flags:JSON_THROW_ON_ERROR);
-            $config["autoload"]["psr-4"]["Experiment\\"]="lab/";
-            $config["autoload"]["files"][]="lab/helpers.php";
-            file_put_contents($path,json_encode($config,JSON_THROW_ON_ERROR|JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES).PHP_EOL);
-          '
-          composer dump-autoload --no-dev --optimize --no-interaction
-          composer check-platform-reqs --no-dev
-          composer show --format=json > "$EVIDENCE/packages.json"
-          php -v > "$EVIDENCE/php.txt"
-          php -m > "$EVIDENCE/extensions.txt"
-          php --ini=diff > "$EVIDENCE/ini.txt"
-          lscpu > "$EVIDENCE/cpu.txt"
-          free -m > "$EVIDENCE/memory.txt"
-          for source in "$GITHUB_WORKSPACE"/qa/workloads/*.php; do php -l "$source"; done
-      - name: Provision PHP-FPM and Nginx for the FPM workload
-        if: matrix.host == 'fpm'
-        run: |
-          docker build -t infbyte-lab-fpm - < qa/workloads/Fpm.Dockerfile
-          docker run --rm infbyte-lab-fpm php -v
-          docker run --rm infbyte-lab-fpm php -m
-          docker pull nginx:alpine
-      - name: Provision the actual RoadRunner binary and host client
-        if: matrix.host == 'roadrunner'
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd "$PROJECT"
-          composer require 'roadrunner/http:^4.0' --no-interaction --prefer-dist --no-progress --with-all-dependencies
-          composer check-platform-reqs --no-dev
-          composer show --format=json > "$EVIDENCE/packages.json"
-          docker pull ghcr.io/roadrunner-server/roadrunner:3.0.1
-          container="$(docker create ghcr.io/roadrunner-server/roadrunner:3.0.1)"
-          trap 'docker rm -f "$container" >/dev/null' EXIT
-          docker cp "$container:/usr/bin/rr" "$RUNNER_TEMP/lab-rr"
-          chmod +x "$RUNNER_TEMP/lab-rr"
-          "$RUNNER_TEMP/lab-rr" --version | tee "$EVIDENCE/roadrunner-version.txt"
-      - name: Provision actual FrankenPHP worker runtime
-        if: matrix.host == 'frankenphp'
-        shell: bash
-        run: |
-          docker build -t infbyte-lab-frankenphp - < qa/workloads/Frankenphp.Dockerfile
-          docker run --rm --entrypoint php infbyte-lab-frankenphp -v
-          docker run --rm --entrypoint php infbyte-lab-frankenphp -m
-      - name: Execute independent concurrent business workers and reconcile state
-        if: matrix.scenario != 'http' && matrix.scenario != 'operations' && matrix.scenario != 'browser' && !startsWith(matrix.scenario, 'db-') && !startsWith(matrix.scenario, 'ecosystem-')
-        shell: bash
-        run: bash qa/workloads/stress.sh
-      - name: Exercise independent core and ecosystem capabilities
-        if: startsWith(matrix.scenario, 'ecosystem-')
-        env:
-          POSTGRES_SERVICE: ${{ job.services.postgres.id }}
-          REDIS_SERVICE: ${{ job.services.redis.id }}
-          MAIL_SERVICE: ${{ job.services.mailpit.id }}
-        shell: bash
-        run: bash qa/workloads/ecosystem.sh
-      - name: Exercise DBLayer database mechanics independently
-        if: startsWith(matrix.scenario, 'db-')
-        env:
-          POSTGRES_SERVICE: ${{ job.services.postgres.id }}
-        shell: bash
-        run: bash qa/workloads/database.sh
-      - name: Exercise compiled production HTTP application and host replacement
-        if: matrix.scenario == 'http' || matrix.scenario == 'browser'
-        shell: bash
-        run: bash qa/workloads/http.sh
-      - name: Exercise distributed scheduling, state restore, release rollback and backend failure
-        if: matrix.scenario == 'operations'
-        env:
-          POSTGRES_SERVICE: ${{ job.services.postgres.id }}
-          REDIS_SERVICE: ${{ job.services.redis.id }}
-        shell: bash
-        run: bash qa/workloads/operations.sh
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: workload-${{ matrix.scenario }}-${{ matrix.backend }}-${{ matrix.host || 'worker' }}-${{ matrix.matcher || 'default' }}
-          path: ${{ runner.temp }}/workload-evidence/
-          if-no-files-found: error
-          retention-days: 30
+    uses: ./.github/workflows/production-worker.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+      php: ${{ matrix.php || '8.6' }}
 
   grpc:
     name: Native gRPC / PHP 8.6 / ${{ matrix.mode }}
