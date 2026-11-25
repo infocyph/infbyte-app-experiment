@@ -15,6 +15,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-routing, backend: pgsql, matcher: fused}
+          - {scenario: ecosystem-routing, backend: pgsql, matcher: sharded}
+          - {scenario: ecosystem-coroutines, backend: pgsql}
+          - {scenario: ecosystem-async-files, backend: pgsql}
+          - {scenario: ecosystem-pathwise-upload, backend: pgsql}
+          - {scenario: ecosystem-pathwise-download, backend: pgsql}
+          - {scenario: ecosystem-mail-mime, backend: pgsql}
+          - {scenario: ecosystem-omnibus-workflow, backend: pgsql}
+          - {scenario: ecosystem-omnibus-workflow, backend: mysql}
+          - {scenario: ecosystem-omnibus-redis, backend: pgsql}
+          - {scenario: ecosystem-omnibus-redis, backend: mysql}
           - {scenario: ecosystem-cache-tier, backend: pgsql}
           - {scenario: ecosystem-cache-local, backend: pgsql}
           - {scenario: ecosystem-cache-integrity, backend: pgsql}

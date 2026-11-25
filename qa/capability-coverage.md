@@ -77,3 +77,5 @@ B16 sets fused/sharded as the only acceptance matchers for both production HTTP 
 B17 adds five core/InterMix/ArrayKit/UID native capability jobs; PHPProbe belongs to engineering QA, not production runtime. Detailed tracker records implemented vs open.
 
 B18 adds nine cache, validation and security jobs. Distinguish native OTP recovery from Foundation's existing durable recovery failure; no defect bypass.
+
+B19 adds native runtime/routing/storage/communication/queue lanes and a separate PHPProbe engineering workflow. No generated matcher, no QA package added to no-dev production.

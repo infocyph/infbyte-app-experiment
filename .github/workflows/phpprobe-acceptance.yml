@@ -1,0 +1,27 @@
+name: Published PHPProbe engineering acceptance
+on:
+  push:
+    branches: [main]
+    paths: ['qa/workloads/phpprobe.sh', '.github/workflows/phpprobe-acceptance.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  engineering:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.6'
+          tools: composer:v2
+          coverage: none
+      - run: bash qa/workloads/phpprobe.sh
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: phpprobe-evidence
+          path: ${{ runner.temp }}/probe-evidence/

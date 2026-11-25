@@ -123,3 +123,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B18 — cache/security native lanes
 - [x] Add nine independent CacheLayer, OTP, ReqShield and Epicrypt jobs.
 - [ ] Hosted evidence and remaining full capabilities. No vendor changes or suppressed upstream defects.
+
+## B19 — runtime and remaining ecosystem native lanes
+- [x] Add eleven independent runtime, Webrick, Pathwise, Omnibus and TalkingBytes jobs; separate PHPProbe engineering acceptance.
+- [ ] Hosted evidence and remaining granular capabilities across all packages.

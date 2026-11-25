@@ -37,6 +37,8 @@ function evidenceDirectory(): string
 
 require __DIR__ . '/ecosystem-data.php';
 require __DIR__ . '/ecosystem-security.php';
+require __DIR__ . '/ecosystem-runtime.php';
+require __DIR__ . '/ecosystem-messaging.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
@@ -49,6 +51,14 @@ match ($argv[1] ?? '') {
     'validation' => validationWorkload(),
     'crypto-file' => cryptoFileWorkload(),
     'crypto-envelope' => cryptoEnvelopeWorkload(),
+    'routing' => routingWorkload(),
+    'coroutines' => coroutinesWorkload(),
+    'async-files' => asyncFilesWorkload(),
+    'pathwise-upload' => pathwiseUploadWorkload(),
+    'pathwise-download' => pathwiseDownloadWorkload(),
+    'mail-mime' => mailMimeWorkload(),
+    'omnibus-workflow' => omnibusWorkflowWorkload(),
+    'omnibus-redis' => omnibusRedisWorkload(),
     'intermix' => intermixWorkload(),
     'array-config' => arrayConfigWorkload(),
     'array-stream' => arrayStreamWorkload(),
