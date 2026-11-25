@@ -772,3 +772,7 @@ I: sixteen independent lanes (eight contracts on dynamic and strict compiled con
 ## B188 — Real TalkingBytes redirect and response boundaries
 
 I: 24 independent HTTPS/HTTP lanes: all 15 combinations of 301/302/303/307/308 with POST/PUT/HEAD, actual method/entity/header/credential and wire multiplicity; query-only reference containing a literal URI; default HTTPS downgrade rejection and explicit credential-isolated plaintext opt-in; concurrent redirect preflight rejection and sibling completion; exact/one-over body, header byte and repeated header field-count limits on single and multi curl transports. Independent loopback peer with exact raw HTTP/1.1 header blocks; no external requests, vendor changes or disabled checks. CORE-01, REQUEST, SEC, DATA, EXEC-03: source and dispatch reviewed; hosted execution pending. 1175 routine rows.
+
+## B189 — Foundation configured cache and filesystem ownership
+
+I: fifteen independent provider lanes: named cache aliases, real backend data, namespace isolation and replacement application across Redis, Valkey, Memcached, file, PHP files, SQLite and three PDO drivers; explicit store/lock replacement and native file coordination; two named local storage disks with real filesystem data, safe storage link lifecycle and foreign/non-link rejection, configured public file resolution with reject/within-root policies and traversal/escape rejection. CORE-01, DATA, SEC, OPS, EXEC-03: provider, fixture, extension/service and dispatch wiring reviewed; hosted execution pending. No upstream changes. 1190 routine rows.

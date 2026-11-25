@@ -1089,6 +1089,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-foundation-cache-named-redis, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-valkey, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-memcached, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-file, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-sqlite, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-pdo, backend: pgsql}
+          - {scenario: ecosystem-foundation-cache-named-pdo, backend: mysql}
+          - {scenario: ecosystem-foundation-cache-named-pdo, backend: mariadb}
+          - {scenario: ecosystem-foundation-cache-replacement, backend: pgsql}
+          - {scenario: ecosystem-foundation-storage-disks, backend: pgsql}
+          - {scenario: ecosystem-foundation-storage-link-lifecycle, backend: pgsql}
+          - {scenario: ecosystem-foundation-storage-link-rejection, backend: pgsql}
+          - {scenario: ecosystem-foundation-storage-public-reject, backend: pgsql}
+          - {scenario: ecosystem-foundation-storage-public-allow, backend: pgsql}
           - {scenario: ecosystem-http-redirect-301-post, backend: pgsql}
           - {scenario: ecosystem-http-redirect-301-put, backend: pgsql}
           - {scenario: ecosystem-http-redirect-301-head, backend: pgsql}

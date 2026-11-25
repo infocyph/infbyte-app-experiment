@@ -66,6 +66,7 @@ require __DIR__ . '/ecosystem-cache-contracts.php';
 require __DIR__ . '/ecosystem-cache-locking.php';
 require __DIR__ . '/ecosystem-foundation-contracts.php';
 require __DIR__ . '/ecosystem-foundation-providers.php';
+require __DIR__ . '/ecosystem-foundation-storage-cache.php';
 require __DIR__ . '/ecosystem-mailbox-tls.php';
 require __DIR__ . '/ecosystem-storage-boundaries.php';
 require __DIR__ . '/ecosystem-storage-outage.php';
@@ -430,6 +431,19 @@ match ($argv[1] ?? '') {
     'array-matrix-shape' => arrayMatrixShapeWorkload(),
     'array-path-mutation' => arrayPathMutationWorkload(),
     'config-read-cache-toggle' => configReadCacheToggleWorkload(),
+    'foundation-cache-named-redis' => foundationNamedCacheContracts('redis'),
+    'foundation-cache-named-valkey' => foundationNamedCacheContracts('valkey'),
+    'foundation-cache-named-memcached' => foundationNamedCacheContracts('memcached'),
+    'foundation-cache-named-file' => foundationNamedCacheContracts('file'),
+    'foundation-cache-named-phpfiles' => foundationNamedCacheContracts('phpfiles'),
+    'foundation-cache-named-sqlite' => foundationNamedCacheContracts('sqlite'),
+    'foundation-cache-named-pdo' => foundationNamedCacheContracts('pdo'),
+    'foundation-cache-replacement' => foundationCacheReplacementContracts(),
+    'foundation-storage-disks' => foundationStorageProviderContracts('disks'),
+    'foundation-storage-link-lifecycle' => foundationStorageProviderContracts('link-lifecycle'),
+    'foundation-storage-link-rejection' => foundationStorageProviderContracts('link-rejection'),
+    'foundation-storage-public-reject' => foundationStorageProviderContracts('public-reject'),
+    'foundation-storage-public-allow' => foundationStorageProviderContracts('public-allow'),
     'foundation-resource-contracts' => foundationResourceContracts(),
     'cache-redis-cluster-bulk' => cacheBulkWorkload('redis-cluster'),
     'cache-redis-cluster-tags' => cacheTagsWorkload('redis-cluster'),
