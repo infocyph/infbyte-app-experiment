@@ -1083,6 +1083,27 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
       php: ${{ matrix.php || '8.6' }}
 
+  ecosystem-expansion:
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: ecosystem-array-hook-order, backend: pgsql}
+          - {scenario: ecosystem-array-hook-rejection, backend: pgsql}
+          - {scenario: ecosystem-array-hook-copy, backend: pgsql}
+          - {scenario: ecosystem-array-facade-mutations, backend: pgsql}
+          - {scenario: ecosystem-array-facade-rejection, backend: pgsql}
+          - {scenario: ecosystem-config-typed-defaults, backend: pgsql}
+          - {scenario: ecosystem-config-lazy-defaults, backend: pgsql}
+    uses: ./.github/workflows/production-worker.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+      php: ${{ matrix.php || '8.6' }}
+
   application:
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:

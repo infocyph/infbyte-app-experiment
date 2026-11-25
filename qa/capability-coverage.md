@@ -654,3 +654,7 @@ I: eight lanes, three native MongoDB driver contracts (TLS trust, strict CAS/con
 - Five independent workloads: nested extension filtering, ordered add/save hook arguments and idempotent save, native AES-128 interoperability and invalid encryption configuration, selected-entry collision/missing/traversal rejection with no partial publication, and exact extraction limits with invalid/one-byte-over rejection.
 - Evidence: actual ZIP files and independent ZipArchive inspection; hosted execution pending. No production/vendor code modified. CORE-01 / SEC / DATA / EXEC-03: preserve boundaries, assert actual effects, defer hosted outcome review.
 - Routine workload matrix: 1,117 entries; ecosystem shards each 256, database 249, application 100.
+
+## B183 — ArrayKit hook, facade and typed configuration boundaries
+
+I: seven independent lanes: ordered deduplicated get/set hooks and null presence, hook rejection and recovery, copy registry/data isolation, facade reference-preserving mutations and named target, facade invalid dispatch and collision non-mutation, strict typed config fallback with cache enabled/disabled, and lazy default evaluation across cached hits/misses, mutations and exceptions. New ecosystem-expansion shard preserves the 256-row cap and inventory validation. CORE-01, TYPE, DATA, FLOW-02, EXEC-03: source and dispatch reviewed; hosted execution pending. No upstream changes or weakened checks. 1124 routine rows.

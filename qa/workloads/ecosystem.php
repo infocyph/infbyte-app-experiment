@@ -78,6 +78,7 @@ require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-utility-lifecycle.php';
 require __DIR__ . '/ecosystem-value-crypto.php';
 require __DIR__ . '/ecosystem-array-contracts.php';
+require __DIR__ . '/ecosystem-array-boundaries.php';
 require __DIR__ . '/ecosystem-granular-contracts.php';
 require __DIR__ . '/ecosystem-di-factories.php';
 require __DIR__ . '/ecosystem-di-runtime-contracts.php';
@@ -217,6 +218,13 @@ match ($argv[1] ?? '') {
     'http-signatures' => httpSignaturesWorkload(),
     'uid-families' => uidFamiliesWorkload(),
     'array-transforms' => arrayTransformsWorkload(),
+    'array-hook-order' => arrayHookOrderWorkload(),
+    'array-hook-rejection' => arrayHookRejectionWorkload(),
+    'array-hook-copy' => arrayHookCopyWorkload(),
+    'array-facade-mutations' => arrayFacadeMutationsWorkload(),
+    'array-facade-rejection' => arrayFacadeRejectionWorkload(),
+    'config-typed-defaults' => configTypedDefaultsWorkload(),
+    'config-lazy-defaults' => configLazyDefaultsWorkload(),
     'array-set-contracts' => arraySetContractsWorkload(),
     'array-dto-guard' => arrayDtoGuardWorkload(),
     'array-helper-boundaries' => arrayHelperBoundariesWorkload(),
