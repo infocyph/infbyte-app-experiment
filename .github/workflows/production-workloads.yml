@@ -787,6 +787,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-amqp-crash, backend: pgsql}
+          - {scenario: ecosystem-amqp-crash, backend: mysql}
+          - {scenario: ecosystem-amqp-crash, backend: mariadb}
+          - {scenario: ecosystem-amqp-crash, backend: sqlite}
+          - {scenario: ecosystem-amqp-crash, backend: mssql}
+          - {scenario: ecosystem-sqs-fifo-groups, backend: pgsql}
+          - {scenario: ecosystem-sqs-fifo-groups, backend: mysql}
+          - {scenario: ecosystem-sqs-fifo-groups, backend: mariadb}
+          - {scenario: ecosystem-sqs-fifo-groups, backend: sqlite}
+          - {scenario: ecosystem-sqs-fifo-groups, backend: mssql}
+          - {scenario: ecosystem-sqs-visibility-recovery, backend: pgsql}
+          - {scenario: ecosystem-sqs-visibility-recovery, backend: mysql}
+          - {scenario: ecosystem-sqs-visibility-recovery, backend: mariadb}
+          - {scenario: ecosystem-sqs-visibility-recovery, backend: sqlite}
+          - {scenario: ecosystem-sqs-visibility-recovery, backend: mssql}
           - {scenario: ecosystem-di-ownership-input-identity-dynamic, backend: pgsql}
           - {scenario: ecosystem-di-ownership-input-identity-compiled, backend: pgsql}
           - {scenario: ecosystem-di-ownership-input-rejection-dynamic, backend: pgsql}

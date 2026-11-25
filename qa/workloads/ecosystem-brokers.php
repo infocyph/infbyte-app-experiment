@@ -73,7 +73,7 @@ final readonly class LabAmqpBackend implements AmqpBackend
 
 final readonly class LabSqsBackend implements SqsBackend
 {
-    public function __construct(private SqsClient $client, private string $url, private bool $fifo = false, private ?Closure $ackFault = null) {}
+    public function __construct(private SqsClient $client, private string $url, private bool $fifo = false, private ?Closure $ackFault = null, private string $group = 'orders') {}
 
     public function capabilities(): BrokerCapabilities
     {
@@ -84,7 +84,7 @@ final readonly class LabSqsBackend implements SqsBackend
     {
         $request = ['QueueUrl' => $this->url, 'MessageBody' => $payload, 'MessageAttributes' => ['LabId' => ['DataType' => 'String', 'StringValue' => $messageId]]];
         if ($this->fifo) {
-            $request['MessageGroupId'] = 'orders';
+            $request['MessageGroupId'] = $this->group;
             $request['MessageDeduplicationId'] = $messageId;
         } else {
             $request['DelaySeconds'] = (int) ceil($delaySeconds);

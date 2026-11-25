@@ -359,3 +359,129 @@ function brokerConsumerFailureWorkload(string $provider): void
         if ($client !== null && $url !== null) { $client->deleteQueue(['QueueUrl' => $url]); }
     }
 }
+
+function brokerRecordEffect(\Infocyph\DBLayer\Connection\Connection $db, LabJob $job): void
+{
+    $db->transaction(static function ($connection) use ($job): void {
+        $existing = $connection->table('lab_job_effects')->find($job->id);
+        if ($existing === null) {
+            verify($connection->table('lab_job_effects')->insert(['id' => $job->id, 'step' => $job->step]), 'Business effect publication failed.');
+        } else {
+            verify((int) $existing['step'] === $job->step, 'Redelivery changed committed effect.');
+        }
+    });
+}
+
+function amqpCrashContracts(bool $seed): void
+{
+    [$db, $serializer] = messagingSetup($seed);
+    $root = (string) getenv('LAB_BROKER_CRASH_ROOT');
+    $connection = new \PhpAmqpLib\Connection\AMQPStreamConnection('127.0.0.1', 15672, 'experiment', 'fixture-only-password', connection_timeout: 3.0, read_write_timeout: 5.0);
+    $channel = $connection->channel();
+    $queue = 'crash-contract';
+    $transport = new AmqpTransport(new LabAmqpBackend($channel), $serializer);
+    if ($seed) {
+        $channel->queue_declare($queue, false, true, false, false);
+        $channel->confirm_select();
+        $confirmed = 0;
+        $channel->set_ack_handler(static function () use (&$confirmed): void { ++$confirmed; });
+        $channel->set_nack_handler(static function (): never { throw new RuntimeException('Broker negatively acknowledged publication.'); });
+        foreach (range(1, 12) as $id) {
+            $transport->send(new Envelope(new LabJob('crash-' . $id, $id)), $queue);
+        }
+        $channel->wait_for_pending_acks_returns(10.0);
+        verify($confirmed === 12, 'Durable publication confirmations incomplete.');
+        $first = iterator_to_array($transport->receive($queue, 1))[0];
+        verify($first->envelope()->message->id === 'crash-1', 'Initial delivery differs.');
+        brokerRecordEffect($db, $first->envelope()->message);
+        verify(file_put_contents($root . '/reserved-id', $first->messageId, LOCK_EX) !== false && touch($root . '/seeded'), 'Reservation marker failed.');
+        cacheWaitMarker($root . '/stopped');
+        expectFailure(static fn() => $transport->acknowledge($first), \PhpAmqpLib\Exception\AMQPExceptionInterface::class, 'Crashed broker acknowledged outstanding delivery.');
+        verify(touch($root . '/observed'), 'Crash evidence marker unavailable.');
+        // The killed connection cannot be reused; do not attempt to settle its receipt.
+        return;
+    }
+    try {
+        $seen = [];
+        foreach ($transport->receive($queue, 12) as $delivery) {
+            $job = $delivery->envelope()->message;
+            verify(!isset($seen[$job->id]), 'Duplicate recovery delivery.');
+            if ($job->id === 'crash-1') {
+                verify($delivery->messageId === file_get_contents($root . '/reserved-id') && $delivery->attempt >= 2, 'Outstanding delivery lost its identity or redelivery marker.');
+            }
+            brokerRecordEffect($db, $job);
+            $seen[$job->id] = $job->step;
+            $transport->acknowledge($delivery);
+        }
+        $expected = [];
+        foreach (range(1, 12) as $id) {
+            $expected['crash-' . $id] = $id;
+        }
+        ksort($seen);
+        ksort($expected);
+        verify($seen === $expected && $transport->size($queue) === 0 && $db->table('lab_job_effects')->count() === 12, 'Crash recovery lost or duplicated durable effects.');
+        foreach ($expected as $id => $step) {
+            verify((int) $db->table('lab_job_effects')->find($id)['step'] === $step, 'Recovered SQL ledger differs.');
+        }
+    } finally {
+        $connection->close();
+    }
+    echo "RabbitMQ crash, confirmed publication and independent SQL reconciliation completed\n";
+}
+
+function sqsOwnershipContracts(string $contract): void
+{
+    [$db, $serializer] = messagingSetup();
+    $client = new SqsClient(['version' => 'latest', 'region' => 'us-east-1', 'endpoint' => 'http://127.0.0.1:19324',
+        'credentials' => ['key' => 'fixture', 'secret' => 'fixture'], 'http' => ['connect_timeout' => 3, 'timeout' => 10]]);
+    $fifo = $contract === 'fifo-groups';
+    $queue = $fifo ? 'ownership.fifo' : 'ownership';
+    $url = $client->createQueue(['QueueName' => $queue] + ($fifo ? ['Attributes' => ['FifoQueue' => 'true', 'ContentBasedDeduplication' => 'false']] : []))['QueueUrl'];
+    $transport = static fn(string $group) => new SqsTransport(new LabSqsBackend($client, $url, fifo: $fifo, group: $group), $serializer);
+    $a = $transport('alpha');
+    $b = $transport('beta');
+    try {
+        if ($fifo) {
+            $a->send(new Envelope(new LabJob('alpha-1', 1)), $queue);
+            $a->send(new Envelope(new LabJob('alpha-2', 2)), $queue);
+            $first = iterator_to_array($a->receive($queue, 1, 30.0))[0];
+            verify($first->envelope()->message->id === 'alpha-1', 'First group ordering differs.');
+            $sent = $b->send(new Envelope(new LabJob('beta-1', 3)), $queue);
+            $b->send($sent, $queue);
+            $b->send(new Envelope(new LabJob('beta-2', 4)), $queue);
+            foreach (['beta-1', 'beta-2'] as $id) {
+                $delivery = iterator_to_array($b->receive($queue, 1, 10.0))[0];
+                verify($delivery->envelope()->message->id === $id, 'Independent group blocked or deduplication failed.');
+                brokerRecordEffect($db, $delivery->envelope()->message);
+                $b->acknowledge($delivery);
+            }
+            verify(iterator_to_array($b->receive($queue, 1)) === [], 'Blocked group advanced or duplicate beta delivery appeared.');
+            brokerRecordEffect($db, $first->envelope()->message);
+            $a->acknowledge($first);
+            $last = iterator_to_array($b->receive($queue, 1, 10.0))[0];
+            verify($last->envelope()->message->id === 'alpha-2', 'First group did not resume.');
+            brokerRecordEffect($db, $last->envelope()->message);
+            $b->acknowledge($last);
+            verify($db->table('lab_job_effects')->count() === 4 && iterator_to_array($a->receive($queue, 1)) === [], 'FIFO group effects not reconciled.');
+        } else {
+            $a->send(new Envelope(new LabJob('expired', 7)), $queue);
+            $first = iterator_to_array($a->receive($queue, 1, 3.0))[0];
+            brokerRecordEffect($db, $first->envelope()->message);
+            verify(iterator_to_array($b->receive($queue, 1, 5.0)) === [], 'In-flight message available before expiry.');
+            $deadline = hrtime(true) + 15_000_000_000;
+            do {
+                $rows = iterator_to_array($b->receive($queue, 1, 10.0));
+            } while ($rows === [] && hrtime(true) < $deadline);
+            verify(count($rows) === 1, 'Expired reservation not recovered.');
+            $next = $rows[0];
+            verify($next->messageId === $first->messageId && $next->receipt !== $first->receipt && $next->attempt >= 2, 'Replacement receipt/attempt differs.');
+            brokerRecordEffect($db, $next->envelope()->message);
+            $b->acknowledge($next);
+            verify($db->table('lab_job_effects')->count() === 1 && (int) $db->table('lab_job_effects')->find('expired')['step'] === 7, 'Visibility recovery duplicated durable effect.');
+            verify(iterator_to_array($a->receive($queue, 1)) === [], 'Settled replacement remained deliverable.');
+        }
+    } finally {
+        $client->deleteQueue(['QueueUrl' => $url]);
+    }
+    echo "SQS-compatible $contract with independent SQL effect reconciliation completed\n";
+}

@@ -726,3 +726,7 @@ I: 25 real SQL lanes across PostgreSQL/MySQL/MariaDB/SQLite/SQL Server: structur
 ## B177 — InterMix scoped input and execution-carrier ownership
 
 I: 18 independent lanes (nine contracts on dynamic and strict compiled runtimes): declared input identity/nullable alias, missing/invalid seeds, fresh construction and invocation overrides, interleaved Fiber isolation, overlapping explicit context attachments, stale/foreign/serialization rejection, child exception recovery, tagged iterator lifetime and failed-request replacement. Actual published container APIs; no private carrier helpers or vendor changes. CORE-01, TYPE, SEC, OPS, EXEC-03: matrix/dispatch wiring reviewed; hosted runtime verification deferred. 1066 routine rows.
+
+## B178 — Broker crash and receipt/group ownership
+
+I: 15 lanes, five SQL drivers each for actual RabbitMQ SIGKILL with publisher-confirmed persistent messages and outstanding delivery, SQS-compatible independent FIFO group progress and stable-ID deduplication, and unacknowledged visibility expiry with new receipt and idempotent durable effect. Broker and database identities reconciled independently; no exactly-once broker guarantee. SQS fixture is an emulator. CORE-01, DATA, OPS, EXEC-03: matrix/dispatch wiring reviewed; hosted outcomes deferred. 1081 routine rows.
