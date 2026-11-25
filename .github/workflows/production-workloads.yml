@@ -2001,6 +2001,26 @@ jobs:
           - {scenario: ecosystem-runwire-negotiation-h2-wrong-offer, backend: pgsql}
           - {scenario: ecosystem-runwire-negotiation-h2-h3-preferred, backend: pgsql}
           - {scenario: ecosystem-runwire-negotiation-h2-plaintext-h2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-parallel-2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-parallel-4, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-parallel-8, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-parallel-16, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-head-2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-head-4, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-head-8, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-head-16, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-reset-2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-reset-4, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-reset-8, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-reset-16, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-cancel-2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-cancel-4, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-cancel-8, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-cancel-16, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-flow-2, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-flow-4, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-flow-8, backend: pgsql}
+          - {scenario: ecosystem-runwire-multiplex-flow-16, backend: pgsql}
     uses: ./.github/workflows/production-worker.yml
     with:
       scenario: ${{ matrix.scenario }}

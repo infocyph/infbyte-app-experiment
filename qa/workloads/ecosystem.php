@@ -39,6 +39,7 @@ require __DIR__ . '/ecosystem-data.php';
 require __DIR__ . '/ecosystem-security.php';
 require __DIR__ . '/ecosystem-runtime.php';
 require __DIR__ . '/ecosystem-runwire-outbound.php';
+require __DIR__ . '/ecosystem-runwire-multiplex.php';
 require __DIR__ . '/ecosystem-runtime-budget.php';
 require __DIR__ . '/ecosystem-messaging.php';
 require __DIR__ . '/ecosystem-messaging-events.php';
@@ -114,6 +115,26 @@ require __DIR__ . '/ecosystem-module-dependencies.php';
 
 $start = hrtime(true);
 match ($argv[1] ?? '') {
+    'runwire-multiplex-parallel-2' => runwireMultiplexContracts('parallel', 2),
+    'runwire-multiplex-parallel-4' => runwireMultiplexContracts('parallel', 4),
+    'runwire-multiplex-parallel-8' => runwireMultiplexContracts('parallel', 8),
+    'runwire-multiplex-parallel-16' => runwireMultiplexContracts('parallel', 16),
+    'runwire-multiplex-head-2' => runwireMultiplexContracts('head', 2),
+    'runwire-multiplex-head-4' => runwireMultiplexContracts('head', 4),
+    'runwire-multiplex-head-8' => runwireMultiplexContracts('head', 8),
+    'runwire-multiplex-head-16' => runwireMultiplexContracts('head', 16),
+    'runwire-multiplex-reset-2' => runwireMultiplexContracts('reset', 2),
+    'runwire-multiplex-reset-4' => runwireMultiplexContracts('reset', 4),
+    'runwire-multiplex-reset-8' => runwireMultiplexContracts('reset', 8),
+    'runwire-multiplex-reset-16' => runwireMultiplexContracts('reset', 16),
+    'runwire-multiplex-cancel-2' => runwireMultiplexContracts('cancel', 2),
+    'runwire-multiplex-cancel-4' => runwireMultiplexContracts('cancel', 4),
+    'runwire-multiplex-cancel-8' => runwireMultiplexContracts('cancel', 8),
+    'runwire-multiplex-cancel-16' => runwireMultiplexContracts('cancel', 16),
+    'runwire-multiplex-flow-2' => runwireMultiplexContracts('flow', 2),
+    'runwire-multiplex-flow-4' => runwireMultiplexContracts('flow', 4),
+    'runwire-multiplex-flow-8' => runwireMultiplexContracts('flow', 8),
+    'runwire-multiplex-flow-16' => runwireMultiplexContracts('flow', 16),
     'runwire-negotiation-h1-strict' => runwireNegotiationContracts('h1', 'strict'),
     'runwire-negotiation-h1-preferred-fallback' => runwireNegotiationContracts('h1', 'preferred-fallback'),
     'runwire-negotiation-h1-reverse-fallback' => runwireNegotiationContracts('h1', 'reverse-fallback'),

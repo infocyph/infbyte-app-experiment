@@ -840,3 +840,7 @@ I: 22 independent real socket lanes. GET/HEAD across 301/302/303/307/308; query-
 ## B227 — Real TLS H1/H2 protocol negotiation policy
 
 I: 20 independent lanes (two actual peer ALPN versions × strict, preferred/reverse fallback, forbidden reverse strict/only, untrusted CA, substituted peer, invalid offer, H3-only transport selection and H2 plaintext denial). Reuses independent TLS peer and exact origin request evidence; confirms allowed negotiation, denial without published response, zero-DNS preflight for synchronous policy errors, healthy replacement and loop ownership cleanup. Added ecosystem-specialist matrix group and audited inventory at <=256 entries each. CORE-01, SEC, REQUEST, OPS, EXEC-03: source and matrix inspected; hosted execution pending. 2,069 routine rows, 1,242 names, 41 engineering modes.
+
+## B228 — Native H2 shared-socket concurrent stream settlement
+
+I: 20 independent native TLS lanes (2/4/8/16 concurrent streams × reverse response order, mixed HEAD/GET, peer RST, token cancellation, flow-control saturation). Real hyper-h2 server observes one socket, odd stream IDs, request methods/authority, native reset and WINDOW_UPDATE-dependent progress, and a new request on the original socket. Client checks exact per-stream bytes, independent errors, single terminal settlement, capacity and origin rejection, active-count recovery, and loop teardown. CORE-01, SEC, REQUEST, OPS, EXEC-03: API and fixture dispatch/matrix inspected; hosted execution pending. 2,089 routine rows, 1,262 distinct scenario names, 41 engineering modes.
