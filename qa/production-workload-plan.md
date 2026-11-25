@@ -139,3 +139,7 @@ B1a: initial workflow run 45544003087 was rejected before workers registered. Mo
 ## B22 — real optional cache and storage backends
 - [x] Redis Cluster, MongoDB, S3-compatible and SFTP v3 lanes using isolated service containers.
 - [ ] Hosted qualification, remaining remote adapters and failure/HA matrices.
+
+## B23 — native gRPC streaming and TLS
+- [x] Independent TLS generated-stub native unary/server/client/bidi, deadline, cancellation and channel recovery lane.
+- [ ] Hosted qualification and remaining inbound and protocol features.

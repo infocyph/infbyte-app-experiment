@@ -301,7 +301,11 @@ jobs:
           retention-days: 30
 
   grpc:
-    name: Native gRPC / PHP 8.6
+    name: Native gRPC / PHP 8.6 / ${{ matrix.mode }}
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [unary, streaming-tls]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -344,6 +348,7 @@ jobs:
           composer show --format=json > "$EVIDENCE/packages.json"
           php --ini > "$EVIDENCE/ini.txt"
       - name: Concurrent real unary calls and error status
+        if: matrix.mode == 'unary'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -371,9 +376,13 @@ jobs:
             if (( failed )); then cat "$EVIDENCE"/errors-"$concurrency"-*.log >&2; exit 1; fi
             php qa/workloads/report.php "$((concurrency * 100))" "$(( $(php -r 'echo intdiv(hrtime(true), 1000000);') - start ))" "$concurrency" "$EVIDENCE"/results-"$concurrency"-*.jsonl | tee "$EVIDENCE/summary-$concurrency.json"
           done
+      - name: Real native streaming, TLS, deadline and cancellation
+        if: matrix.mode == 'streaming-tls'
+        shell: bash
+        run: bash qa/workloads/grpc-stream.sh
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: native-grpc-evidence
+          name: native-grpc-evidence-${{ matrix.mode }}
           path: ${{ runner.temp }}/grpc-evidence/
           if-no-files-found: error

@@ -85,3 +85,5 @@ B20 adds four connected checkout jobs; existing authenticated HTTP and separate 
 B21 adds advanced DB transaction/lock contracts and native PDO ownership. No closure of all driver or deployment capabilities is asserted.
 
 B22 adds real Redis Cluster, MongoDB, S3-compatible and SFTP v3 scenarios; see detailed register for topology and protocol limitations.
+
+B23 adds native TLS streaming acceptance, preserving the independent unary lane. Full duplex and inbound framework dispatch are not certified.

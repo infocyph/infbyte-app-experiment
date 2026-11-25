@@ -99,3 +99,7 @@ I: nine additional jobs: two real PostgreSQL SERIALIZABLE snapshot workers with 
 ## B22 — real optional service backends
 
 I: four isolated hosted jobs for a three-primary Redis Cluster (all slots, no HA replica election), MongoDB primary (PHP 8.4 extension and published client), S3-compatible MinIO and SFTP v3 (loopback disposable credentials, published optional adapters). Cache scenarios exercise 12-process atomic claims, 1,200 keys, bulk/tag/namespace/CAS/consume; storage scenarios exercise real stream/range/prefix/move/delete reconciliation. Remote service logs excluded from artifacts because they can contain disposable credentials. SFTP test is a local protocol fixture, not authenticated-host-key production certification. Scylla/Cassandra native client compatibility, other cloud/FTP adapters, cluster failover and remote outages remain open. Hosted results pending.
+
+## B23 — generated-stub native gRPC over TLS
+
+I: separate native gRPC job (unary lane preserved) using published grpc/grpc and protobuf, real Python HTTP/2 TLS peer with disposable SAN certificate and actual generated-style BaseStub methods. Four workers × 20 cycles, 64 messages per stream, trailers, deadline, cancellation, wrong trust anchor and channel recovery. Bidi follows documented outbound-then-inbound contract, not interactive full duplex. TLS secrets kept outside artifacts. Hosted evidence pending; inbound application dispatcher and other protocol lanes remain open.
