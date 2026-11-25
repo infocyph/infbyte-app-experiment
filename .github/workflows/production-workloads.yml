@@ -273,6 +273,55 @@ jobs:
       matcher: ${{ matrix.matcher || 'fused' }}
       php: ${{ matrix.php || '8.6' }}
 
+  database-expansion:
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {scenario: db-conditional-builder, backend: pgsql}
+          - {scenario: db-conditional-builder, backend: mysql}
+          - {scenario: db-conditional-builder, backend: mariadb}
+          - {scenario: db-conditional-builder, backend: sqlite}
+          - {scenario: db-conditional-builder, backend: mssql}
+          - {scenario: db-correlated-exists, backend: pgsql}
+          - {scenario: db-correlated-exists, backend: mysql}
+          - {scenario: db-correlated-exists, backend: mariadb}
+          - {scenario: db-correlated-exists, backend: sqlite}
+          - {scenario: db-correlated-exists, backend: mssql}
+          - {scenario: db-cross-join, backend: pgsql}
+          - {scenario: db-cross-join, backend: mysql}
+          - {scenario: db-cross-join, backend: mariadb}
+          - {scenario: db-cross-join, backend: sqlite}
+          - {scenario: db-cross-join, backend: mssql}
+          - {scenario: db-distinct-projection, backend: pgsql}
+          - {scenario: db-distinct-projection, backend: mysql}
+          - {scenario: db-distinct-projection, backend: mariadb}
+          - {scenario: db-distinct-projection, backend: sqlite}
+          - {scenario: db-distinct-projection, backend: mssql}
+          - {scenario: db-seed-transactional, backend: pgsql}
+          - {scenario: db-seed-transactional, backend: mysql}
+          - {scenario: db-seed-transactional, backend: mariadb}
+          - {scenario: db-seed-transactional, backend: sqlite}
+          - {scenario: db-seed-transactional, backend: mssql}
+          - {scenario: db-seed-nontransactional, backend: pgsql}
+          - {scenario: db-seed-nontransactional, backend: mysql}
+          - {scenario: db-seed-nontransactional, backend: mariadb}
+          - {scenario: db-seed-nontransactional, backend: sqlite}
+          - {scenario: db-seed-nontransactional, backend: mssql}
+          - {scenario: db-composite-foreign, backend: pgsql}
+          - {scenario: db-composite-foreign, backend: mysql}
+          - {scenario: db-composite-foreign, backend: mariadb}
+          - {scenario: db-composite-foreign, backend: sqlite}
+          - {scenario: db-composite-foreign, backend: mssql}
+    uses: ./.github/workflows/production-worker.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host || 'worker' }}
+      matcher: ${{ matrix.matcher || 'fused' }}
+      php: ${{ matrix.php || '8.6' }}
+
   ecosystem:
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host || 'worker' }} / ${{ matrix.matcher || 'fused' }} / PHP ${{ matrix.php || '8.6' }}"
     strategy:

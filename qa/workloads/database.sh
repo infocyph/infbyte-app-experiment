@@ -19,7 +19,7 @@ case "$SCENARIO" in
   db-migration-fault|db-connection-loss) php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-proxy-*) bash "$GITHUB_WORKSPACE/qa/workloads/database-proxy.sh" ;;
   db-binlog-replica|db-maxscale|db-maxscale-failover) bash "$GITHUB_WORKSPACE/qa/workloads/database-binlog.sh" ;;
-  db-runtime-nested-cancellation|db-runtime-nested-deadline|db-runtime-retry-boundary|db-runtime-event-ownership|db-window-query|db-recursive-query|db-generated-identity|db-upsert-returning|db-compiler-payload|db-complex-join|db-grouped-query|db-union-multiplicity|db-repository-scope|db-derived-query|db-result-projections|db-repository-hooks|db-schema-prefix|db-execution-plan|db-predicate-contracts|db-pagination-contracts|db-chunk-checkpoint|db-connection-reuse|db-batch-boundaries)
+  db-conditional-builder|db-correlated-exists|db-cross-join|db-distinct-projection|db-seed-transactional|db-seed-nontransactional|db-composite-foreign|db-runtime-nested-cancellation|db-runtime-nested-deadline|db-runtime-retry-boundary|db-runtime-event-ownership|db-window-query|db-recursive-query|db-generated-identity|db-upsert-returning|db-compiler-payload|db-complex-join|db-grouped-query|db-union-multiplicity|db-repository-scope|db-derived-query|db-result-projections|db-repository-hooks|db-schema-prefix|db-execution-plan|db-predicate-contracts|db-pagination-contracts|db-chunk-checkpoint|db-connection-reuse|db-batch-boundaries)
     php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-driver|db-relations-advanced)
     php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;

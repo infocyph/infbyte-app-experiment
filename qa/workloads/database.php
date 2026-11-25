@@ -276,6 +276,7 @@ require __DIR__ . '/database-cache-race.php';
 require __DIR__ . '/database-active-backup.php';
 require __DIR__ . '/database-contracts.php';
 require __DIR__ . '/database-query-advanced-contracts.php';
+require __DIR__ . '/database-residual-contracts.php';
 
 $db = new Connection(config(($argv[1] ?? '') === 'mysql-physical-verify' ? ['port' => 3308] : []));
 match ($argv[1] ?? '') {
@@ -283,6 +284,13 @@ match ($argv[1] ?? '') {
     'runtime-nested-deadline' => databaseRuntimePolicyContracts($db, 'nested-deadline'),
     'runtime-retry-boundary' => databaseRuntimePolicyContracts($db, 'retry-boundary'),
     'runtime-event-ownership' => databaseRuntimePolicyContracts($db, 'event-ownership'),
+    'conditional-builder' => databaseConditionalBuilderContracts($db),
+    'correlated-exists' => databaseExistsContracts($db),
+    'cross-join' => databaseCrossJoinContracts($db),
+    'distinct-projection' => databaseDistinctContracts($db),
+    'seed-transactional' => databaseSeedContracts($db, true),
+    'seed-nontransactional' => databaseSeedContracts($db, false),
+    'composite-foreign' => databaseCompositeForeignContracts($db),
     'window-query' => windowQueryContracts($db),
     'recursive-query' => recursiveQueryContracts($db),
     'generated-identity' => generatedIdentityContracts($db),
