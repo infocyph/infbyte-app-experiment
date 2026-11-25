@@ -56,6 +56,7 @@ require __DIR__ . '/ecosystem-invalidation.php';
 require __DIR__ . '/ecosystem-storage-adapters.php';
 require __DIR__ . '/ecosystem-cache-ha.php';
 require __DIR__ . '/ecosystem-otp-boundaries.php';
+require __DIR__ . '/ecosystem-security-lifecycle.php';
 require __DIR__ . '/ecosystem-validation-matrix.php';
 require __DIR__ . '/ecosystem-cache-faults.php';
 require __DIR__ . '/ecosystem-cache-atomic.php';
@@ -296,6 +297,23 @@ match ($argv[1] ?? '') {
     'validation-database' => validationDatabaseWorkload(),
     'otp-backends' => otpBackendsWorkload(),
     'otp-drift' => otpDriftWorkload(),
+    'otp-challenge-replacement-redis' => otpChallengeReplacementContracts('redis'),
+    'otp-challenge-replacement-valkey' => otpChallengeReplacementContracts('valkey'),
+    'otp-challenge-replacement-file' => otpChallengeReplacementContracts('file'),
+    'otp-challenge-replacement-phpfiles' => otpChallengeReplacementContracts('phpfiles'),
+    'otp-challenge-replacement-sqlite' => otpChallengeReplacementContracts('sqlite'),
+    'otp-challenge-replacement-pdo' => otpChallengeReplacementContracts('pdo'),
+    'otp-rotation-orchestration-redis' => otpRotationOrchestrationContracts('redis'),
+    'otp-rotation-orchestration-valkey' => otpRotationOrchestrationContracts('valkey'),
+    'otp-rotation-orchestration-file' => otpRotationOrchestrationContracts('file'),
+    'otp-rotation-orchestration-phpfiles' => otpRotationOrchestrationContracts('phpfiles'),
+    'otp-rotation-orchestration-sqlite' => otpRotationOrchestrationContracts('sqlite'),
+    'otp-rotation-orchestration-pdo' => otpRotationOrchestrationContracts('pdo'),
+    'envelope-rotation-aes' => envelopeRotationContracts('aes-256-gcm'),
+    'envelope-rotation-xchacha' => envelopeRotationContracts('xchacha20-poly1305-ietf'),
+    'file-key-rotation' => fileKeyRotationContracts(),
+    'validation-affix-digits' => validationAffixDigitsContracts(),
+    'validation-conditional' => validationConditionalContracts(),
     'otp-enrollment' => otpEnrollmentWorkload(),
     'scylla' => scyllaWorkload(),
     'redis-failover-seed' => redisFailoverWorkload(true),

@@ -452,6 +452,27 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-otp-challenge-replacement-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-file, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-challenge-replacement-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-challenge-replacement-pdo, backend: mariadb}
+          - {scenario: ecosystem-otp-rotation-orchestration-redis, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-valkey, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-file, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-phpfiles, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-sqlite, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-pdo, backend: pgsql}
+          - {scenario: ecosystem-otp-rotation-orchestration-pdo, backend: mysql}
+          - {scenario: ecosystem-otp-rotation-orchestration-pdo, backend: mariadb}
+          - {scenario: ecosystem-envelope-rotation-aes, backend: pgsql}
+          - {scenario: ecosystem-envelope-rotation-xchacha, backend: pgsql}
+          - {scenario: ecosystem-file-key-rotation, backend: pgsql}
+          - {scenario: ecosystem-validation-affix-digits, backend: pgsql}
+          - {scenario: ecosystem-validation-conditional, backend: pgsql}
           - {scenario: ecosystem-omnibus-failure-replay, backend: pgsql}
           - {scenario: ecosystem-omnibus-failure-replay, backend: mysql}
           - {scenario: ecosystem-omnibus-failure-replay, backend: mariadb}

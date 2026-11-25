@@ -673,3 +673,7 @@ I: 22 independent lanes: nine stores each for response-cache HEAD/freshness and 
 ## B155 — Durable messaging retry and transaction boundaries; Pathwise reader/writer contracts
 
 I: 20 independent jobs: three SQL messaging contracts across five drivers, five local file contracts. Failure manager replay resets delivery stamps and preserves stable identity, invalid raw/workflow retries release claims, transactional enqueue reconciles rollback and commit with independent business rows. File contracts verify binary bounded chunk digests, native CSV multiline oracle, falsey JSONL and malformed tail, serialized safe values/object rejection, independent file-handle locks and disposal. Remote publication uncertainty remains open. CORE-01, DATA, SEC, MEM, EXEC-03: source and dispatcher/matrix reviewed; hosted qualification pending. 697 routine rows; no upstream changes.
+
+## B156 — Crypto rotation, challenge lifecycle and conditional validation
+
+I: 21 independent jobs: two OTP contracts across eight real authentication-state stores; AES-GCM and XChaCha envelope and protected-file rotation; multi-affix/digit options and conditional rule/exclusion reuse. TOTP rotation is an explicit lab application selection policy, not a new library orchestration API. Real durable state and independent peers, stable ciphertext provenance and no output mutation on rejection. SEC, DATA, TYPE, EXEC-03: source/matrix/dispatcher reviewed; hosted qualification pending. 718 routine rows; no upstream changes.
