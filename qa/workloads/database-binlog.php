@@ -137,3 +137,19 @@ function maxscaleRecover(): void
     check(binlogServer($reader) === 42 && balance($reader, 1) === 121 && balance($reader, 2) === 79, 'Recovered proxy reader diverged.');
     echo "Actual MaxScale primary transaction affinity, savepoints, reader loss and recovery passed\n";
 }
+
+function maxscalePromoted(): void
+{
+    $db = binlogConnection(16033);
+    check(binlogServer($db) === 42 && (int) $db->scalar('SELECT @@read_only') === 0, 'Stable MaxScale endpoint did not route to new writable primary.');
+    check(balance($db, 1) === 120 && balance($db, 2) === 80, 'Confirmed GTID effects were lost.');
+    $effects = 0;
+    $db->transaction(static function (Connection $active) use (&$effects): void {
+        $active->update('UPDATE lab_balances SET balance = balance + 2 WHERE id = 1');
+        $active->update('UPDATE lab_balances SET balance = balance - 2 WHERE id = 2');
+        $active->afterCommit(static function () use (&$effects): void { ++$effects; });
+    });
+    $direct = binlogConnection(23307);
+    check($effects === 1 && $db->transactionLevel() === 0 && balance($direct, 1) === 122 && balance($direct, 2) === 78, 'Post-promotion write did not reconcile.');
+    echo "Automatic MariaDB GTID monitor failover, fenced old primary and stable endpoint write passed\n";
+}

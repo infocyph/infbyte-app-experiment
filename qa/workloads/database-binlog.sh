@@ -8,6 +8,10 @@ case "$DB_BACKEND" in
 esac
 extra=()
 if [[ "$DB_BACKEND" == mysql ]]; then extra+=(--mysqlx=0); fi
+if [[ "$SCENARIO" == db-maxscale-failover ]]; then
+  test "$DB_BACKEND" = mariadb
+  extra+=(--gtid-strict-mode=ON --log-slave-updates=ON)
+fi
 root_password="$(php -r 'echo bin2hex(random_bytes(24));')"
 replica_password="$(php -r 'echo bin2hex(random_bytes(24));')"
 root="$(mktemp -d "$RUNNER_TEMP/binlog.XXXXXXXX")"
@@ -34,23 +38,44 @@ for role in source reader; do
     sleep 1
   done
   sql "$role" 'SELECT 1' | grep -qx 1
-  sql "$role" "CREATE DATABASE experiment; CREATE USER 'experiment'@'%' IDENTIFIED BY 'experiment'; GRANT ALL PRIVILEGES ON experiment.* TO 'experiment'@'%';"
+  prefix=""
+  if [[ "$SCENARIO" == db-maxscale-failover ]]; then prefix="SET SESSION sql_log_bin=0;"; fi
+  sql "$role" "$prefix CREATE DATABASE experiment; CREATE USER 'experiment'@'%' IDENTIFIED BY 'experiment'; GRANT ALL PRIVILEGES ON experiment.* TO 'experiment'@'%';"
 done
-sql source "CREATE USER 'lab_replica'@'%' IDENTIFIED BY '$replica_password'; GRANT REPLICATION SLAVE ON *.* TO 'lab_replica'@'%';"
+if [[ "$SCENARIO" == db-maxscale-failover ]]; then
+  for role in source reader; do
+    sql "$role" "SET SESSION sql_log_bin=0; CREATE USER 'lab_replica'@'%' IDENTIFIED BY '$replica_password'; GRANT REPLICATION SLAVE ON *.* TO 'lab_replica'@'%';"
+  done
+  # Generate one actual GTID event on the source and let the replica receive it.
+  sql source 'CREATE TABLE experiment.lab_gtid_seed (id INT PRIMARY KEY); INSERT INTO experiment.lab_gtid_seed VALUES (1);'
+else
+  sql source "CREATE USER 'lab_replica'@'%' IDENTIFIED BY '$replica_password'; GRANT REPLICATION SLAVE ON *.* TO 'lab_replica'@'%';"
+fi
 read -r file position _ <<< "$(sql source "$status")"
 [[ "$file" =~ ^lab-binlog\.[0-9]+$ && "$position" =~ ^[0-9]+$ ]]
 if [[ "$DB_BACKEND" == mysql ]]; then
   sql reader "CHANGE REPLICATION SOURCE TO SOURCE_HOST='127.0.0.1', SOURCE_PORT=23306, SOURCE_USER='lab_replica', SOURCE_PASSWORD='$replica_password', SOURCE_LOG_FILE='$file', SOURCE_LOG_POS=$position, GET_SOURCE_PUBLIC_KEY=1;"
+elif [[ "$SCENARIO" == db-maxscale-failover ]]; then
+  sql reader "CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=23306, MASTER_USER='lab_replica', MASTER_PASSWORD='$replica_password', MASTER_USE_GTID=slave_pos;"
 else
   sql reader "CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=23306, MASTER_USER='lab_replica', MASTER_PASSWORD='$replica_password', MASTER_LOG_FILE='$file', MASTER_LOG_POS=$position;"
 fi
 sql reader "$start; SET GLOBAL read_only=ON;"
-if [[ "$SCENARIO" == db-maxscale ]]; then
+if [[ "$SCENARIO" == db-maxscale || "$SCENARIO" == db-maxscale-failover ]]; then
   test "$DB_BACKEND" = mariadb
   service_password="$(php -r 'echo bin2hex(random_bytes(24));')"
   for role in source reader; do
     sql "$role" "SET SESSION sql_log_bin=0; CREATE USER 'lab_maxscale'@'%' IDENTIFIED BY '$service_password'; GRANT SELECT ON mysql.* TO 'lab_maxscale'@'%'; GRANT SHOW DATABASES, REPLICA MONITOR ON *.* TO 'lab_maxscale'@'%';"
   done
+  monitor_user=lab_maxscale
+  monitor_password="$service_password"
+  if [[ "$SCENARIO" == db-maxscale-failover ]]; then
+    monitor_user=lab_monitor
+    monitor_password="$(php -r 'echo bin2hex(random_bytes(24));')"
+    for role in source reader; do
+      sql "$role" "SET SESSION sql_log_bin=0; CREATE USER 'lab_monitor'@'%' IDENTIFIED BY '$monitor_password'; GRANT REPLICA MONITOR, REPLICATION SLAVE ADMIN, BINLOG ADMIN, RELOAD, PROCESS, SHOW DATABASES, EVENT, SET USER, READ_ONLY ADMIN ON *.* TO 'lab_monitor'@'%';"
+    done
+  fi
   chmod 755 "$root"
   cat > "$root/maxscale.cnf" <<CONF
 [maxscale]
@@ -69,8 +94,8 @@ port=23307
 type=monitor
 module=mariadbmon
 servers=source,reader
-user=lab_maxscale
-password=$service_password
+user=$monitor_user
+password=$monitor_password
 monitor_interval=500ms
 [write-service]
 type=service
@@ -100,6 +125,10 @@ protocol=MariaDBClient
 address=127.0.0.1
 port=16034
 CONF
+  if [[ "$SCENARIO" == db-maxscale-failover ]]; then
+    # GTID monitor promotion is automatic; the old source stays fenced.
+    sed -i '/^monitor_interval=/a auto_failover=true\nauto_rejoin=false\nfailcount=3' "$root/maxscale.cnf"
+  fi
   chmod 644 "$root/maxscale.cnf"
   docker run -d --name lab-maxscale --network host -v "$root/maxscale.cnf:/etc/maxscale.cnf:ro" docker.mariadb.com/maxscale:latest
   ready=0
@@ -114,6 +143,25 @@ CONF
   test "$ready" = 1
   timeout 60s php "$probe" maxscale-seed | tee "$EVIDENCE/maxscale-seed.log"
   timeout 60s php "$probe" maxscale-work | tee "$EVIDENCE/maxscale-work.log"
+  if [[ "$SCENARIO" == db-maxscale-failover ]]; then
+    source_gtid="$(sql source 'SELECT @@gtid_binlog_pos')"
+    reader_gtid="$(sql reader 'SELECT @@gtid_slave_pos')"
+    test -n "$source_gtid"
+    test "$source_gtid" = "$reader_gtid"
+    printf '%s\n' "$source_gtid" > "$EVIDENCE/maxscale-confirmed-gtid.txt"
+    docker stop -t 10 lab-binlog-source >/dev/null
+    ready=0
+    for attempt in {1..120}; do
+      if docker exec lab-maxscale maxctrl --hosts=127.0.0.1:18989 list servers > "$EVIDENCE/maxscale-promoted.txt" &&
+         grep -E 'source.*Down' "$EVIDENCE/maxscale-promoted.txt" >/dev/null &&
+         grep -E 'reader.*(Master|Primary).*Running' "$EVIDENCE/maxscale-promoted.txt" >/dev/null; then ready=1; break; fi
+      sleep 1
+    done
+    test "$ready" = 1
+    timeout 60s php "$probe" maxscale-promoted | tee "$EVIDENCE/maxscale-promoted.log"
+    test "$(docker inspect -f '{{.State.Running}}' lab-binlog-source)" = false
+    exit 0
+  fi
   docker stop lab-binlog-reader >/dev/null
   ready=0
   for attempt in {1..45}; do

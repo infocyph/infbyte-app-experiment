@@ -25,7 +25,7 @@ case "$SCENARIO" in
   db-proxy-mysql) bash "$GITHUB_WORKSPACE/qa/workloads/database-mysql-proxy.sh" ;;
   db-migration-fault|db-connection-loss) php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-proxy-*) bash "$GITHUB_WORKSPACE/qa/workloads/database-proxy.sh" ;;
-  db-binlog-replica|db-maxscale) bash "$GITHUB_WORKSPACE/qa/workloads/database-binlog.sh" ;;
+  db-binlog-replica|db-maxscale|db-maxscale-failover) bash "$GITHUB_WORKSPACE/qa/workloads/database-binlog.sh" ;;
   db-driver|db-relations-advanced)
     php "$probe" "${SCENARIO#db-}" | tee "$EVIDENCE/database.log" ;;
   db-relations) php "$probe" relations | tee "$EVIDENCE/database.log" ;;
@@ -60,9 +60,9 @@ case "$SCENARIO" in
     if (( failed )); then exit 1; fi
     php "$probe" verify-deadlock | tee "$EVIDENCE/database.log"
     ;;
-  db-replicas|db-replica-fault|db-primary-promotion|db-pgpool)
+  db-replicas|db-replica-fault|db-primary-promotion|db-pgpool|db-pgpool-failover)
     ports=(5433 5434)
-    if [[ "$SCENARIO" == db-pgpool ]]; then ports=(5433); fi
+    if [[ "$SCENARIO" == db-pgpool || "$SCENARIO" == db-pgpool-failover ]]; then ports=(5433); fi
     cleanup() {
       for port in "${ports[@]}"; do
         docker logs "lab-standby-$port" > "$EVIDENCE/standby-$port.log" 2>&1 || :
@@ -91,7 +91,7 @@ case "$SCENARIO" in
       done
       test "$ready" = 1
     done
-    if [[ "$SCENARIO" == db-pgpool ]]; then
+    if [[ "$SCENARIO" == db-pgpool || "$SCENARIO" == db-pgpool-failover ]]; then
       bash "$GITHUB_WORKSPACE/qa/workloads/database-pgpool.sh"
     elif [[ "$SCENARIO" == db-replicas ]]; then
       php "$probe" replicas | tee "$EVIDENCE/database.log"

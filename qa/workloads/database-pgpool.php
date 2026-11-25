@@ -69,3 +69,19 @@ function pgpoolRecover(): void
     check((int) $db->scalar('SELECT inet_server_port()') === 5433 && balance($db, 1) === 121 && balance($db, 2) === 79, 'Explicitly reattached proxy reader did not reconcile.');
     echo "Physical Pgpool-II standby routing, primary transactions, fallback and reattachment passed\n";
 }
+
+function pgpoolPromoted(): void
+{
+    $db = pgpoolConnection();
+    check((int) $db->scalar('SELECT inet_server_port()') === 5433 && in_array($db->scalar('SELECT pg_is_in_recovery()'), [false, 'f', 0, '0'], true), 'Stable proxy endpoint did not switch to promoted standby.');
+    check(balance($db, 1) === 120 && balance($db, 2) === 80, 'Confirmed pre-failover writes were lost.');
+    $effects = 0;
+    $db->transaction(static function (Connection $active) use (&$effects): void {
+        $active->update('UPDATE lab_balances SET balance = balance + 2 WHERE id = 1');
+        $active->update('UPDATE lab_balances SET balance = balance - 2 WHERE id = 2');
+        $active->afterCommit(static function () use (&$effects): void { ++$effects; });
+    });
+    $direct = pgpoolConnection(5433);
+    check($effects === 1 && $db->transactionLevel() === 0 && balance($direct, 1) === 122 && balance($direct, 2) === 78, 'Post-failover write did not reconcile.');
+    echo "Monitor-triggered fenced PostgreSQL promotion preserved confirmed data and stable proxy writes\n";
+}
