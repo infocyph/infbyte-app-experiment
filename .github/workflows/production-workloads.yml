@@ -787,6 +787,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {scenario: ecosystem-validation-granular-sizes, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-dates, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-collections, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-patterns, backend: pgsql}
+          - {scenario: ecosystem-validation-granular-network, backend: pgsql}
+          - {scenario: ecosystem-validation-presence-truth-table, backend: pgsql}
+          - {scenario: ecosystem-validation-distinct-groups, backend: pgsql}
+          - {scenario: ecosystem-array-numeric-domains, backend: pgsql}
+          - {scenario: ecosystem-array-bucket-projection, backend: pgsql}
+          - {scenario: ecosystem-array-matrix-shape, backend: pgsql}
+          - {scenario: ecosystem-array-path-mutation, backend: pgsql}
+          - {scenario: ecosystem-config-read-cache-toggle, backend: pgsql}
           - {scenario: ecosystem-jwt-rotation-eddsa, backend: pgsql}
           - {scenario: ecosystem-jwt-rotation-es256, backend: pgsql}
           - {scenario: ecosystem-jwt-rotation-es384, backend: pgsql}

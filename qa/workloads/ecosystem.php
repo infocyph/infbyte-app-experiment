@@ -78,6 +78,7 @@ require __DIR__ . '/ecosystem-utility-contracts.php';
 require __DIR__ . '/ecosystem-utility-lifecycle.php';
 require __DIR__ . '/ecosystem-value-crypto.php';
 require __DIR__ . '/ecosystem-array-contracts.php';
+require __DIR__ . '/ecosystem-granular-contracts.php';
 require __DIR__ . '/ecosystem-di-factories.php';
 require __DIR__ . '/ecosystem-di-runtime-contracts.php';
 require __DIR__ . '/ecosystem-grpc-inbound.php';
@@ -343,6 +344,18 @@ match ($argv[1] ?? '') {
     'signing-readiness-rs512' => signingReadinessWorkload('RS512'),
     'purpose-token-rotation' => signedPayloadRotationWorkload(true),
     'signed-payload-rotation' => signedPayloadRotationWorkload(false),
+    'validation-granular-sizes' => granularValidationWorkload('sizes'),
+    'validation-granular-dates' => granularValidationWorkload('dates'),
+    'validation-granular-collections' => granularValidationWorkload('collections'),
+    'validation-granular-patterns' => granularValidationWorkload('patterns'),
+    'validation-granular-network' => granularValidationWorkload('network'),
+    'validation-presence-truth-table' => validationPresenceTruthTableWorkload(),
+    'validation-distinct-groups' => validationDistinctGroupsWorkload(),
+    'array-numeric-domains' => arrayNumericDomainsWorkload(),
+    'array-bucket-projection' => arrayBucketProjectionWorkload(),
+    'array-matrix-shape' => arrayMatrixShapeWorkload(),
+    'array-path-mutation' => arrayPathMutationWorkload(),
+    'config-read-cache-toggle' => configReadCacheToggleWorkload(),
     'foundation-resource-contracts' => foundationResourceContracts(),
     'cache-redis-cluster-bulk' => cacheBulkWorkload('redis-cluster'),
     'cache-redis-cluster-tags' => cacheTagsWorkload('redis-cluster'),

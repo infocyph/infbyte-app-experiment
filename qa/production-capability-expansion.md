@@ -716,3 +716,9 @@ I: 25 real SQL lanes across PostgreSQL/MySQL/MariaDB/SQLite/SQL Server: structur
 - 10 asymmetric signing-readiness algorithms: public JWKS eligibility, no private fields, reconstructed public-key verification, mismatched-pair rejection, expired fallback removal on rebuild.
 - Purpose-token and signed-payload: fallback provenance, context boundaries and deterministic expiration; purpose-token activation and reserved metadata rejection.
 - Implementation committed; hosted execution and qualification pending. No vendor changes.
+
+### B176 — Granular validation and array/config contracts (12 lanes)
+
+- Seven independent ReqShield scenarios: size domains/units, date boundaries, strict typed membership, pattern configuration, network values, conditional presence truth tables, nested distinct groups; dynamic and compiled paths with reuse.
+- Five ArrayKit scenarios: numeric classification, bucket/extremum projections, ragged matrix rejection and leaf preservation, path moves and collision non-mutation, read-cache toggling and invalidation.
+- Implementation committed; hosted execution and qualification pending. No vendor changes.
