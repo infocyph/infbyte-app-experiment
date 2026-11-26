@@ -18,11 +18,12 @@ Updated 2026-11-26. Scope derived from [capability inventory](../qa/capability-c
 | [Omnibus](omnibus.md) | Outbox/relay, broker settlement | Integration candidates; quorum representative fixed |
 | [TalkingBytes](talkingbytes.md) | IMAP capability parsing, wire protocols | Reproduced candidate |
 | [Pathwise](pathwise.md) | Streams, archive publication, SFTP | Source-confirmed defects; **4.3 compatibility-breaking** |
-| [ArrayKit](arraykit.md) | Data/config processing | No confirmed defect; investigate |
-| [UID](uid.md) | Sequence/provider boundaries | No confirmed defect; fixture corrected |
-| [Infbyte](infbyte.md) | Skeleton and consumer integration | Integration candidates |
-| [PHPProbe](phpprobe.md) | Engineering diagnostics | 41/41 passed; no confirmed defect |
-| [PHPForge](phpforge.md) | Engineering and release gates | No confirmed defect |
+
+## Packages without actionable independent defects
+
+No standalone remediation plan is retained for ArrayKit, UID, PHPProbe, PHPForge or the Infbyte skeleton. ArrayKit has no independently reproduced library defect; the UID failure was corrected in the playground and the representative hosted retest passed. PHPProbe passed all 41 engineering jobs; no PHPForge defect was identified. Infbyte consumer acceptance passed all 12 profiles and its unresolved application integration failures remain assigned to Foundation and the relevant libraries above. These exclusions reflect available evidence, not proof of universal defect-free behavior. Preserve all their original test coverage and reopen feedback only when concrete independently attributable failure evidence warrants it.
+
+The remaining 12 plans contain either confirmed defects or specific observed failures with an actionable root-cause investigation. Candidates remain explicitly unconfirmed until isolated; shared failures must not be counted twice or assigned to the wrong owner.
 
 ## Coordination
 
