@@ -138,11 +138,7 @@ if [[ "$SCENARIO" == *-remote-order-recovery || "$SCENARIO" == *-order-http-publ
   composer require php-amqplib/php-amqplib --no-interaction --prefer-dist --no-progress
   docker run -d --name lab-remote-orders-broker -p 127.0.0.1:15672:5672 -e RABBITMQ_DEFAULT_USER=experiment -e RABBITMQ_DEFAULT_PASS=fixture-only-password rabbitmq:4
   broker_ready() {
-    for attempt in {1..90}; do
-      if docker exec lab-remote-orders-broker rabbitmq-diagnostics -q ping >/dev/null; then return; fi
-      sleep 1
-    done
-    return 1
+    fixture_rabbit_ready lab-remote-orders-broker 15672 90
   }
   broker_ready
 fi

@@ -34,8 +34,12 @@ function clusterTlsContracts(string $phase): void
         foreach ($masters as $master) {
             verify($client->ping($master) !== false, 'Discovered TLS node unreachable.');
         }
-        foreach ([[$root . '/wrong.pem', '127.0.0.1', true], [$cert, 'wrong.example.test', true], [$cert, '127.0.0.1', false]] as [$ca, $peer, $tls]) {
-            expectFailure(static fn() => @labClusterTlsClient($ca, $peer, $tls), RedisClusterException::class, 'Invalid TLS trust or plaintext cluster accepted.');
+        foreach ([
+            'wrong CA' => [$root . '/wrong.pem', '127.0.0.1', true],
+            'wrong hostname' => [$cert, 'wrong.example.test', true],
+            'plaintext' => [$cert, '127.0.0.1', false],
+        ] as $boundary => [$ca, $peer, $tls]) {
+            expectFailure(static fn() => @labClusterTlsClient($ca, $peer, $tls), RedisClusterException::class, 'Invalid cluster trust accepted: ' . $boundary);
         }
     } elseif ($phase === 'bulk') {
         $cache = labClusterTlsCache('lab-cluster-tls');

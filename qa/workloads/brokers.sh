@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 cd "$PROJECT"
-trap 'docker rm -f lab-broker >/dev/null 2>&1 || :' EXIT
+trap 'fixture_container_evidence lab-broker || :; docker rm -f lab-broker >/dev/null 2>&1 || :' EXIT
 case "$SCENARIO" in
   ecosystem-amqp-crash|ecosystem-amqp|ecosystem-amqp-dlq|ecosystem-amqp-ack-uncertain|ecosystem-amqp-wire-ack|ecosystem-amqp-consumer-failures)
     docker run -d --name lab-broker -p 127.0.0.1:15672:5672 -e RABBITMQ_DEFAULT_USER=experiment -e RABBITMQ_DEFAULT_PASS=fixture-only-password rabbitmq:4
     composer require php-amqplib/php-amqplib --no-interaction --prefer-dist --no-progress
-    for i in $(seq 1 60); do
-      if docker exec lab-broker rabbitmq-diagnostics -q ping; then break; fi
-      sleep 1
-    done
-    docker exec lab-broker rabbitmq-diagnostics -q ping
+    fixture_rabbit_ready lab-broker 15672 90
     ;;
   ecosystem-sqs-fifo-groups|ecosystem-sqs-visibility-recovery|ecosystem-sqs|ecosystem-sqs-fifo|ecosystem-sqs-redrive|ecosystem-sqs-ack-uncertain|ecosystem-sqs-wire-ack|ecosystem-sqs-consumer-failures)
     docker run -d --name lab-broker -p 127.0.0.1:19324:9324 softwaremill/elasticmq-native:latest
@@ -19,6 +16,7 @@ case "$SCENARIO" in
       if curl -fsS --max-time 2 'http://127.0.0.1:19324/?Action=ListQueues' >/dev/null; then break; fi
       sleep 1
     done
+    curl -fsS --max-time 2 'http://127.0.0.1:19324/?Action=ListQueues' >/dev/null
     ;;
 esac
 composer check-platform-reqs --no-dev
@@ -28,7 +26,7 @@ if [[ "$SCENARIO" == ecosystem-amqp-crash ]]; then
   probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
   timeout 90s php "$probe" amqp-crash-seed > "$EVIDENCE/broker-crash-seed.log" 2>&1 &
   seed=$!
-  trap 'kill "$seed" 2>/dev/null || :; wait "$seed" 2>/dev/null || :; docker rm -f lab-broker >/dev/null 2>&1 || :; rm -rf "$LAB_BROKER_CRASH_ROOT"' EXIT
+  trap 'kill "$seed" 2>/dev/null || :; wait "$seed" 2>/dev/null || :; fixture_container_evidence lab-broker || :; docker rm -f lab-broker >/dev/null 2>&1 || :; rm -rf "$LAB_BROKER_CRASH_ROOT"' EXIT
   for attempt in {1..300}; do
     [[ -f "$LAB_BROKER_CRASH_ROOT/seeded" ]] && break
     kill -0 "$seed"
@@ -41,11 +39,8 @@ if [[ "$SCENARIO" == ecosystem-amqp-crash ]]; then
   wait "$seed"
   test -f "$LAB_BROKER_CRASH_ROOT/observed"
   docker start lab-broker >/dev/null
-  for attempt in {1..60}; do
-    if docker exec lab-broker rabbitmq-diagnostics -q check_port_connectivity; then break; fi
-    sleep 2
-  done
-  docker exec lab-broker rabbitmq-diagnostics -q check_port_connectivity
+  fixture_rabbit_ready lab-broker 15672 90
+  docker exec -u rabbitmq lab-broker rabbitmq-diagnostics -q check_port_connectivity
   timeout 90s php "$probe" amqp-crash-recover | tee "$EVIDENCE/broker-crash-recovery.log"
 elif [[ "$SCENARIO" == ecosystem-amqp-wire-ack ]]; then
   export LAB_AMQP_FAULT_ROOT="$(mktemp -d "$RUNNER_TEMP/amqp-wire.XXXXXXXX")"

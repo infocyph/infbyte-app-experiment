@@ -21,6 +21,11 @@ import poplib
 
 with imaplib.IMAP4("127.0.0.1", 11430, timeout=5) as imap:
     imap.login("labmail", "fixture-only-password")
+    status, capabilities = imap.capability()
+    print("Independent authenticated IMAP capabilities:", capabilities)
+    assert status == "OK"
+    if __import__("os").environ["SCENARIO"] == "ecosystem-imap":
+        assert {b"MOVE", b"UIDPLUS"} & set(b" ".join(capabilities).split()), "Fixture must support safe MOVE"
     status, count = imap.select("INBOX", readonly=True)
     print("Independent IMAP:", status, count)
     assert status == "OK" and count == [b"12"]

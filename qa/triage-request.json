@@ -161,37 +161,37 @@
     "matcher": "sharded"
   },
   {
-    "scenario": "http",
+    "scenario": "browser-policy-trace",
     "backend": "pgsql",
     "host": "native",
     "matcher": "sharded"
   },
   {
-    "scenario": "http",
+    "scenario": "browser-policy-trace",
     "backend": "pgsql",
     "host": "fpm",
     "matcher": "sharded"
   },
   {
-    "scenario": "http",
+    "scenario": "browser-policy-trace",
     "backend": "pgsql",
     "host": "roadrunner",
     "matcher": "sharded"
   },
   {
-    "scenario": "http",
+    "scenario": "browser-policy-trace",
     "backend": "pgsql",
     "host": "frankenphp",
     "matcher": "sharded"
   },
   {
-    "scenario": "http",
+    "scenario": "browser-policy-trace",
     "backend": "pgsql",
     "host": "swoole",
     "matcher": "sharded"
   },
   {
-    "scenario": "http",
+    "scenario": "browser-policy-trace",
     "backend": "pgsql",
     "host": "openswoole",
     "matcher": "sharded"
@@ -206,6 +206,10 @@
   },
   {
     "scenario": "db-pgpool-failover",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-route-cors-contracts",
     "backend": "pgsql"
   }
 ]

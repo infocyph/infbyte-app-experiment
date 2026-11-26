@@ -31,11 +31,7 @@ if [[ "$SCENARIO" == *-order-rename-* ]]; then
   combined=1
   packages+=(php-amqplib/php-amqplib)
   docker run -d --name lab-remote-orders-broker -p 127.0.0.1:15672:5672 -e RABBITMQ_DEFAULT_USER=experiment -e RABBITMQ_DEFAULT_PASS=fixture-only-password rabbitmq:4 >/dev/null
-  for attempt in {1..90}; do
-    if docker exec lab-remote-orders-broker rabbitmq-diagnostics -q ping >/dev/null; then break; fi
-    sleep 1
-  done
-  docker exec lab-remote-orders-broker rabbitmq-diagnostics -q ping >/dev/null
+  fixture_rabbit_ready lab-remote-orders-broker 15672 90
 fi
 composer require "${packages[@]}" --with-all-dependencies --no-interaction --prefer-dist --no-progress
 composer check-platform-reqs --no-dev

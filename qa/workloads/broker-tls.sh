@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 root="$(mktemp -d "$RUNNER_TEMP/amqp-tls.XXXXXXXX")"
 cleanup() {
+  fixture_container_evidence lab-broker-tls || :
   docker rm -f lab-broker-tls >/dev/null 2>&1 || :
   rm -rf "$root"
 }
@@ -35,11 +37,8 @@ docker run -d --name lab-broker-tls -p 127.0.0.1:15671:5671 \
     exec docker-entrypoint.sh rabbitmq-server
   ' >/dev/null
 ready() {
-  for attempt in {1..60}; do
-    if docker exec lab-broker-tls rabbitmq-diagnostics -q check_port_connectivity >/dev/null 2>&1; then return; fi
-    sleep 2
-  done
-  return 1
+  fixture_rabbit_ready lab-broker-tls 15671 90
+  docker exec -u rabbitmq lab-broker-tls rabbitmq-diagnostics -q check_port_connectivity
 }
 cd "$PROJECT"
 composer require php-amqplib/php-amqplib --no-interaction --prefer-dist --no-progress

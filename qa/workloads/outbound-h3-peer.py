@@ -126,8 +126,17 @@ async def main():
         create_protocol=IndependentH3,
     )
     try:
-        Path(args.ready).write_text("ready\n", encoding="utf-8")
-        await asyncio.Event().wait()
+        # localhost resolves to either address; retain the DNS authority and TLS checks.
+        ipv6 = await serve(
+            "::1", args.port, configuration=conf,
+            create_protocol=IndependentH3,
+        )
+        try:
+            print(f"Independent H3 peer listening on 127.0.0.1 and ::1:{args.port}", flush=True)
+            Path(args.ready).write_text("ready\n", encoding="utf-8")
+            await asyncio.Event().wait()
+        finally:
+            ipv6.close()
     finally:
         server.close()
 

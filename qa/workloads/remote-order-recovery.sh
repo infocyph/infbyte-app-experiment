@@ -21,9 +21,9 @@ docker run --rm lab-minio --version | tee "$EVIDENCE/minio-version.txt"
 docker run -d --name lab-remote-orders-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" lab-minio server /data
 docker run -d --name lab-remote-orders-broker -p 127.0.0.1:15672:5672 -e RABBITMQ_DEFAULT_USER=experiment -e RABBITMQ_DEFAULT_PASS=fixture-only-password rabbitmq:4
 ready() {
+  fixture_rabbit_ready lab-remote-orders-broker 15672 90
   for attempt in {1..90}; do
-    if curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null \
-      && docker exec lab-remote-orders-broker rabbitmq-diagnostics -q ping >/dev/null; then return; fi
+    if curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null; then return; fi
     sleep 1
   done
   return 1

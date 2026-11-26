@@ -22,9 +22,7 @@ safe = {key: state.get(key) for key in ("Status", "Running", "OOMKilled", "ExitC
 safe["image"] = container["Config"]["Image"]
 (root / f"container-{name}-state.json").write_text(json.dumps(safe, indent=2) + "\n")
 print(f"Fixture {name}: {json.dumps(safe)}")
-if safe["Running"] or not safe["ExitCode"]:
-    raise SystemExit(0)
-logs = subprocess.run(["docker", "logs", "--tail", "100", name], capture_output=True, text=True, errors="replace")
+logs = subprocess.run(["docker", "logs", "--tail", "300", name], capture_output=True, text=True, errors="replace")
 message = logs.stdout + logs.stderr
 for entry in container["Config"].get("Env", []):
     key, _, value = entry.partition("=")
@@ -37,8 +35,26 @@ for index, line in enumerate(raw_lines):
         selected.update(range(max(0, index - 2), min(len(raw_lines), index + 5)))
 lines = [raw_lines[i][:800] for i in sorted(selected)
          if not re.search(r"password|secret|cookie|token|credential|authorization|private.key", raw_lines[i], re.I)]
-(root / f"container-{name}-errors.log").write_text("\n".join(lines[-40:]) + "\n")
-for line in lines[-40:]:
+bounded = lines if len(lines) <= 80 else lines[:40] + ["..."] + lines[-40:]
+(root / f"container-{name}-errors.log").write_text("\n".join(bounded) + "\n")
+for line in bounded:
     print(line)
 PY
+}
+
+fixture_rabbit_ready() {
+  local name="$1" port="$2" attempts="${3:-60}" i
+  for ((i=0; i<attempts; ++i)); do
+    if [[ "$(docker inspect -f '{{.State.Running}}' "$name" 2>/dev/null)" != true ]]; then
+      fixture_container_evidence "$name" || :
+      return 1
+    fi
+    if timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/$1' _ "$port" 2>/dev/null \
+      && timeout 10 docker exec -u rabbitmq "$name" rabbitmq-diagnostics -q check_running >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+  fixture_container_evidence "$name" || :
+  return 1
 }

@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 probe="$GITHUB_WORKSPACE/qa/workloads/database.php"
 root="$(mktemp -d "$RUNNER_TEMP/pgpool.XXXXXXXX")"
 chmod 755 "$root"
 controller=""
 cleanup() {
   if [[ -n "$controller" ]]; then kill "$controller" 2>/dev/null || :; wait "$controller" 2>/dev/null || :; fi
+  fixture_container_evidence lab-pgpool || :
   docker logs lab-pgpool > "$EVIDENCE/pgpool.log" 2>&1 || :
   docker rm -f lab-pgpool >/dev/null 2>&1 || :
   rm -rf "$root"
@@ -32,6 +34,7 @@ load_balance_mode = on
 disable_load_balance_on_write = 'transaction'
 write_function_list = 'nextval,setval'
 enable_pool_hba = off
+pool_passwd = '/config/pool_passwd'
 allow_clear_text_frontend_auth = on
 num_init_children = 8
 max_pool = 2
@@ -70,7 +73,9 @@ HOOK
 else
   mkdir "$root/signal"
 fi
-chmod 644 "$root/pgpool.conf"
+printf "experiment:TEXTexperiment\n" > "$root/pool_passwd"
+printf "experiment:%s\n" "$(printf experiment | md5sum | cut -d " " -f1)" > "$root/pcp.conf"
+chmod 644 "$root/pgpool.conf" "$root/pool_passwd" "$root/pcp.conf"
 docker build -t lab-pgpool - < "$GITHUB_WORKSPACE/qa/workloads/Pgpool.Dockerfile"
 start_proxy() {
   docker run -d --name lab-pgpool --network host -v "$root:/config:ro" -v "$root/signal:/signal:rw" lab-pgpool
@@ -78,9 +83,11 @@ start_proxy() {
 await_proxy() {
   local expected="$1"
   for attempt in {1..60}; do
-    if php -r 'try {$pdo=new PDO("pgsql:host=127.0.0.1;port=16433;dbname=experiment;connect_timeout=2","experiment","experiment"); $rows=$pdo->query("SHOW POOL_NODES")->fetchAll(PDO::FETCH_ASSOC); if (count($rows)!==2 || $rows[0]["status"]!=="up" || $rows[0]["role"]!=="primary" || $rows[1]["status"]!==$argv[1]) exit(1); if ($argv[1]==="up" && $rows[1]["role"]!=="standby") exit(1); echo json_encode($rows, JSON_THROW_ON_ERROR),PHP_EOL;} catch (PDOException) {exit(1);}' "$expected" > "$EVIDENCE/pgpool-$expected.json"; then return; fi
+    if [[ "$(docker inspect -f '{{.State.Running}}' lab-pgpool)" != true ]]; then return 1; fi
+    if php -r 'try {$pdo=new PDO("pgsql:host=127.0.0.1;port=16433;dbname=experiment;connect_timeout=2","experiment","experiment"); $rows=$pdo->query("SHOW POOL_NODES")->fetchAll(PDO::FETCH_ASSOC); echo json_encode($rows, JSON_THROW_ON_ERROR),PHP_EOL; if (count($rows)!==2 || $rows[0]["status"]!=="up" || $rows[0]["role"]!=="primary" || $rows[1]["status"]!==$argv[1]) exit(1); if ($argv[1]==="up" && $rows[1]["role"]!=="standby") exit(1); } catch (PDOException $e) {fwrite(STDERR, "Pgpool probe SQLSTATE: ".$e->getCode().PHP_EOL);exit(1);}' "$expected" > "$EVIDENCE/pgpool-$expected.json" 2> "$EVIDENCE/pgpool-$expected-error.log"; then return; fi
     sleep 1
   done
+  cat "$EVIDENCE/pgpool-$expected.json" "$EVIDENCE/pgpool-$expected-error.log" >&2
   return 1
 }
 php "$probe" pgpool-seed
