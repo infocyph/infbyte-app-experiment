@@ -43,6 +43,23 @@ composer require php-amqplib/php-amqplib --no-interaction --prefer-dist --no-pro
 composer check-platform-reqs --no-dev
 composer show --format=json > "$EVIDENCE/packages.json"
 probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
+# Do not begin recovery until the broker independently confirms that all
+# twelve original publications are available and the old reservation is gone.
+await_seed_requeue() {
+  local node="$1"
+  for attempt in {1..60}; do
+    if timeout 5 docker exec -u rabbitmq "$node" rabbitmqctl -q list_queues name leader members online messages_ready messages_unacknowledged consumers --formatter json > "$EVIDENCE/quorum-before-recovery.json" 2>&1 \
+      && php -r '$queues=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR);foreach($queues as $q){if($q["name"]==="quorum-contract" && count($q["online"])===2 && (int)$q["messages_ready"]===12 && (int)$q["messages_unacknowledged"]===0)exit(0);}exit(1);' "$EVIDENCE/quorum-before-recovery.json"; then
+      cat "$EVIDENCE/quorum-before-recovery.json"
+      return
+    fi
+    sleep 1
+  done
+  cat "$EVIDENCE/quorum-before-recovery.json" >&2
+  echo 'Independent broker did not return all twelve confirmed messages after reservation owner exit.' >&2
+  return 1
+}
+
 timeout 180s php "$probe" amqp-quorum-seed > "$EVIDENCE/quorum-seed.log" 2>&1 &
 worker=$!
 for attempt in {1..600}; do
@@ -83,6 +100,7 @@ case "$SCENARIO" in
     done
     test "$ready" = 1
     test "$(docker inspect -f '{{.State.Running}}' "${stopped[1]}")" = false
+    await_seed_requeue "$survivor"
     timeout 90s php "$probe" amqp-quorum-verify | tee "$EVIDENCE/quorum-recovery.log"
     if [[ "$SCENARIO" == *-publish ]]; then
       timeout 90s php "$probe" amqp-quorum-minority-retry | tee "$EVIDENCE/quorum-publication-recovery.log"
@@ -106,5 +124,5 @@ for attempt in {1..60}; do
   sleep 1
 done
 test "$ready" = 1
-docker exec -u rabbitmq "$survivor" rabbitmqctl -q list_queues name leader members online messages_ready messages_unacknowledged consumers --formatter json | tee "$EVIDENCE/quorum-before-recovery.json"
+await_seed_requeue "$survivor"
 timeout 90s php "$probe" amqp-quorum-verify | tee "$EVIDENCE/quorum-recovery.log"

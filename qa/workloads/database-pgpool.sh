@@ -80,14 +80,37 @@ docker build -t lab-pgpool - < "$GITHUB_WORKSPACE/qa/workloads/Pgpool.Dockerfile
 start_proxy() {
   docker run -d --name lab-pgpool --network host -v "$root:/config:ro" -v "$root/signal:/signal:rw" lab-pgpool
 }
+# SHOW POOL_NODES is a Pgpool control command, not PostgreSQL SQL.
+# Use psql's simple-query path rather than PDO's native prepared protocol.
+# The application below still uses the original DBLayer/PDO configuration.
 await_proxy() {
-  local expected="$1"
+  local primary="$1" standby="$2" label="$3"
+  local csv="$EVIDENCE/pgpool-$label.csv" error="$EVIDENCE/pgpool-$label-error.log"
   for attempt in {1..60}; do
     if [[ "$(docker inspect -f '{{.State.Running}}' lab-pgpool)" != true ]]; then return 1; fi
-    if php -r 'try {$pdo=new PDO("pgsql:host=127.0.0.1;port=16433;dbname=experiment;connect_timeout=2","experiment","experiment"); $rows=$pdo->query("SHOW POOL_NODES")->fetchAll(PDO::FETCH_ASSOC); echo json_encode($rows, JSON_THROW_ON_ERROR),PHP_EOL; if (count($rows)!==2 || $rows[0]["status"]!=="up" || $rows[0]["role"]!=="primary" || $rows[1]["status"]!==$argv[1]) exit(1); if ($argv[1]==="up" && $rows[1]["role"]!=="standby") exit(1); } catch (PDOException $e) {fwrite(STDERR, "Pgpool probe SQLSTATE: ".$e->getCode().PHP_EOL);exit(1);}' "$expected" > "$EVIDENCE/pgpool-$expected.json" 2> "$EVIDENCE/pgpool-$expected-error.log"; then return; fi
+    if timeout 5s docker exec -e PGPASSWORD=experiment lab-pgpool psql -X --csv -v ON_ERROR_STOP=1 \
+      -h 127.0.0.1 -p 16433 -U experiment -d experiment -c 'SHOW POOL_NODES' > "$csv" 2> "$error" \
+      && php -r '
+        $file = fopen($argv[1], "r");
+        $header = fgetcsv($file, escape: "");
+        if ($header === false) exit(1);
+        $nodes = [];
+        while (($row = fgetcsv($file, escape: "")) !== false) {
+            if (count($row) !== count($header)) exit(1);
+            $node = array_combine($header, $row);
+            $nodes[(int) $node["node_id"]] = $node;
+        }
+        fclose($file);
+        echo json_encode($nodes, JSON_THROW_ON_ERROR), PHP_EOL;
+        if (count($nodes) !== 2 || !isset($nodes[0], $nodes[1])) exit(1);
+        foreach ([0 => $argv[2], 1 => $argv[3]] as $id => $expected) {
+            [$status, $role] = explode(":", $expected);
+            if ($nodes[$id]["status"] !== $status || ($role !== "*" && $nodes[$id]["role"] !== $role)) exit(1);
+        }
+      ' "$csv" "$primary" "$standby" > "$EVIDENCE/pgpool-$label.json"; then return; fi
     sleep 1
   done
-  cat "$EVIDENCE/pgpool-$expected.json" "$EVIDENCE/pgpool-$expected-error.log" >&2
+  cat "$csv" "$error" "$EVIDENCE/pgpool-$label.json" >&2
   return 1
 }
 # A base backup inherits pg_hba.conf, but the primary sees the Docker bridge
@@ -125,7 +148,7 @@ foreach ([5432 => false, 5433 => true] as $port => $standby) {
 }' | tee "$EVIDENCE/pgpool-backend-auth.log"
 php "$probe" pgpool-seed
 start_proxy
-await_proxy up
+await_proxy up:primary up:standby up
 timeout 90s php "$probe" pgpool-work | tee "$EVIDENCE/pgpool-work.log"
 if [[ "$SCENARIO" == db-pgpool-failover ]]; then
   # Pre-fault verification: both confirmed balances are already on the standby.
@@ -146,17 +169,13 @@ if [[ "$SCENARIO" == db-pgpool-failover ]]; then
   if ! wait "$controller"; then cat "$EVIDENCE/pgpool-promotion.log"; exit 1; fi
   controller=""
   cat "$root/signal/request" > "$EVIDENCE/pgpool-failover-trigger.txt"
-  for attempt in {1..60}; do
-    if php -r 'try {$p=new PDO("pgsql:host=127.0.0.1;port=16433;dbname=experiment;connect_timeout=2","experiment","experiment");$r=$p->query("SHOW POOL_NODES")->fetchAll(PDO::FETCH_ASSOC);if(count($r)!==2||$r[0]["status"]!=="down"||$r[1]["status"]!=="up"||$r[1]["role"]!=="primary")exit(1);echo json_encode($r,JSON_THROW_ON_ERROR),PHP_EOL;}catch(PDOException){exit(1);}' > "$EVIDENCE/pgpool-promoted.json"; then break; fi
-    sleep 1
-  done
-  test -s "$EVIDENCE/pgpool-promoted.json"
+  await_proxy 'down:*' up:primary promoted
   timeout 60s php "$probe" pgpool-promoted | tee "$EVIDENCE/pgpool-promoted.log"
   test "$(docker inspect -f '{{.State.Running}}' "$POSTGRES_SERVICE")" = false
   exit 0
 fi
 docker stop lab-standby-5433 >/dev/null
-await_proxy down
+await_proxy up:primary 'down:*' down
 timeout 60s php "$probe" pgpool-outage | tee "$EVIDENCE/pgpool-outage.log"
 docker start lab-standby-5433 >/dev/null
 for attempt in {1..60}; do
@@ -167,5 +186,5 @@ docker exec lab-standby-5433 pg_isready -h 127.0.0.1 -p 5433
 docker logs lab-pgpool > "$EVIDENCE/pgpool-before-restart.log" 2>&1
 docker rm -f lab-pgpool >/dev/null
 start_proxy
-await_proxy up
+await_proxy up:primary up:standby up
 timeout 90s php "$probe" pgpool-recover | tee "$EVIDENCE/pgpool-recover.log"

@@ -146,8 +146,8 @@ function amqpQuorumPhase(bool $seed): void
             brokerRecordEffect($db, $delivery->envelope()->message);
             verify(file_put_contents($root . '/reserved-id', $delivery->messageId, LOCK_EX) !== false && touch($root . '/seeded'), 'Quorum reservation barrier unavailable.');
             cacheWaitMarker($root . '/member-stopped');
-            // No ack is sent for this receipt. Connection destruction returns it
-            // to the majority even when the original channel remains connected.
+            // No ack is sent. Explicitly close the reservation channel in finally;
+            // the shell independently waits for broker requeue before recovery.
             return;
         }
         $transport->send(new Envelope(new LabJob('quorum-13', 13)), $queue);
@@ -185,7 +185,11 @@ function amqpQuorumPhase(bool $seed): void
         echo "Three-member quorum one-node loss and durable SQL reconciliation passed\n";
     } finally {
         try {
-            $connection->close();
+            try {
+                $channel->close();
+            } finally {
+                $connection->close();
+            }
         } catch (\PhpAmqpLib\Exception\AMQPExceptionInterface $failure) {
             if (!$seed || !is_file($root . '/member-stopped')) {
                 throw $failure;
