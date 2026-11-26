@@ -1,0 +1,98 @@
+# Pathwise — next-release production feedback and remediation plan
+
+Status: **investigation / implementation pending** · 2026-11-26
+
+## Scope and evidence
+
+- Latest published Pathwise: [4.2.1](https://github.com/infocyph/Pathwise/releases/tag/4.2.1); inspected tagged source and main `aaf3e290b401c8684e28b17b48ce2a79e3b069b9`. The compare endpoint reports one additional commit and no changed files. Verify exact installed versions from each workload's packages.json artifact before claiming a published-version reproduction.
+- [Full production run 45661843498](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498), revision c5c5efa: all 22 job-summary pages screened for storage and cross-library scenarios, not every individual log. 2,179 jobs total; 674 failed. The storage worker owns 280 frozen tuples (historically 216 failed, 64 passed, per worker step grouping); those are not 216 Pathwise defects.
+- [Latest targeted qualification 45756151480](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45756151480), revision 6f73868: all 14 worker types operational; archive-security, S3 and async-S3 pass; four SFTP jobs dependency-blocked. Historical MinIO image access, broker startup and some stream-cleanup failures were addressed in the playground; not every affected tuple was rerun.
+- Scope includes direct storage, SafeFileReader/Writer, local and remote archives, stream publication, Foundation filesystem integration, Webrick upload/download, business orders/import, HTTP transfer/cleanup, and runtime/operations integration. Relevant job families were screened across the full run; representative failed logs and source boundaries were examined. Do not claim every failure individually root-caused.
+- Source links below use the published tag where available. No upstream implementation, release, dependency override or assertion change in this feedback batch.
+
+## Action register
+
+| ID | Priority | Ownership / confidence | Action | Status |
+| --- | --- | --- | --- | --- |
+| PW-01 | P1 | Pathwise, source-confirmed compatibility defect; hosted archive failure family consistent | Stream ownership and cleanup | [ ] |
+| PW-02 | P1 | Pathwise, source-confirmed diagnostic defect | Preserve original exceptions and publication failure state | [ ] |
+| PW-03 | P2 | Pathwise candidate, hosted failure | CSV logical record/count parity | [ ] |
+| PW-04 | P1 | Pathwise / Foundation integration, unresolved | Valid storage-link root containment and lifecycle | [ ] |
+| PW-05 | P1 | Pathwise + external adapters, confirmed dependency blocker and incorrect package metadata | Secure SFTP support | [ ] |
+| PW-06 | P2 | FTP adapter / Pathwise integration candidate | Recursive listing and archive manifest reconciliation | [ ] |
+| PW-07 | P1 | GridFS adapter / SDK; Pathwise recovery contract candidate | Uncertain write and corrupt stage handling | [ ] |
+| PW-08 | P2 | WebDAV / Sabre / fixture; Pathwise compatibility candidate | Rewindable upload stream and fault boundary | [ ] |
+| PW-09 | P1 | Remote providers / Pathwise, unresolved | Remote archive and publication failure/recovery | [ ] |
+| PW-10 | P2 | Cross-library / fixture, unresolved | Integrated HTTP and business storage failures | [ ] |
+| PW-11 | P1 | Release acceptance | Regression and hosted provider matrix | [ ] |
+
+### PW-01 — Stream ownership, adapter-closed input and cleanup
+
+[StreamTransferHelper::copyLocalFileToPath](https://github.com/infocyph/Pathwise/blob/4.2.1/src/Utils/StreamTransferHelper.php#L9-L21) unconditionally calls fclose in finally after Flysystem writeStream. Adapters may close the supplied resource. The historical Azure/GCS direct worker failures explicitly show this behavior in analogous playground cleanup ([Azure](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376702991), [GCS](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376708240)); the playground cleanup was subsequently guarded. Pathwise retains the same unsafe pattern in its helper. Remote ZIP save fails through this helper for [Azure](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376765834), [GCS](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376763081), [WebDAV](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376762897). Hidden original causes mean not all these ZIP failures can yet be attributed to double-close.
+
+Fix: define stream ownership explicitly; close only still-open owned streams, preserve the primary failure, never silently report unsuccessful writes as success. Audit all stream call sites (reader localization, upload/download, archive extraction, sync, rollback and async paths); do not add unconditional buffering or duplicate whole-file reads. Test adapters that leave streams open, close on success, close then throw, fail mid-stream and short-write. Test exact bytes, cleanup, bounded memory, no descriptor leaks and no masking.
+
+### PW-02 — Preserve exceptions and truthful remote publication state
+
+[StreamTransferHelper::syncLocalFileToPathOrThrow](https://github.com/infocyph/Pathwise/blob/4.2.1/src/Utils/StreamTransferHelper.php#L34-L47) catches Throwable and throws a fresh exception without previous cause. [FsConcern](https://github.com/infocyph/Pathwise/blob/4.2.1/src/FileManager/Concerns/FsConcern.php#L243-L250) supplies a generic CompressionException. [SafeFileWriter](https://github.com/infocyph/Pathwise/blob/4.2.1/src/FileManager/SafeFileWriter.php#L599-L615) shares the helper; finally deletes the working copy even after failure. [FileCompressionRuntimeConcern](https://github.com/infocyph/Pathwise/blob/4.2.1/src/FileManager/Concerns/FileCompressionRuntimeConcern.php#L68-L81) marks the archive closed before remote sync. These are concrete diagnostic and state-lifecycle concerns; data-loss or retry bugs are not yet hosted-confirmed.
+
+Fix: chain original exceptions through domain wrappers, distinguish local close, remote publication and confirmed completion; define explicit failed/uncertain state and recovery behavior, avoid implicit unsafe retries. Preserve or securely clean staging according to documented ownership, avoid leaked temp files and secrets, prevent false success on subsequent save/close. Regression: before/after commit faults, explicit retry/reconciliation, primary exception intact, hooks exactly once only for committed state, previous destination and tenant isolation preserved.
+
+### PW-03 — SafeFileReader CSV record/count mismatch
+
+[Hosted CSV failure](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376701314); [workload](https://github.com/infocyph/infbyte-app-experiment/blob/main/qa/workloads/ecosystem-file-lifecycle.php#L242-L267). Four records include a comma/quote, embedded newline and literal zero. Reader values or count differ; assertion runs before native verification, so exact divergence is not logged. [SafeFileReader::csvIterator](https://github.com/infocyph/Pathwise/blob/4.2.1/src/FileManager/SafeFileReader.php#L279-L289) uses eof before fgetcsv and accepts every non-false result. Plausible phantom [null] terminal row on SplFileObject; multiline corruption not established. Writer delegates to fputcsv.
+
+First capture actual rows, count and native fgetcsv control, including terminal newline. Correct iterator semantics if confirmed (do not discard genuine empty records). Test empty file, blank physical rows, quoted empty field, CRLF/LF, multiline field, embedded quotes, custom delimiter, explicit empty escape, no terminal newline, repeated iteration and count. Maintain streaming; no whole-file load.
+
+### PW-04 — Configured storage-link lifecycle rejects intended root
+
+[Hosted failure](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376762600) occurs on first create from Foundation StorageLinkManager, Pathwise SafeSymlinkManager::resolveCandidate -> assertInside. Public/storage roots are intentionally distinct. [SafeSymlinkManager](https://github.com/infocyph/Pathwise/blob/4.2.1/src/FileManager/SafeSymlinkManager.php#L240-L300) compares candidate against a canonical root; [Foundation StorageLinkManager](https://github.com/infocyph/Foundation/blob/4.0.1/src/Filesystem/StorageLinkManager.php) resolves configured absolute mapping. Actual mapping after configuration merge is not logged, so cannot yet determine whether canonical vs lexical alias, merged default link or another config issue caused rejection. Direct native control with isolated roots and exact configured mappings needed. No evidence of traversal bypass.
+
+Fix only identified owner; never relax containment or use prefix-only security checks. Verify legitimate distinct roots, aliases with canonical parent, idempotent create/status/remove, broken links, foreign existing link, normal file, traversal, symlinked parent escape, concurrent mutation and target preservation. Retain public-file symlink rejection/allow-within-root controls. If Foundation defaults merge incorrectly, route finding there.
+
+### PW-05 — SFTP package metadata and secure dependency strategy
+
+[Latest v2](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45756151480/job/139695177169), [v3](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45756151480/job/139695177132), [v2 rename](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45756151480/job/139695177252), [v3 rename](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45756151480/job/139695176965). Both adapters blocked before runtime by Composer advisories on available phpseclib 2.x/3.x. Pathwise [composer.json](https://github.com/infocyph/Pathwise/blob/4.2.1/composer.json) and [StorageFactory](https://github.com/infocyph/Pathwise/blob/4.2.1/src/Storage/StorageFactory.php#L34-L49) incorrectly reference league/flysystem-sftp-v2; actual package is league/flysystem-sftp. Fix metadata and missing-adapter diagnostic even if legacy driver remains temporarily.
+
+Prefer secure maintained SFTP adapter; evaluate published phpseclib 4.x-compatible adapter/API, or maintained ext-ssh2-backed adapter if suitable. Do not assume compatibility across major versions, weaken security advisories, pin revisions, fork unnecessarily or force vulnerable downgrade. Legacy v2 retirement is a compatibility decision (document deprecation/migration; removing public driver may require major release). Any native adapter must meet Flysystem contracts, host-key pinning before auth, key/password auth, bounded streaming, exact copy/move/listing, tenant isolation, timeout/cancellation, before/after rename settlement and no blind replay. Audit resolved dependency graph with composer audit and platform requirements. Preserve original frozen SFTP cases until supported replacement is qualified; do not relabel old tests as passed.
+
+### PW-06 — FTP listing / extraction manifest mismatch
+
+[FTP copy](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376713206) fails exact recursive metadata after direct Flysystem copy/move; [FTP encrypted archive](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376768126) and [collision archive](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376770777) fail extracted manifest. Both use Flysystem listContents to establish actual results. FTP basic, selection, staged and traversal controls passed historically. Isolate using direct FTP listing/download, raw path and sizes, compare expected manifest, and identify whether enumeration, metadata, fixture path prefix or Pathwise extraction is wrong. Fix adapter integration only if Pathwise owns the issue; do not filter unexpected entries to force success.
+
+### PW-07 — GridFS uncertain publication with missing chunk
+
+[GridFS publication-after](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376699211) fails with MongoDB CorruptFileException, missing chunk 0. [Workload](https://github.com/infocyph/infbyte-app-experiment/blob/main/qa/workloads/ecosystem-storage-outage.php#L378-L401) directly calls Flysystem read and confirms metadata/chunk fault injection. This is not a proven Pathwise implementation defect. Assess SDK compensation and actual file/chunk metadata; distinguish confirmed absence, complete stage and corrupt stage. Pathwise publication APIs must not promote incomplete objects or retry an uncertain operation blindly. Test digest/size and tenant isolation, old destination preserved, no hidden orphan deletion. Assign underlying SDK defect externally if reproduced independently.
+
+### PW-08 — WebDAV stream rewind / transport fault
+
+[Basic WebDAV](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376701167), [staged](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376704518) report Sabre HTTP ClientException: necessary data rewind was not possible, at direct Flysystem writeStream. [Publication-after](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376699345) never reached expected origin-facing fault. Compare native DAV PUT with rewindable resource, auth challenge, redirects, curl behavior and proxy request marker. Confirm stream seekability and ownership, avoid global buffering/retrying and origin changes. Fix at adapter/fixture boundary unless Pathwise integration adds the failure. Requalify copy, staged, basic, outage, rename/publication and archives.
+
+### PW-09 — Remote ZIP / publication / outage provider sweep
+
+Historical failures include Azure/GCS/WebDAV archive creation, S3/async-S3 archive/outage and integrated publication, provider outage and fault settlement. Some S3 historical jobs failed because MinIO image could not be pulled; later basic S3 and async-S3 pass after fixture correction. Some Azure/GCS jobs had playground double-close; retest current fixture. Do not infer all failures share PW-01. Investigate before/after remote mutation, independent destination bytes/metadata, exact fault reached, rollback partial extraction and read-only archive integrity. Provider-specific evidence: [Azure outage](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376767143), [GCS outage](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376769289), [S3 historical fixture](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376706144). Preserve source, foreign namespace, destination pre-existing contents and uncertain state. Do not promise atomicity on providers lacking the primitive; expose capability/contract accurately.
+
+### PW-10 — Cross-worker ownership and exclusions
+
+- Business orders and local storage controls passed historically. Import fails wildcard cast ([job](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376650621)): ReqShield candidate, not Pathwise.
+- Browser-file [HTTP 500 on GET /lab/items/42](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376719489): generic app route failure before a proven storage fault. Obtain application logs and trace route/auth/provider ownership; no Pathwise attribution yet.
+- HTTP transfer and cleanup [transfer](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376788883), [cleanup](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376894678) fail production auth-driver readiness policy; isolate non-auth storage controls and route to Foundation where appropriate.
+- Combined remote-order and publication workflows often fail before storage operation because the broker container stopped (e.g. [FTP](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376763337), [GridFS](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376961289)). Retest after broker fixture corrections across all five database backends. Do not assign messaging or DB errors to Pathwise.
+- Positive direct local controls include file watch, binary, JSONL, serialized values, locking, transactions, rollback, archive limits/traversal/security/selection/hooks, Pathwise upload/download, async files, index/retention and queue/audit. Keep them in regression, not automatically in defect list.
+
+## Ordered implementation and hosted acceptance
+
+- [ ] Batch A — exact hosted reproduction and evidence: collect package inventories, native CSV values/count, configured link mapping and root, stream ownership/exception chain; rerun representative existing frozen tuples with diagnostics if needed. Resolve fixture errors separately in this repository; no vendor patches.
+- [ ] Batch B — Pathwise stream ownership and error/state preservation (PW-01/02); audit other callers; unit + provider tests, memory/descriptor evidence and failure injection.
+- [ ] Batch C — CSV and link lifecycle (PW-03/04) after owner isolation; fix Pathwise only when confirmed; preserve security boundaries. Add narrowly scoped regression cases.
+- [ ] Batch D — SFTP strategy, accurate package metadata, dependency security and migration docs (PW-05). Major compatibility decision requires owner approval; no silently removed driver.
+- [ ] Batch E — FTP, WebDAV, GridFS and remote publication/archive root causes (PW-06–09). Route third-party/fixture defects correctly; add provider integration tests for Pathwise-owned contracts.
+- [ ] Batch F — cross-worker integration and release verification (PW-10/11). Rerun all 280 storage tuples and relevant Foundation, HTTP, business, runtime and operations cases on published candidate; preserve 2,177 routine tuple inventory. Use exact package version evidence, PHP 8.5 experiment, supported Pathwise PHP matrix, ubuntu-latest hosted workers. Full matrix final gate after library releases.
+
+## Release rules
+
+Follow all sections of [PHPForge engineering principles](https://github.com/infocyph/PHPForge/blob/main/resources/engineering-principles.md). Performance first; avoid added dependencies/classes where existing abstractions suffice, preserve streaming and bounded resources. One logical batch = one commit, maintain tracker, no local verification claimed, no automatic merge. No package/workflow revision pins, no vendor edits, no security overrides, no weakened invariants or skipped tests. Publish only after required Pathwise-owned cases pass and all remaining external/integration blockers have explicit disposition. Recommend a minor release if adding a new compatible SFTP capability; a major version if removing supported public drivers without compatibility. Final version to be chosen after scope is confirmed.
+
+## Investigation limits
+
+This is an evidence-based initial release plan, not a guarantee of exhaustive root-cause closure. Historical jobs were screened by scenario and step across the entire production matrix, representative logs were traced; individual historical failures and exact installed provider versions still need verification. Latest qualification covers representative controls, not full current-revision Pathwise acceptance. No new hosted executions initiated by this documentation-only batch.
