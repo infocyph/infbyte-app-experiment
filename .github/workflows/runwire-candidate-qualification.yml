@@ -20,6 +20,7 @@ jobs:
       reference: ${{ steps.matrix.outputs.reference }}
       first: ${{ steps.matrix.outputs.first }}
       second: ${{ steps.matrix.outputs.second }}
+      jwks: ${{ steps.matrix.outputs.jwks }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -31,6 +32,8 @@ jobs:
           set -euo pipefail
           reference="$(git ls-remote --exit-code https://github.com/infocyph/Runwire refs/heads/fix/production-feedback | cut -f1)"
           [[ "$reference" =~ ^[0-9a-f]{40}$ ]]
+          expected="$(jq -er '.candidate_reference' qa/runwire-candidate-request.json)"
+          [[ "$expected" =~ ^[0-9a-f]{40}$ && "$expected" == "$reference" ]]
           printf 'reference=%s\n' "$reference" >> "$GITHUB_OUTPUT"
           printf 'Qualifying unreleased Runwire source %s\n' "$reference" >> "$GITHUB_STEP_SUMMARY"
           python3 - <<'PY'
@@ -39,7 +42,11 @@ jobs:
           import re
           from pathlib import Path
 
-          groups = {"runtime": [], "runtime-2": []}
+          groups = {"runtime": [], "runtime-2": [], "authentication": []}
+          jwks_scenarios = {
+              "ecosystem-remote-jwks", "ecosystem-jwks-dns-public", "ecosystem-jwks-dns-private",
+              "ecosystem-jwks-dns-mixed", "ecosystem-jwks-dns-empty", "ecosystem-jwks-dns-rebind",
+          }
           group = None
           for line in Path(".github/workflows/production-workloads.yml").read_text(encoding="utf-8").splitlines():
               job = re.fullmatch(r"  ([a-z0-9-]+):", line)
@@ -51,6 +58,8 @@ jobs:
               if not match:
                   continue
               row = dict(part.strip().split(": ", 1) for part in match.group(1).split(","))
+              if group == "authentication" and row["scenario"] not in jwks_scenarios:
+                  continue
               if row.get("php", "8.5").strip("'") != "8.5":
                   raise SystemExit("Unexpected runtime PHP series")
               groups[group].append({
@@ -59,11 +68,13 @@ jobs:
                   "host": row.get("host", "worker"),
                   "matcher": row.get("matcher", "fused"),
               })
-          first, second = groups["runtime"], groups["runtime-2"]
+          first, second, jwks = groups["runtime"], groups["runtime-2"], groups["authentication"]
           if (len(first), len(second)) != (256, 51) or len({tuple(row.values()) for row in first + second}) != 307:
               raise SystemExit("Frozen runtime matrix changed; review the candidate scope")
+          if len(jwks) != 6 or {row["scenario"] for row in jwks} != jwks_scenarios:
+              raise SystemExit("Frozen JWKS matrix changed; review the candidate scope")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              for name, rows in (("first", first), ("second", second)):
+              for name, rows in (("first", first), ("second", second), ("jwks", jwks)):
                   output.write(name + "=" + json.dumps({"include": rows}, separators=(",", ":")) + "\n")
           PY
 
@@ -90,6 +101,21 @@ jobs:
       max-parallel: 12
       matrix: ${{ fromJSON(needs.prepare.outputs.second) }}
     uses: ./.github/workflows/production-worker-runtime.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+      runwire_candidate_reference: ${{ needs.prepare.outputs.reference }}
+
+  jwks:
+    needs: prepare
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix: ${{ fromJSON(needs.prepare.outputs.jwks) }}
+    uses: ./.github/workflows/production-worker-authentication.yml
     with:
       scenario: ${{ matrix.scenario }}
       backend: ${{ matrix.backend }}
