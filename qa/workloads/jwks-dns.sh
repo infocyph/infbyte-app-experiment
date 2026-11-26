@@ -12,9 +12,9 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj '/CN=issuer.example.test
 printf 'public-peer' > "$root/phase"
 printf 'nameserver 127.0.0.1\noptions timeout:1 attempts:1 ndots:1\n' > "$root/resolv.conf"
 mode="${SCENARIO#ecosystem-jwks-dns-}"
-sudo unshare --net --mount --propagation private -- bash -Eeuo pipefail -s -- "$root" "$PROJECT" "$GITHUB_WORKSPACE" "$(command -v php)" "$mode" <<'NAMESPACE' | tee "$EVIDENCE/jwks-dns.log"
+sudo unshare --net --mount --propagation private -- bash -Eeuo pipefail -s -- "$root" "$PROJECT" "$GITHUB_WORKSPACE" "$(command -v php)" "$mode" "${LAB_RUNWIRE_CANDIDATE_REFERENCE:-}" <<'NAMESPACE' | tee "$EVIDENCE/jwks-dns.log"
 export LAB_JWKS_DNS_ROOT="$1" PROJECT="$2"
-work="$3"; php="$4"; mode="$5"
+work="$3"; php="$4"; mode="$5"; candidate="$6"
 root="$LAB_JWKS_DNS_ROOT"
 test "$(ip -o link show | wc -l)" = 1
 test -z "$(ip route show default)"
@@ -31,5 +31,14 @@ for attempt in {1..100}; do
   sleep 0.1
 done
 test -f "$root/ready"
-timeout 30s "$php" "$work/qa/workloads/jwks-dns-probe.php" "$mode"
+guzzle_status=0
+runwire_status=0
+timeout 30s "$php" "$work/qa/workloads/jwks-dns-probe.php" "$mode" guzzle || guzzle_status=$?
+if [[ -n "$candidate" ]]; then
+  printf 'public-peer' > "$root/phase"
+  rm -f "$root/public.requests" "$root/private.requests" "$root/connected-peers"
+  timeout 30s "$php" "$work/qa/workloads/jwks-dns-probe.php" "$mode" runwire || runwire_status=$?
+fi
+printf 'JWKS transport outcomes: guzzle=%s runwire=%s\n' "$guzzle_status" "$runwire_status"
+test "$guzzle_status" -eq 0 && test "$runwire_status" -eq 0
 NAMESPACE
