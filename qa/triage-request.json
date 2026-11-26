@@ -1,5 +1,21 @@
 [
   {
+    "scenario": "db-pgpool",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "db-pgpool-failover",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-cache-redis-cluster-tls-trust",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-amqp-quorum-leader",
+    "backend": "pgsql"
+  },
+  {
     "scenario": "ecosystem-scylla",
     "backend": "pgsql"
   },
@@ -40,15 +56,7 @@
     "backend": "pgsql"
   },
   {
-    "scenario": "ecosystem-cache-redis-cluster-tls-trust",
-    "backend": "pgsql"
-  },
-  {
     "scenario": "ecosystem-otp-cluster-redis-totp",
-    "backend": "pgsql"
-  },
-  {
-    "scenario": "ecosystem-amqp-quorum-leader",
     "backend": "pgsql"
   },
   {
@@ -61,10 +69,6 @@
   },
   {
     "scenario": "db-replicas",
-    "backend": "pgsql"
-  },
-  {
-    "scenario": "db-pgpool",
     "backend": "pgsql"
   },
   {
@@ -202,10 +206,6 @@
   },
   {
     "scenario": "db-primary-promotion",
-    "backend": "pgsql"
-  },
-  {
-    "scenario": "db-pgpool-failover",
     "backend": "pgsql"
   },
   {

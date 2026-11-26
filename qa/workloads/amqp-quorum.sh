@@ -6,7 +6,13 @@ export LAB_QUORUM_ROOT="$(mktemp -d "$RUNNER_TEMP/amqp-quorum.XXXXXXXX")"
 worker=""
 cleanup() {
   if [[ -n "$worker" ]]; then kill "$worker" 2>/dev/null || :; wait "$worker" 2>/dev/null || :; fi
-  for n in 1 2 3; do fixture_container_evidence "lab-q$n" || :; docker rm -f "lab-q$n" >/dev/null 2>&1 || :; done
+  for n in 1 2 3; do
+    if [[ "$(docker inspect -f '{{.State.Running}}' "lab-q$n" 2>/dev/null)" == true ]]; then
+      timeout 10 docker exec -u rabbitmq "lab-q$n" rabbitmqctl -q list_queues name leader members online messages_ready messages_unacknowledged consumers --formatter json > "$EVIDENCE/quorum-final-$n.json" 2>&1 || :
+    fi
+    fixture_container_evidence "lab-q$n" || :
+    docker rm -f "lab-q$n" >/dev/null 2>&1 || :
+  done
   docker network rm lab-quorum >/dev/null 2>&1 || :
   rm -rf "$LAB_QUORUM_ROOT"
 }
@@ -100,4 +106,5 @@ for attempt in {1..60}; do
   sleep 1
 done
 test "$ready" = 1
+docker exec -u rabbitmq "$survivor" rabbitmqctl -q list_queues name leader members online messages_ready messages_unacknowledged consumers --formatter json | tee "$EVIDENCE/quorum-before-recovery.json"
 timeout 90s php "$probe" amqp-quorum-verify | tee "$EVIDENCE/quorum-recovery.log"

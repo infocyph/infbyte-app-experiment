@@ -168,8 +168,17 @@ function amqpQuorumPhase(bool $seed): void
             }
             usleep(50_000);
         }
-        $channel->queue_declare($queue, true);
-        verify(count($seen) === 13 && $transport->size($queue) === 0 && $db->table('lab_job_effects')->count() === 13, 'Quorum recovery ledger mismatch.');
+        [, $brokerReady, $brokerConsumers] = $channel->queue_declare($queue, true);
+        $transportSize = $transport->size($queue);
+        $ledgerCount = $db->table('lab_job_effects')->count();
+        echo json_encode([
+            'received' => $seen,
+            'broker_ready' => $brokerReady,
+            'broker_consumers' => $brokerConsumers,
+            'transport_size' => $transportSize,
+            'ledger_count' => $ledgerCount,
+        ], JSON_THROW_ON_ERROR), PHP_EOL;
+        verify(count($seen) === 13 && $transportSize === 0 && $ledgerCount === 13, 'Quorum recovery ledger mismatch.');
         foreach (range(1, 13) as $id) {
             verify(($seen['quorum-' . $id] ?? null) === $id && (int) $db->table('lab_job_effects')->find('quorum-' . $id)['step'] === $id, 'Recovered SQL receipt differs.');
         }

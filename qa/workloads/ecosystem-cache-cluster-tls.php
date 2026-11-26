@@ -9,12 +9,14 @@ function labClusterTlsClient(string $certificate, string $peer = '127.0.0.1', bo
 {
     $seeds = array_map(static fn(int $port): string => ($tls ? 'tls://' : '') . '127.0.0.1:' . $port, range(17379, 17381));
 
-    return new RedisCluster(null, $seeds, 1.5, 1.5, false, null, [
+    $context = $tls ? [
         'cafile' => $certificate,
         'verify_peer' => true,
         'verify_peer_name' => true,
         'peer_name' => $peer,
-    ]);
+    ] : null;
+
+    return new RedisCluster(null, $seeds, 1.5, 1.5, false, null, $context);
 }
 
 function labClusterTlsCache(string $namespace): Cache

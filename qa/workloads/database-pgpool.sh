@@ -90,6 +90,39 @@ await_proxy() {
   cat "$EVIDENCE/pgpool-$expected.json" "$EVIDENCE/pgpool-$expected-error.log" >&2
   return 1
 }
+# A base backup inherits pg_hba.conf, but the primary sees the Docker bridge
+# while the host-network standby sees loopback. Both must negotiate SCRAM.
+docker exec "$POSTGRES_SERVICE" bash -ec '
+  sed -i "1i host experiment experiment 0.0.0.0/0 scram-sha-256" "$PGDATA/pg_hba.conf"
+  gosu postgres pg_ctl reload -D "$PGDATA"
+'
+docker exec lab-standby-5433 bash -ec '
+  sed -i "1i host experiment experiment 127.0.0.1/32 scram-sha-256" /tmp/standby/pg_hba.conf
+  gosu postgres pg_ctl reload -D /tmp/standby
+'
+# Independently check authenticated direct connections, role and password rejection.
+php -r '
+foreach ([5432 => false, 5433 => true] as $port => $standby) {
+    $dsn = "pgsql:host=127.0.0.1;port=$port;dbname=experiment;connect_timeout=3";
+    try {
+        new PDO($dsn, "experiment", "fixture-invalid-password");
+    } catch (PDOException $failure) {
+        if (!str_contains($failure->getMessage(), "password authentication failed")) {
+            throw $failure;
+        }
+        $rejected = true;
+    }
+    if (!($rejected ?? false)) {
+        throw new RuntimeException("Backend accepted invalid authentication: $port");
+    }
+    unset($rejected);
+    $pdo = new PDO($dsn, "experiment", "experiment");
+    $actual = $pdo->query("SELECT pg_is_in_recovery()")->fetchColumn();
+    if (in_array($actual, [true, "t", 1, "1"], true) !== $standby) {
+        throw new RuntimeException("Unexpected native backend role: $port");
+    }
+    echo "Native SCRAM backend $port verified", PHP_EOL;
+}' | tee "$EVIDENCE/pgpool-backend-auth.log"
 php "$probe" pgpool-seed
 start_proxy
 await_proxy up
