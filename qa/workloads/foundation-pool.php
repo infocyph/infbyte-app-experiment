@@ -112,7 +112,19 @@ if ($mode === 'observe') {
         }
         usleep(100000);
     } while (hrtime(true) < $deadline);
-    poolVerify(count($effects) === 12 && $transport->size('receipts') === 0 && count($records) === 1 && $records[0]['running'], 'Pool did not drain with live supervisor.');
+    $remaining = $transport->size('receipts');
+    if (count($effects) !== 12 || $remaining !== 0 || count($records) !== 1 || !$records[0]['running']) {
+        echo json_encode([
+            'contract' => $contract,
+            'effect_count' => count($effects),
+            'effects' => $effects,
+            'queue_remaining' => $remaining,
+            'registry' => $records,
+            'crash_pid' => is_file($root . '/crash-owner') ? (int) file_get_contents($root . '/crash-owner') : null,
+            'failed_receipts' => count($app->make(FailureStore::class)->all(100)),
+        ], JSON_THROW_ON_ERROR), PHP_EOL;
+        throw new RuntimeException('Pool did not drain with live supervisor.');
+    }
     $parent = (int) $records[0]['pid'];
     $pids = array_map('intval', array_column($effects, 'worker_pid'));
     poolVerify(count(array_unique($pids)) >= 6 && !in_array($parent, $pids, true), 'Pool did not recycle real child processes.');

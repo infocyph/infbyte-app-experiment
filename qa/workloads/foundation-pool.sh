@@ -25,7 +25,11 @@ fi
 php "$script" seed "$contract"
 setsid php "$script" run "$contract" > "$EVIDENCE/pool-supervisor.log" 2>&1 &
 supervisor=$!
-php "$script" observe "$contract" | tee "$EVIDENCE/pool-observation.log"
+if ! php "$script" observe "$contract" | tee "$EVIDENCE/pool-observation.log"; then
+  echo '--- Pool supervisor diagnostics ---' >&2
+  cat "$EVIDENCE/pool-supervisor.log" >&2
+  exit 1
+fi
 for attempt in {1..150}; do
   kill -0 "$supervisor" 2>/dev/null || break
   sleep 0.1
