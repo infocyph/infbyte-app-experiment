@@ -1,0 +1,316 @@
+name: Production targeted qualification
+on:
+  push:
+    branches: [main]
+    paths: ['qa/triage-request.json']
+  workflow_dispatch:
+    inputs:
+      request:
+        description: JSON array of up to 50 frozen tuples; blank uses committed request
+        required: false
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: production-triage-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      database: ${{ steps.select.outputs.database }}
+      cache: ${{ steps.select.outputs.cache }}
+      authentication: ${{ steps.select.outputs.authentication }}
+      cryptography: ${{ steps.select.outputs.cryptography }}
+      storage: ${{ steps.select.outputs.storage }}
+      messaging: ${{ steps.select.outputs.messaging }}
+      runtime: ${{ steps.select.outputs.runtime }}
+      routing: ${{ steps.select.outputs.routing }}
+      foundation: ${{ steps.select.outputs.foundation }}
+      utilities: ${{ steps.select.outputs.utilities }}
+      http: ${{ steps.select.outputs.http }}
+      business: ${{ steps.select.outputs.business }}
+      operations: ${{ steps.select.outputs.operations }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - id: select
+        name: Validate and partition exact frozen tuples
+        shell: bash
+        env:
+          REQUEST_JSON: ${{ inputs.request || '' }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          owners = json.loads(Path("qa/workload-worker-types.json").read_text())
+          groups = {key: [] for key in ["database", *owners, "http", "business", "operations"]}
+          request = json.loads(os.environ["REQUEST_JSON"] or Path("qa/triage-request.json").read_text())
+          if not isinstance(request, list) or not 1 <= len(request) <= 50:
+              raise SystemExit("Select 1–50 exact frozen tuples.")
+          matrix = Path(".github/workflows/production-workloads.yml").read_text()
+          def normalize(row):
+              return (row["scenario"], row["backend"], row.get("host", "worker"), row.get("matcher", "fused"))
+          frozen = set()
+          for match in re.finditer(r"^\s*- \{(scenario: [^}]+)\}\s*$", matrix, re.M):
+              frozen.add(normalize(dict(field.strip().split(": ", 1) for field in match.group(1).split(","))))
+          selected = set()
+          for row in request:
+              if not isinstance(row, dict) or not {"scenario", "backend"} <= row.keys() or row.keys() - {"scenario", "backend", "host", "matcher"}:
+                  raise SystemExit("Invalid tuple fields.")
+              if any(not isinstance(value, str) for value in row.values()):
+                  raise SystemExit("Tuple values must be strings.")
+              key = normalize(row)
+              if key not in frozen or key in selected:
+                  raise SystemExit(f"Unknown or duplicate frozen tuple: {key!r}")
+              selected.add(key)
+              scenario, backend, host, matcher = key
+              if scenario.startswith("db-"):
+                  worker = "database"
+              elif scenario.startswith("ecosystem-"):
+                  capability = scenario.removeprefix("ecosystem-")
+                  matching = [owner for owner, prefixes in owners.items()
+                              if any(capability == prefix or capability.startswith(prefix + "-") for prefix in prefixes)]
+                  if len(matching) != 1:
+                      raise SystemExit(f"Ambiguous capability owner: {scenario}")
+                  worker = matching[0]
+              elif scenario == "operations":
+                  worker = "operations"
+              elif scenario == "http" or scenario.startswith(("browser", "transfer")) or scenario == "oauth-http":
+                  worker = "http"
+              else:
+                  worker = "business"
+              groups[worker].append(dict(scenario=scenario, backend=backend, host=host, matcher=matcher))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              for worker, entries in groups.items():
+                  output.write(worker + "=" + json.dumps(entries, separators=(",", ":")) + "\n")
+          print(f"Selected {len(selected)} frozen PHP 8.5 tuples.")
+          PY
+  dispatch-inventory:
+    name: Direct ecosystem dispatch inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Verify declared dispatch targets exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          root = Path("qa/workloads")
+          dispatcher = (root / "ecosystem.php").read_text()
+          paths = re.findall(r"^require __DIR__ \. '/([^']+)';", dispatcher, re.M)
+          sources = [dispatcher] + [(root / path).read_text() for path in paths]
+          declared = set(re.findall(r"^function ([A-Za-z_][A-Za-z_0-9]*)\(", "\n".join(sources), re.M))
+          targets = set(re.findall(r"^\s*'[^']+' => ([A-Za-z_][A-Za-z_0-9]*)\(", dispatcher, re.M))
+          missing = sorted(targets - declared)
+          if missing:
+              raise SystemExit("Undefined ecosystem dispatch targets: " + ", ".join(missing))
+          print(f"Verified {len(targets)} direct dispatch targets.")
+          PY
+  database:
+    needs: plan
+    if: needs.plan.outputs.database != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.database) }}
+    uses: ./.github/workflows/production-worker-database.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  cache:
+    needs: plan
+    if: needs.plan.outputs.cache != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.cache) }}
+    uses: ./.github/workflows/production-worker-cache.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  authentication:
+    needs: plan
+    if: needs.plan.outputs.authentication != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.authentication) }}
+    uses: ./.github/workflows/production-worker-authentication.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  cryptography:
+    needs: plan
+    if: needs.plan.outputs.cryptography != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.cryptography) }}
+    uses: ./.github/workflows/production-worker-cryptography.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  storage:
+    needs: plan
+    if: needs.plan.outputs.storage != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.storage) }}
+    uses: ./.github/workflows/production-worker-storage.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  messaging:
+    needs: plan
+    if: needs.plan.outputs.messaging != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.messaging) }}
+    uses: ./.github/workflows/production-worker-messaging.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  runtime:
+    needs: plan
+    if: needs.plan.outputs.runtime != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.runtime) }}
+    uses: ./.github/workflows/production-worker-runtime.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  routing:
+    needs: plan
+    if: needs.plan.outputs.routing != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.routing) }}
+    uses: ./.github/workflows/production-worker-routing.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  foundation:
+    needs: plan
+    if: needs.plan.outputs.foundation != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.foundation) }}
+    uses: ./.github/workflows/production-worker-foundation.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  utilities:
+    needs: plan
+    if: needs.plan.outputs.utilities != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.utilities) }}
+    uses: ./.github/workflows/production-worker-utilities.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  http:
+    needs: plan
+    if: needs.plan.outputs.http != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.http) }}
+    uses: ./.github/workflows/production-worker-http.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  business:
+    needs: plan
+    if: needs.plan.outputs.business != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.business) }}
+    uses: ./.github/workflows/production-worker-business.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+  operations:
+    needs: plan
+    if: needs.plan.outputs.operations != '[]'
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.operations) }}
+    uses: ./.github/workflows/production-worker-operations.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}

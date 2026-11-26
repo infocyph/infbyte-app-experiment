@@ -1,0 +1,58 @@
+[
+  {
+    "scenario": "db-composite-foreign",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "db-composite-foreign",
+    "backend": "mysql"
+  },
+  {
+    "scenario": "db-composite-foreign",
+    "backend": "mariadb"
+  },
+  {
+    "scenario": "db-composite-foreign",
+    "backend": "sqlite"
+  },
+  {
+    "scenario": "db-composite-foreign",
+    "backend": "mssql"
+  },
+  {
+    "scenario": "ecosystem-validation-granular-patterns",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-uid-provider-boundaries",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-di-contextual",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-amqp-tls",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-scylla",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-runwire-outbound-h1-get",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-runwire-outbound-h2-get",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-runwire-negotiation-h2-strict",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-runwire-multiplex-parallel-2",
+    "backend": "pgsql"
+  }
+]

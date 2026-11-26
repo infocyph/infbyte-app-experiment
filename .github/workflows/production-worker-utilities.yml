@@ -49,6 +49,10 @@ jobs:
       group: production-worker-utilities-${{ github.ref }}-${{ inputs.scenario }}-${{ inputs.backend }}-${{ inputs.host || 'worker' }}-${{ inputs.matcher || 'fused' }}
       cancel-in-progress: true
     services:
+      redis:
+        image: ${{ inputs.scenario == 'ecosystem-uid-provider-boundaries' && 'redis:8' || '' }}
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 15
       postgres:
         image: ${{ (startsWith(inputs.scenario, 'ecosystem-validation-db-') || startsWith(inputs.scenario, 'ecosystem-validation-database')) && 'postgres:17' || '' }}
         env:
