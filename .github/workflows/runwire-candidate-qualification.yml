@@ -73,13 +73,52 @@ jobs:
               raise SystemExit("Frozen runtime matrix changed; review the candidate scope")
           if len(jwks) != 6 or {row["scenario"] for row in jwks} != jwks_scenarios:
               raise SystemExit("Frozen JWKS matrix changed; review the candidate scope")
+          request = json.loads(Path("qa/runwire-candidate-request.json").read_text(encoding="utf-8"))
+          retired = set(request["scope"]["retired"])
+          retired_rows = [row for row in first + second if row["scenario"] in retired]
+          if len(retired_rows) != 7 or {row["scenario"] for row in retired_rows} != retired:
+              raise SystemExit("Retired protocol inventory changed")
+          first = [row for row in first if row["scenario"] not in retired]
+          second = [row for row in second if row["scenario"] not in retired]
+          if (len(first), len(second)) != (249, 51) or len(first + second) != request["scope"]["runtime"]:
+              raise SystemExit("Retained runtime inventory changed")
+          print("Explicitly retired native HTTP/3-only tuples:", json.dumps(retired_rows, sort_keys=True))
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               for name, rows in (("first", first), ("second", second), ("jwks", jwks)):
                   output.write(name + "=" + json.dumps({"include": rows}, separators=(",", ":")) + "\n")
           PY
 
-  runtime:
+  dependency-preflight:
     needs: prepare
+    runs-on: ubuntu-latest
+    env:
+      SCENARIO: ecosystem-http-pool
+      HOST_MODE: worker
+      LAB_MATCHER: fused
+      DB_BACKEND: pgsql
+      PHP_SERIES: '8.5'
+      LAB_RUNWIRE_CANDIDATE_REFERENCE: ${{ needs.prepare.outputs.reference }}
+      COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/prepare-production-workload
+        with:
+          worker_type: runtime
+          scenario: ecosystem-http-pool
+          backend: pgsql
+          host: worker
+          extensions: pcntl, pdo_mysql, pdo_pgsql, pdo_sqlite, sqlite3, redis, curl, mbstring, intl, sodium, zip, fileinfo, apcu, shmop, sysvsem
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: runwire-4-dependency-preflight
+          path: ${{ runner.temp }}/workload-evidence/
+          retention-days: 30
+
+  runtime:
+    needs: [prepare, dependency-preflight]
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -94,7 +133,7 @@ jobs:
       runwire_candidate_reference: ${{ needs.prepare.outputs.reference }}
 
   runtime-2:
-    needs: prepare
+    needs: [prepare, dependency-preflight]
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
     strategy:
       fail-fast: false
@@ -109,7 +148,7 @@ jobs:
       runwire_candidate_reference: ${{ needs.prepare.outputs.reference }}
 
   jwks:
-    needs: prepare
+    needs: [prepare, dependency-preflight]
     name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
     strategy:
       fail-fast: false

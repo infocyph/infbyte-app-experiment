@@ -154,14 +154,29 @@ runs:
         # ordinary production workers continue to install published packages.
         if [[ -n "${LAB_RUNWIRE_CANDIDATE_REFERENCE:-}" ]]; then
           [[ "$LAB_RUNWIRE_CANDIDATE_REFERENCE" =~ ^[0-9a-f]{40}$ ]]
+          # This is an isolated pre-release compatibility prototype. Foundation's
+          # published manifest still requires ^3.1; stage a separate source tree
+          # and alter only its manifest before Composer installs it. Never edit vendor.
+          foundation_source="$RUNNER_TEMP/foundation-runwire4-source"
+          git clone --depth 1 --branch main https://github.com/infocyph/Foundation.git "$foundation_source"
+          foundation_expected="$(jq -er '.foundation_reference' "$GITHUB_WORKSPACE/qa/runwire-candidate-request.json")"
+          test "$(git -C "$foundation_source" rev-parse HEAD)" = "$foundation_expected"
+          jq -e '.require["infocyph/runwire"] == "^3.1"' "$foundation_source/composer.json" >/dev/null
+          jq '.require["infocyph/runwire"] = "^3.1 || ^4.0"' "$foundation_source/composer.json" > "$foundation_source/composer.candidate.json"
+          mv "$foundation_source/composer.candidate.json" "$foundation_source/composer.json"
+          git -C "$foundation_source" diff -- composer.json > "$EVIDENCE/foundation-compatibility-prototype.patch"
+          sha256sum "$foundation_source/composer.json" > "$EVIDENCE/foundation-candidate-manifest.sha256"
+          composer config repositories.foundation-candidate "$(jq -cn --arg url "$foundation_source" '{type:"path",url:$url,options:{symlink:false,reference:"auto",versions:{"infocyph/foundation":"4.0.x-dev"}}}')"
           composer config repositories.runwire-candidate vcs https://github.com/infocyph/Runwire
-          composer require --update-no-dev --no-interaction --prefer-dist --no-progress --with-dependencies 'infocyph/runwire:dev-qa/production-feedback-candidate as 3.1.1'
+          composer require --update-no-dev --no-interaction --prefer-dist --no-progress --with-all-dependencies 'infocyph/foundation:4.0.x-dev' 'infocyph/runwire:dev-qa/production-feedback-candidate as 4.0.x-dev'
+          test "$(sha256sum vendor/infocyph/foundation/composer.json | cut -d ' ' -f 1)" = "$(sha256sum "$foundation_source/composer.json" | cut -d ' ' -f 1)"
+          php -r 'require "vendor/autoload.php"; if (Composer\InstalledVersions::getReference("infocyph/foundation") !== $argv[1]) throw new RuntimeException("Foundation candidate source changed.");' "$foundation_expected"
           php -r '
             require "vendor/autoload.php";
             $name = "infocyph/runwire";
             $reference = Composer\InstalledVersions::getReference($name);
             $version = Composer\InstalledVersions::getPrettyVersion($name);
-            echo json_encode(["package"=>$name,"reference"=>$reference,"version"=>$version,"mode"=>"unreleased-candidate"], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT), PHP_EOL;
+            echo json_encode(["package"=>$name,"reference"=>$reference,"version"=>$version,"mode"=>"unreleased-4.0-candidate"], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT), PHP_EOL;
             if ($reference !== getenv("LAB_RUNWIRE_CANDIDATE_REFERENCE")) {
                 throw new RuntimeException("Resolved Runwire candidate differs from the qualification source.");
             }

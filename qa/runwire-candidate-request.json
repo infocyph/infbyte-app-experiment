@@ -1,11 +1,22 @@
 {
-  "candidate_reference": "0da62fc3e5b9b9da9ad72cda7a48790bae0e89b9",
+  "candidate_reference": "0c56c841b6f91562ce3603b88d827b9d2c5593c0",
+  "foundation_reference": "250456f49339331b9115e8e1874066f70b967bef",
+  "foundation_mode": "isolated-source-compatibility-prototype",
   "scope": {
-    "runtime": 307,
+    "original_runtime": 307,
+    "runtime": 300,
     "jwks": 6,
-    "php": "8.5"
+    "php": "8.5",
+    "retired": [
+      "ecosystem-wire-outbound-h3",
+      "ecosystem-wire-http3",
+      "ecosystem-wire-http3-flow",
+      "ecosystem-wire-http3-admission",
+      "ecosystem-wire-http3-aggregate-drain",
+      "ecosystem-wire-http3-aggregate-reset",
+      "ecosystem-wire-http3-aggregate-isolation"
+    ]
   },
-  "mode": "unreleased-candidate",
-  "upstream_pr": 18,
-  "upstream_green_source_reference": "21b012daa9914d19b6c54638eb73040f4f9c436b"
+  "mode": "unreleased-4.0-candidate",
+  "upstream_pr": 18
 }

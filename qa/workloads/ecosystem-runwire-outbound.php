@@ -210,20 +210,34 @@ function runwireNegotiationContracts(string $protocol, string $contract): void
     $base = '127.0.0.1:' . (int) getenv('LAB_RUNWIRE_OUTBOUND_PORT');
     $ca = (string) getenv('LAB_RUNWIRE_OUTBOUND_CA');
     $execute = static function (string $case) use ($actual, $other, $alpn, $loop, $dialer, $base, $ca): array {
+        if ($case === 'h3-preferred') {
+            // 4.0 removes the enum member; retain both original fail-closed
+            // negotiation tuples as negative tests, with healthy recovery.
+            try {
+                ProtocolVersion::from('3');
+                throw new RuntimeException('Retired HTTP/3 protocol value was accepted.');
+            } catch (ValueError) {
+                // No request or transport was allocated.
+            }
+            try {
+                (new ClientProtocolPolicy($actual, [$actual], allowFallback: true))->negotiate('h3', true);
+                throw new RuntimeException('Retired HTTP/3 ALPN was accepted.');
+            } catch (\Infocyph\Runwire\Exception\RuntimeUnavailableException $error) {
+                return [[], '', $error, 0];
+            }
+        }
         $preferred = match ($case) {
             'reverse-fallback', 'reverse-strict', 'reverse-only' => $other,
-            'h3-preferred' => ProtocolVersion::HTTP_3,
             'plaintext-h2' => ProtocolVersion::HTTP_2,
             default => $actual,
         };
         $allowed = match ($case) {
             'preferred-fallback', 'reverse-fallback', 'reverse-strict' => [$preferred, $preferred === $actual ? $other : $actual],
-            'h3-preferred' => [ProtocolVersion::HTTP_3, $actual],
             default => [$preferred],
         };
-        $fallback = in_array($case, ['preferred-fallback', 'reverse-fallback', 'h3-preferred', 'plaintext-h2'], true);
+        $fallback = in_array($case, ['preferred-fallback', 'reverse-fallback', 'plaintext-h2'], true);
         $policy = new ClientProtocolPolicy($preferred, $allowed, allowFallback: $fallback, allowPlaintext: $case === 'plaintext-h2');
-        $options = $case === 'plaintext-h2' || $case === 'h3-preferred'
+        $options = $case === 'plaintext-h2'
             ? new DialOptions(connectTimeoutSeconds: 3.0)
             : new DialOptions(connectTimeoutSeconds: 3.0, tls: new TlsClientOptions(
                 $case === 'wrong-peer' ? 'other.invalid' : '127.0.0.1',
