@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 root="$(mktemp -d "$RUNNER_TEMP/otp-cluster.XXXXXXXX")"
 image=redis:8
 server=redis-server
@@ -16,7 +17,7 @@ case "$factor" in
 esac
 ports=(17379 17380 17381 17382 17383 17384)
 cleanup() {
-  for port in "${ports[@]}"; do docker rm -f "lab-otp-$port" >/dev/null 2>&1 || :; done
+  for port in "${ports[@]}"; do fixture_container_evidence "lab-otp-$port" || :; docker rm -f "lab-otp-$port" >/dev/null 2>&1 || :; done
   rm -rf "$root"
 }
 trap cleanup EXIT

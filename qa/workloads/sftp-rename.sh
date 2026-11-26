@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 cd "$PROJECT"
 probe="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
 root="$GITHUB_WORKSPACE/qa/workloads"
-cleanup() { docker rm -f lab-sftp-rename lab-remote-orders-broker >/dev/null 2>&1 || :; }
+cleanup() {
+  fixture_container_evidence lab-sftp-rename || :
+  fixture_container_evidence lab-remote-orders-broker || :
+  docker rm -f lab-sftp-rename lab-remote-orders-broker >/dev/null 2>&1 || :
+}
 trap cleanup EXIT
 export LAB_SFTP_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
 docker build -t lab-sftp-rename -f "$root/SftpRename.Dockerfile" "$root"
@@ -18,7 +23,7 @@ export LAB_STORAGE_BACKEND=sftp
 adapter=league/flysystem-sftp-v3
 if [[ "$SCENARIO" == ecosystem-sftp2-rename-* || "$SCENARIO" == ecosystem-sftp2-order-rename-* ]]; then
   LAB_STORAGE_BACKEND=sftp2
-  adapter=league/flysystem-sftp-v2
+  adapter=league/flysystem-sftp
 fi
 packages=("$adapter")
 combined=0
@@ -32,7 +37,7 @@ if [[ "$SCENARIO" == *-order-rename-* ]]; then
   done
   docker exec lab-remote-orders-broker rabbitmq-diagnostics -q ping >/dev/null
 fi
-composer require "${packages[@]}" --no-interaction --prefer-dist --no-progress
+composer require "${packages[@]}" --with-all-dependencies --no-interaction --prefer-dist --no-progress
 composer check-platform-reqs --no-dev
 composer show --format=json > "$EVIDENCE/packages.json"
 docker exec -u experiment lab-sftp-rename sh -c 'printf off > /signal/phase'

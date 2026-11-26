@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 cd "$PROJECT"
 containers=()
 pids=()
@@ -7,7 +8,7 @@ cleanup() {
   for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || :; done
   for pid in "${pids[@]}"; do wait "$pid" 2>/dev/null || :; done
   for name in "${containers[@]}"; do
-    # Service output may include disposable credentials; retain only protocol evidence.
+    fixture_container_evidence "$name" || :
     docker rm -f "$name" >/dev/null 2>&1 || :
   done
 }
@@ -66,7 +67,7 @@ case "$provision" in
   ecosystem-s3|ecosystem-async-s3|ecosystem-s3-outage|ecosystem-s3-publication-fault)
     containers+=(lab-s3)
     export LAB_S3_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
-    docker run -d --name lab-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" minio/minio:latest server /data
+    docker run -d --name lab-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" quay.io/minio/minio:latest server /data
     for i in $(seq 1 60); do
       if curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null; then break; fi
       sleep 1
@@ -84,7 +85,7 @@ case "$provision" in
     done
     test -s "$RUNNER_TEMP/lab-sftp-host.pub"
     export LAB_SFTP_HOST_KEYS="$(docker exec lab-sftp sh -c 'for f in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$f" -E sha256; done' | awk '{print $2}')"
-    if [[ "$provision" != ecosystem-sftp2 ]]; then composer require league/flysystem-sftp-v3 --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-sftp-v2 --no-interaction --prefer-dist --no-progress; fi
+    if [[ "$provision" != ecosystem-sftp2 ]]; then composer require league/flysystem-sftp-v3 --with-all-dependencies --no-interaction --prefer-dist --no-progress; else composer require league/flysystem-sftp --with-all-dependencies --no-interaction --prefer-dist --no-progress; fi
     ;;
   ecosystem-storage-local-modes)
     composer require league/flysystem-memory league/flysystem-read-only league/flysystem-path-prefixing league/flysystem-ziparchive --no-interaction --prefer-dist --no-progress

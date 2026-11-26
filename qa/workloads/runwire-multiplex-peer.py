@@ -7,6 +7,7 @@ import sys
 
 from h2.config import H2Configuration
 from h2.connection import H2Connection
+from h2.settings import SettingCodes
 from h2.errors import ErrorCodes
 from h2.events import RequestReceived, StreamEnded, StreamReset, PingAckReceived
 from hyperframe.frame import GoAwayFrame
@@ -28,6 +29,9 @@ class Peer(socketserver.BaseRequestHandler):
         record("connection", alpn="h2")
         session = H2Connection(config=H2Configuration(client_side=False, header_encoding="utf-8"))
         session.initiate_connection()
+        # RFC 9113 section 6.5.2 permits a server to advertise ENABLE_PUSH=0.
+        assert session.local_settings[SettingCodes.ENABLE_PUSH] == 0
+        print("Initial server SETTINGS:", dict(session.local_settings), flush=True)
         sock.sendall(session.data_to_send())
         requests, pending = {}, {}
         ended = set()

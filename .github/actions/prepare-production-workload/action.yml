@@ -79,21 +79,35 @@ runs:
         else:
             raise SystemExit(f"No frozen workload matches {requested!r}; check the matrix for valid combinations.")
         PY
-    - name: Provision Cassandra native build dependencies
-      if: contains(inputs.extensions, 'cassandra')
+    - id: extension-plan
+      name: Select standard PHP extensions
       shell: bash
+      env:
+        LAB_REQUIRED_EXTENSIONS: ${{ inputs.extensions }}
       run: |
-        set -euo pipefail
-        sudo apt-get update
-        sudo apt-get install -y libuv1-dev
-        pkg-config --modversion libuv
+        python3 - <<'PY'
+        import os
+
+        extensions = [part.strip() for part in os.environ["LAB_REQUIRED_EXTENSIONS"].split(",")]
+        standard = ", ".join(part for part in extensions if part and part not in {"cassandra", "quic"})
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+            output.write("standard=" + standard + "\n")
+        PY
     - uses: shivammathur/setup-php@v2
       with:
         php-version: '8.5'
-        extensions: ${{ inputs.extensions }}
+        extensions: ${{ steps.extension-plan.outputs.standard }}
         tools: composer:v2
         ini-values: apc.enable_cli=1
         coverage: none
+    - name: Provision published PHP 8.5 Cassandra driver
+      if: contains(inputs.extensions, 'cassandra')
+      shell: bash
+      run: bash qa/workloads/native-extensions.sh cassandra
+    - name: Provision published PHP 8.5 QUIC extension
+      if: contains(inputs.extensions, 'quic')
+      shell: bash
+      run: bash qa/workloads/native-extensions.sh quic
     - name: Provision Microsoft ODBC driver for SQL Server
       if: inputs.backend == 'mssql'
       shell: bash

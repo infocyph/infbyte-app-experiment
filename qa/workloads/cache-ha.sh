@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 cd "$PROJECT"
 script="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
 if [[ "$SCENARIO" == ecosystem-scylla || "$SCENARIO" == ecosystem-cache-scylla-* ]]; then
@@ -21,7 +22,7 @@ if [[ "$SCENARIO" == ecosystem-scylla || "$SCENARIO" == ecosystem-cache-scylla-*
 fi
 ports=(17379 17380 17381 17382 17383 17384)
 cleanup() {
-  for port in "${ports[@]}"; do docker logs "lab-ha-$port" > "$EVIDENCE/redis-$port.log" 2>&1 || true; docker rm -f "lab-ha-$port" >/dev/null 2>&1 || true; done
+  for port in "${ports[@]}"; do fixture_container_evidence "lab-ha-$port" || :; docker logs "lab-ha-$port" > "$EVIDENCE/redis-$port.log" 2>&1 || true; docker rm -f "lab-ha-$port" >/dev/null 2>&1 || true; done
 }
 trap cleanup EXIT
 cli() { docker exec "lab-ha-$1" redis-cli -p "$1" "${@:2}"; }

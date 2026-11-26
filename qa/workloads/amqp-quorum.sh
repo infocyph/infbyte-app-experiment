@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 cd "$PROJECT"
 export LAB_QUORUM_ROOT="$(mktemp -d "$RUNNER_TEMP/amqp-quorum.XXXXXXXX")"
 worker=""
 cleanup() {
   if [[ -n "$worker" ]]; then kill "$worker" 2>/dev/null || :; wait "$worker" 2>/dev/null || :; fi
-  for n in 1 2 3; do docker rm -f "lab-q$n" >/dev/null 2>&1 || :; done
+  for n in 1 2 3; do fixture_container_evidence "lab-q$n" || :; docker rm -f "lab-q$n" >/dev/null 2>&1 || :; done
   docker network rm lab-quorum >/dev/null 2>&1 || :
   rm -rf "$LAB_QUORUM_ROOT"
 }

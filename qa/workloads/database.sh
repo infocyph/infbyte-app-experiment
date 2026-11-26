@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 probe="$GITHUB_WORKSPACE/qa/workloads/database.php"
 bash "$GITHUB_WORKSPACE/qa/workloads/database-init.sh"
 case "$SCENARIO" in
@@ -62,6 +63,7 @@ case "$SCENARIO" in
     if [[ "$SCENARIO" == db-pgpool || "$SCENARIO" == db-pgpool-failover ]]; then ports=(5433); fi
     cleanup() {
       for port in "${ports[@]}"; do
+        fixture_container_evidence "lab-standby-$port" || :
         docker logs "lab-standby-$port" > "$EVIDENCE/standby-$port.log" 2>&1 || :
         docker rm -f "lab-standby-$port" >/dev/null 2>&1 || :
       done

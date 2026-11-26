@@ -1,58 +1,74 @@
 [
   {
-    "scenario": "db-composite-foreign",
-    "backend": "pgsql"
-  },
-  {
-    "scenario": "db-composite-foreign",
-    "backend": "mysql"
-  },
-  {
-    "scenario": "db-composite-foreign",
-    "backend": "mariadb"
-  },
-  {
-    "scenario": "db-composite-foreign",
-    "backend": "sqlite"
-  },
-  {
-    "scenario": "db-composite-foreign",
-    "backend": "mssql"
-  },
-  {
-    "scenario": "ecosystem-validation-granular-patterns",
-    "backend": "pgsql"
-  },
-  {
-    "scenario": "ecosystem-uid-provider-boundaries",
-    "backend": "pgsql"
-  },
-  {
-    "scenario": "ecosystem-di-contextual",
-    "backend": "pgsql"
-  },
-  {
-    "scenario": "ecosystem-amqp-tls",
-    "backend": "pgsql"
-  },
-  {
     "scenario": "ecosystem-scylla",
     "backend": "pgsql"
   },
   {
-    "scenario": "ecosystem-runwire-outbound-h1-get",
+    "scenario": "ecosystem-wire-http3",
     "backend": "pgsql"
   },
   {
-    "scenario": "ecosystem-runwire-outbound-h2-get",
+    "scenario": "ecosystem-wire-outbound-h3",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-s3",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-async-s3",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-sftp",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-sftp2",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-sftp-order-rename-before",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-sftp2-order-rename-after",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-redis-cluster",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-cache-redis-cluster-tls-trust",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-otp-cluster-redis-totp",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-amqp-quorum-leader",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-imap",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-pop3",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "db-replicas",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "db-pgpool",
     "backend": "pgsql"
   },
   {
     "scenario": "ecosystem-runwire-negotiation-h2-strict",
-    "backend": "pgsql"
-  },
-  {
-    "scenario": "ecosystem-runwire-multiplex-parallel-2",
     "backend": "pgsql"
   }
 ]

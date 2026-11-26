@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 cd "$PROJECT"
 export LAB_STORAGE_BACKEND=s3
 export LAB_S3_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
@@ -7,13 +8,15 @@ pids=()
 cleanup() {
   for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || :; done
   for pid in "${pids[@]}"; do wait "$pid" 2>/dev/null || :; done
+  fixture_container_evidence lab-remote-orders-s3 || :
+  fixture_container_evidence lab-remote-orders-broker || :
   docker rm -f lab-remote-orders-s3 lab-remote-orders-broker >/dev/null 2>&1 || :
 }
 trap cleanup EXIT
 composer require league/flysystem-aws-s3-v3 php-amqplib/php-amqplib --no-interaction --prefer-dist --no-progress
 composer check-platform-reqs --no-dev
 composer show --format=json > "$EVIDENCE/packages.json"
-docker run -d --name lab-remote-orders-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" minio/minio:latest server /data
+docker run -d --name lab-remote-orders-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" quay.io/minio/minio:latest server /data
 docker run -d --name lab-remote-orders-broker -p 127.0.0.1:15672:5672 -e RABBITMQ_DEFAULT_USER=experiment -e RABBITMQ_DEFAULT_PASS=fixture-only-password rabbitmq:4
 ready() {
   for attempt in {1..90}; do

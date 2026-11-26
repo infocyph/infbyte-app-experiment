@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 export LAB_CLUSTER_TLS_ROOT="$(mktemp -d "$RUNNER_TEMP/cluster-tls.XXXXXXXX")"
 root="$LAB_CLUSTER_TLS_ROOT"
 ports=(17379 17380 17381)
 cleanup() {
-  for port in "${ports[@]}"; do docker rm -f "lab-cluster-tls-$port" >/dev/null 2>&1 || :; done
+  for port in "${ports[@]}"; do fixture_container_evidence "lab-cluster-tls-$port" || :; docker rm -f "lab-cluster-tls-$port" >/dev/null 2>&1 || :; done
   rm -rf "$root"
 }
 trap cleanup EXIT
