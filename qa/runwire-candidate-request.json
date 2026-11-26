@@ -1,0 +1,11 @@
+{
+  "candidate_reference": "0da62fc3e5b9b9da9ad72cda7a48790bae0e89b9",
+  "scope": {
+    "runtime": 307,
+    "jwks": 6,
+    "php": "8.5"
+  },
+  "mode": "unreleased-candidate",
+  "upstream_pr": 18,
+  "upstream_green_source_reference": "21b012daa9914d19b6c54638eb73040f4f9c436b"
+}
