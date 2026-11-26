@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Infocyph\Runwire\CancellationSource;
+use Infocyph\Runwire\Exception\CancelledException;
 use Infocyph\Runwire\Executor\ProcessExecutor;
 use Infocyph\Runwire\Http\Client\ClientProtocolPolicy;
 use Infocyph\Runwire\Http\Client\ClientRequest;
@@ -140,8 +141,12 @@ function runwireMultiplexContracts(string $contract, int $count): void
                 continue;
             }
             if ($id === 1 && in_array($contract, ['cancel', 'reset', 'deadline'], true)) {
-                verify($error instanceof RuntimeException && str_contains($error->getMessage(), $contract === 'reset' ? 'RST_STREAM' : 'canceled') && $body === '',
-                    'Failed stream exposed a body or wrong error.');
+                $expectedError = match ($contract) {
+                    'cancel' => $error instanceof CancelledException && $error->reason === CancellationReason::HOST_CANCELLED,
+                    'deadline' => $error instanceof RuntimeException && $error->getMessage() === 'HTTP/2 request deadline expired.',
+                    'reset' => $error instanceof RuntimeException && str_contains($error->getMessage(), 'RST_STREAM'),
+                };
+                verify($expectedError && $body === '', 'Failed stream exposed a body or wrong error: ' . ($error?->getMessage() ?? 'none'));
                 verify(($statuses[$id] ?? []) === ($contract === 'reset' ? [] : [[200, '1']]), 'Failed stream header ownership differs.');
                 continue;
             }

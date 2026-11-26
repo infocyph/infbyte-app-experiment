@@ -7,12 +7,12 @@ if [[ "$mode" == http3-aggregate-* || "$mode" == http2-aggregate-* || "$mode" ==
   openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj '/CN=localhost' -addext 'subjectAltName=DNS:localhost' -keyout "$LAB_WIRE_ROOT/key.pem" -out "$LAB_WIRE_ROOT/cert.pem" >/dev/null 2>&1
 fi
 if [[ "$mode" == mtls ]]; then
-  openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj '/CN=Lab CA' -addext 'basicConstraints=critical,CA:TRUE' -keyout "$LAB_WIRE_ROOT/ca.key" -out "$LAB_WIRE_ROOT/ca.pem" >/dev/null 2>&1
+  openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj '/CN=Lab CA' -addext 'basicConstraints=critical,CA:TRUE' -addext 'keyUsage=critical,keyCertSign,cRLSign' -addext 'subjectKeyIdentifier=hash' -keyout "$LAB_WIRE_ROOT/ca.key" -out "$LAB_WIRE_ROOT/ca.pem" >/dev/null 2>&1
   for identity in server client; do
     openssl req -newkey rsa:2048 -nodes -subj "/CN=$identity" -keyout "$LAB_WIRE_ROOT/$identity.key" -out "$LAB_WIRE_ROOT/$identity.csr" >/dev/null 2>&1
   done
-  printf '%s\n' 'subjectAltName=DNS:localhost' 'extendedKeyUsage=serverAuth' > "$LAB_WIRE_ROOT/server.ext"
-  printf '%s\n' 'extendedKeyUsage=clientAuth' > "$LAB_WIRE_ROOT/client.ext"
+  printf '%s\n' 'subjectAltName=DNS:localhost' 'basicConstraints=critical,CA:FALSE' 'keyUsage=critical,digitalSignature,keyEncipherment' 'extendedKeyUsage=serverAuth' 'subjectKeyIdentifier=hash' 'authorityKeyIdentifier=keyid,issuer' > "$LAB_WIRE_ROOT/server.ext"
+  printf '%s\n' 'basicConstraints=critical,CA:FALSE' 'keyUsage=critical,digitalSignature' 'extendedKeyUsage=clientAuth' 'subjectKeyIdentifier=hash' 'authorityKeyIdentifier=keyid,issuer' > "$LAB_WIRE_ROOT/client.ext"
   openssl x509 -req -in "$LAB_WIRE_ROOT/server.csr" -CA "$LAB_WIRE_ROOT/ca.pem" -CAkey "$LAB_WIRE_ROOT/ca.key" -CAcreateserial -days 1 -extfile "$LAB_WIRE_ROOT/server.ext" -out "$LAB_WIRE_ROOT/cert.pem" >/dev/null 2>&1
   mv "$LAB_WIRE_ROOT/server.key" "$LAB_WIRE_ROOT/key.pem"
   openssl x509 -req -in "$LAB_WIRE_ROOT/client.csr" -CA "$LAB_WIRE_ROOT/ca.pem" -CAkey "$LAB_WIRE_ROOT/ca.key" -CAserial "$LAB_WIRE_ROOT/ca.srl" -days 1 -extfile "$LAB_WIRE_ROOT/client.ext" -out "$LAB_WIRE_ROOT/client.pem" >/dev/null 2>&1

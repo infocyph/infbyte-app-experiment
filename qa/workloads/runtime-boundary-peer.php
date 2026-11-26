@@ -144,7 +144,9 @@ $server = new Server('boundary', '127.0.0.1:18786', $handler, workers: in_array(
     maxBodyBytes: 65536,
     maxKeepAliveRequests: $mode === 'http-connection-quotas' ? 3 : 1000,
     maxResponseChunkBytes: $mode === 'http-backpressure' ? 8192 : 65536,
-    headerTimeoutSeconds: 2.0,
+    // In the idle-quota case, let the 3-second transport idle deadline win.
+    // Other cases keep the separate 2-second HTTP header deadline.
+    headerTimeoutSeconds: $mode === 'http-connection-quotas' ? 5.0 : 2.0,
     bodyIdleTimeoutSeconds: $mode === 'http-admission' ? 15.0 : 2.0,
 ));
 $runtime->listen($server);
