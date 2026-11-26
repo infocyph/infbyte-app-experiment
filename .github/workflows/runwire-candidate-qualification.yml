@@ -30,7 +30,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          reference="$(git ls-remote --exit-code https://github.com/infocyph/Runwire refs/heads/qa/production-feedback-candidate | cut -f1)"
+          reference="$(git ls-remote --exit-code https://github.com/infocyph/Runwire refs/heads/qa/production-feedback-candidate-4 | cut -f1)"
           [[ "$reference" =~ ^[0-9a-f]{40}$ ]]
           expected="$(jq -er '.candidate_reference' qa/runwire-candidate-request.json)"
           [[ "$expected" =~ ^[0-9a-f]{40}$ && "$expected" == "$reference" ]]

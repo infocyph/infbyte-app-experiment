@@ -168,7 +168,7 @@ runs:
           sha256sum "$foundation_source/composer.json" > "$EVIDENCE/foundation-candidate-manifest.sha256"
           composer config repositories.foundation-candidate "$(jq -cn --arg url "$foundation_source" '{type:"path",url:$url,options:{symlink:false,reference:"auto",versions:{"infocyph/foundation":"4.0.x-dev"}}}')"
           composer config repositories.runwire-candidate vcs https://github.com/infocyph/Runwire
-          composer require --update-no-dev --no-interaction --prefer-dist --no-progress --with-all-dependencies 'infocyph/foundation:4.0.x-dev' 'infocyph/runwire:dev-qa/production-feedback-candidate as 4.0.x-dev'
+          composer require --update-no-dev --no-interaction --prefer-dist --no-progress --with-all-dependencies 'infocyph/foundation:4.0.x-dev' 'infocyph/runwire:dev-qa/production-feedback-candidate-4 as 4.0.x-dev'
           test "$(sha256sum vendor/infocyph/foundation/composer.json | cut -d ' ' -f 1)" = "$(sha256sum "$foundation_source/composer.json" | cut -d ' ' -f 1)"
           php -r 'require "vendor/autoload.php"; if (Composer\InstalledVersions::getReference("infocyph/foundation") !== $argv[1]) throw new RuntimeException("Foundation candidate source changed.");' "$foundation_expected"
           php -r '
