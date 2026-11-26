@@ -134,7 +134,7 @@ function runwireH1PolicyContracts(string $contract): void
     $host = '127.0.0.1';
     $base = ($tls ? 'https' : 'http') . '://' . $host . ':' . (int) getenv($tls ? 'LAB_POLICY_TLS_PORT' : 'LAB_POLICY_PORT');
     $policy = new ClientProtocolPolicy(ProtocolVersion::HTTP_1_1, [ProtocolVersion::HTTP_1_1], allowPlaintext: true);
-    $method = str_ends_with($contract, '-head') ? 'HEAD' : (in_array($contract, ['unsafe-post', 'retry-post'], true) ? 'POST' : 'GET');
+    $method = $contract !== 'retry-after-head' && str_ends_with($contract, '-head') ? 'HEAD' : (in_array($contract, ['unsafe-post', 'retry-post'], true) ? 'POST' : 'GET');
     $path = match ($contract) {
         'query' => '/query?seed=1',
         'relative' => '/relative/base/start',

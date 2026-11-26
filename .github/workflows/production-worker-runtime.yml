@@ -38,6 +38,10 @@ on:
       matcher:
         type: string
         default: fused
+      runwire_candidate_reference:
+        description: Exact source identity to verify for isolated candidate qualification (empty uses published packages)
+        type: string
+        default: ''
 permissions:
   contents: read
 jobs:
@@ -88,13 +92,15 @@ jobs:
       LAB_MATCHER: ${{ inputs.matcher || 'fused' }}
       DB_BACKEND: ${{ inputs.backend }}
       PHP_SERIES: '8.5'
+      LAB_RUNWIRE_CANDIDATE_REFERENCE: ${{ inputs.runwire_candidate_reference || '' }}
       SOAK: ${{ inputs.scenario == 'http' && inputs.host == 'native' && inputs.backend == 'pgsql' && '1' || '0' }}
       COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: ./.github/actions/prepare-production-workload
+      - id: prepare
+        uses: ./.github/actions/prepare-production-workload
         with:
           worker_type: runtime
           scenario: ${{ inputs.scenario }}
@@ -108,6 +114,21 @@ jobs:
           MAIL_SERVICE: ${{ job.services.mailpit.id }}
         shell: bash
         run: bash qa/workloads/ecosystem.sh
+      - name: Recheck installed Runwire identity after workload
+        if: ${{ always() && steps.prepare.outcome == 'success' && inputs.runwire_candidate_reference != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$PROJECT"
+          php -r '
+            require "vendor/autoload.php";
+            $reference = Composer\InstalledVersions::getReference("infocyph/runwire");
+            echo json_encode(["reference"=>$reference,"version"=>Composer\InstalledVersions::getPrettyVersion("infocyph/runwire")], JSON_THROW_ON_ERROR), PHP_EOL;
+            if ($reference !== getenv("LAB_RUNWIRE_CANDIDATE_REFERENCE")) {
+                throw new RuntimeException("Runwire candidate changed during workload.");
+            }
+          ' | tee "$EVIDENCE/runwire-candidate-final.json"
+          composer show --format=json > "$EVIDENCE/packages-final.json"
       - uses: actions/upload-artifact@v7
         if: always()
         with:

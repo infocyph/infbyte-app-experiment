@@ -24,7 +24,7 @@ timeout 45s php "$GITHUB_WORKSPACE/qa/workloads/ecosystem.php" "${SCENARIO#ecosy
 cp "$root/requests.jsonl" "$EVIDENCE/runwire-policy-requests.jsonl"
 php -r '
 $case=$argv[2];$rows=array_map(fn($s)=>json_decode($s,true,flags:JSON_THROW_ON_ERROR),file($argv[1],FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES));
-$method=str_ends_with($case,"-head")?"HEAD":(in_array($case,["unsafe-post","retry-post"],true)?"POST":"GET");
+$method=$case!=="retry-after-head"&&str_ends_with($case,"-head")?"HEAD":(in_array($case,["unsafe-post","retry-post"],true)?"POST":"GET");
 $primary=fn($path)=>["origin"=>"primary","path"=>$path,"method"=>$method,"auth"=>true,"cookie"=>true,"tenant"=>true,"accept"=>true];
 $expected=match($case){
 "query"=>[$primary("/query?seed=1"),$primary("/query?next=https://example.test/path")],

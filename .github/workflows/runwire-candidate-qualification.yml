@@ -1,0 +1,98 @@
+name: Runwire candidate production qualification
+
+# Isolated pre-release lane. The published main matrix and its trigger are unchanged.
+on:
+  push:
+    branches: [qa/runwire-production-feedback]
+    paths: ['qa/runwire-candidate-request.json']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: runwire-candidate-qualification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      reference: ${{ steps.matrix.outputs.reference }}
+      first: ${{ steps.matrix.outputs.first }}
+      second: ${{ steps.matrix.outputs.second }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Resolve candidate identity and derive frozen runtime tuples
+        id: matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          reference="$(git ls-remote --exit-code https://github.com/infocyph/Runwire refs/heads/fix/production-feedback | cut -f1)"
+          [[ "$reference" =~ ^[0-9a-f]{40}$ ]]
+          printf 'reference=%s\n' "$reference" >> "$GITHUB_OUTPUT"
+          printf 'Qualifying unreleased Runwire source %s\n' "$reference" >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          groups = {"runtime": [], "runtime-2": []}
+          group = None
+          for line in Path(".github/workflows/production-workloads.yml").read_text(encoding="utf-8").splitlines():
+              job = re.fullmatch(r"  ([a-z0-9-]+):", line)
+              if job:
+                  group = job.group(1)
+              if group not in groups:
+                  continue
+              match = re.fullmatch(r"\s*- \{(scenario: [^}]+)\}\s*", line)
+              if not match:
+                  continue
+              row = dict(part.strip().split(": ", 1) for part in match.group(1).split(","))
+              if row.get("php", "8.5").strip("'") != "8.5":
+                  raise SystemExit("Unexpected runtime PHP series")
+              groups[group].append({
+                  "scenario": row["scenario"],
+                  "backend": row["backend"],
+                  "host": row.get("host", "worker"),
+                  "matcher": row.get("matcher", "fused"),
+              })
+          first, second = groups["runtime"], groups["runtime-2"]
+          if (len(first), len(second)) != (256, 51) or len({tuple(row.values()) for row in first + second}) != 307:
+              raise SystemExit("Frozen runtime matrix changed; review the candidate scope")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              for name, rows in (("first", first), ("second", second)):
+                  output.write(name + "=" + json.dumps({"include": rows}, separators=(",", ":")) + "\n")
+          PY
+
+  runtime:
+    needs: prepare
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix: ${{ fromJSON(needs.prepare.outputs.first) }}
+    uses: ./.github/workflows/production-worker-runtime.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+      runwire_candidate_reference: ${{ needs.prepare.outputs.reference }}
+
+  runtime-2:
+    needs: prepare
+    name: "${{ matrix.scenario }} / ${{ matrix.backend }} / ${{ matrix.host }} / ${{ matrix.matcher }} / PHP 8.5"
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix: ${{ fromJSON(needs.prepare.outputs.second) }}
+    uses: ./.github/workflows/production-worker-runtime.yml
+    with:
+      scenario: ${{ matrix.scenario }}
+      backend: ${{ matrix.backend }}
+      host: ${{ matrix.host }}
+      matcher: ${{ matrix.matcher }}
+      runwire_candidate_reference: ${{ needs.prepare.outputs.reference }}

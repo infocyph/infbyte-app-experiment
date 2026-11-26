@@ -150,6 +150,23 @@ runs:
           php -r '$r=json_decode(file_get_contents($argv[1]),true,flags:JSON_THROW_ON_ERROR); if (($r["status"]??null)!=="complete") exit(1);' "$EVIDENCE/install-$feature.json"
           php infbyte module:enable "$feature" --json=1
         done
+        # Only the isolated candidate caller supplies this reference. The
+        # ordinary production workers continue to install published packages.
+        if [[ -n "${LAB_RUNWIRE_CANDIDATE_REFERENCE:-}" ]]; then
+          [[ "$LAB_RUNWIRE_CANDIDATE_REFERENCE" =~ ^[0-9a-f]{40}$ ]]
+          composer config repositories.runwire-candidate vcs https://github.com/infocyph/Runwire
+          composer require --update-no-dev --no-interaction --prefer-dist --no-progress --with-dependencies 'infocyph/runwire:dev-fix/production-feedback as 3.1.1'
+          php -r '
+            require "vendor/autoload.php";
+            $name = "infocyph/runwire";
+            $reference = Composer\InstalledVersions::getReference($name);
+            $version = Composer\InstalledVersions::getPrettyVersion($name);
+            echo json_encode(["package"=>$name,"reference"=>$reference,"version"=>$version,"mode"=>"unreleased-candidate"], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT), PHP_EOL;
+            if ($reference !== getenv("LAB_RUNWIRE_CANDIDATE_REFERENCE")) {
+                throw new RuntimeException("Resolved Runwire candidate differs from the qualification source.");
+            }
+          ' | tee "$EVIDENCE/runwire-candidate.json"
+        fi
         test ! -d vendor/infocyph/phpforge
         test ! -e vendor/bin/pest
         mkdir -p lab
