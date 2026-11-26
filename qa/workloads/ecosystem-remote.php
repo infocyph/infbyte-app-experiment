@@ -106,7 +106,9 @@ function remoteStorageWorkload(StorageContext $context): void
         rewind($stream);
         $disk->writeStream('reports/document.txt', $stream);
     } finally {
-        fclose($stream);
+        if (is_resource($stream)) {
+            fclose($stream);
+        }
     }
     $foreign->write('reports/document.txt', 'foreign');
     verify($disk->fileSize('reports/document.txt') === strlen($payload) && $foreign->read('reports/document.txt') === 'foreign', 'Remote namespace size/isolation failed.');
@@ -115,7 +117,9 @@ function remoteStorageWorkload(StorageContext $context): void
         $digest = hash_init('sha256');
         verify(hash_update_stream($digest, $source) === strlen($payload) && hash_final($digest) === hash('sha256', $payload), 'Remote stream integrity failed.');
     } finally {
-        fclose($source);
+        if (is_resource($source)) {
+            fclose($source);
+        }
     }
     $download = new DownloadProcessor();
     $download->setStorageContext($context);

@@ -22,9 +22,12 @@ cleanup() {
 }
 trap cleanup EXIT
 run() { local port="$1"; shift; docker exec "lab-otp-$port" "$cli" -p "$port" --raw "$@"; }
+cluster_bus=()
+# Plaintext election fixtures are isolated on the hosted runner loopback only.
+if [[ "$image" == redis:8 ]]; then cluster_bus=(--cluster-bus-port-protected-mode no); fi
 for port in "${ports[@]}"; do
   docker run -d --name "lab-otp-$port" --network host "$image" "$server" --bind 127.0.0.1 --port "$port" \
-    --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 2000 --cluster-require-full-coverage yes --cluster-allow-reads-when-down no \
+    --cluster-enabled yes "${cluster_bus[@]}" --cluster-config-file nodes.conf --cluster-node-timeout 2000 --cluster-require-full-coverage yes --cluster-allow-reads-when-down no \
     --cluster-announce-ip 127.0.0.1 --cluster-announce-port "$port" --cluster-announce-bus-port "$((port + 10000))" \
     --appendonly yes --appendfsync always --repl-diskless-sync-delay 0 >/dev/null
 done

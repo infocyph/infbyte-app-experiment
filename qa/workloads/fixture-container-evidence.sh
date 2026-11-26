@@ -30,14 +30,15 @@ for entry in container["Config"].get("Env", []):
     key, _, value = entry.partition("=")
     if value and re.search(r"PASSWORD|PASS$|SECRET|COOKIE|TOKEN|KEY|AUTH", key, re.I):
         message = message.replace(value, "[redacted]")
-lines = []
-for line in message.splitlines():
-    if re.search(r"password|secret|cookie|token|credential|authorization|private.key", line, re.I):
-        continue
-    if re.search(r"error|fatal|failed|denied|panic|address already|cannot|unable|not found|permission|killed|abort", line, re.I):
-        lines.append(line[:800])
+raw_lines = message.splitlines()
+selected = set()
+for index, line in enumerate(raw_lines):
+    if re.search(r"error|fatal|failed|denied|panic|address already|cannot|unable|not found|permission|killed|abort|exception", line, re.I):
+        selected.update(range(max(0, index - 2), min(len(raw_lines), index + 5)))
+lines = [raw_lines[i][:800] for i in sorted(selected)
+         if not re.search(r"password|secret|cookie|token|credential|authorization|private.key", raw_lines[i], re.I)]
 (root / f"container-{name}-errors.log").write_text("\n".join(lines[-40:]) + "\n")
-for line in lines[-10:]:
+for line in lines[-40:]:
     print(line)
 PY
 }

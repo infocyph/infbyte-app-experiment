@@ -77,7 +77,7 @@ case "$SCENARIO" in
       docker run -d --name "lab-standby-$port" --network host \
         -e PGPASSWORD=experiment -e STANDBY_PORT="$port" \
         --entrypoint bash postgres:17 -e -c '
-          install -d -o postgres -g postgres /tmp/standby
+          install -d -m 0700 -o postgres -g postgres /tmp/standby
           if [[ ! -s /tmp/standby/PG_VERSION ]]; then gosu postgres pg_basebackup -h 127.0.0.1 -p 5432 -U experiment -D /tmp/standby -R -X stream; fi
           exec gosu postgres postgres -D /tmp/standby -p "$STANDBY_PORT" -c listen_addresses=127.0.0.1
         '

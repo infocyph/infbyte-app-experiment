@@ -37,7 +37,7 @@ case "$provision" in
     for port in 17379 17380 17381; do
       name="lab-cluster-$port"
       containers+=("$name")
-      docker run -d --name "$name" --network host redis:8 redis-server --port "$port" --bind 127.0.0.1 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-announce-ip 127.0.0.1 --cluster-announce-port "$port" --cluster-announce-bus-port "$((port + 10000))" --appendonly no
+      docker run -d --name "$name" --network host redis:8 redis-server --port "$port" --bind 127.0.0.1 --cluster-enabled yes --cluster-bus-port-protected-mode no --cluster-config-file nodes.conf --cluster-announce-ip 127.0.0.1 --cluster-announce-port "$port" --cluster-announce-bus-port "$((port + 10000))" --appendonly no
     done
     for port in 17379 17380 17381; do
       for i in $(seq 1 30); do
@@ -67,7 +67,9 @@ case "$provision" in
   ecosystem-s3|ecosystem-async-s3|ecosystem-s3-outage|ecosystem-s3-publication-fault)
     containers+=(lab-s3)
     export LAB_S3_SECRET="$(php -r 'echo bin2hex(random_bytes(24));')"
-    docker run -d --name lab-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" quay.io/minio/minio:latest server /data
+    docker build -t lab-minio - < "$GITHUB_WORKSPACE/qa/workloads/Minio.Dockerfile"
+    docker run --rm lab-minio --version | tee "$EVIDENCE/minio-version.txt"
+    docker run -d --name lab-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" lab-minio server /data
     for i in $(seq 1 60); do
       if curl -fsS --max-time 2 http://127.0.0.1:19000/minio/health/ready >/dev/null; then break; fi
       sleep 1

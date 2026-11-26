@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+source "$GITHUB_WORKSPACE/qa/workloads/fixture-container-evidence.sh"
 umask 077
 export LAB_MAIL_ROOT="$(mktemp -d "$RUNNER_TEMP/mail-tls.XXXXXXXX")"
 worker=""
 cleanup() {
   if [[ -n "$worker" ]]; then kill "$worker" 2>/dev/null || :; wait "$worker" 2>/dev/null || :; fi
+  fixture_container_evidence lab-mail-tls || :
   docker rm -f lab-mail-tls >/dev/null 2>&1 || :
   rm -rf "$LAB_MAIL_ROOT"
 }
@@ -41,6 +43,29 @@ for i in $(seq 1 30); do
   sleep 1
 done
 test "$ready" = 1
+docker exec lab-mail-tls doveadm -c /tls/dovecot.conf mailbox status -u labmail messages INBOX | tee "$EVIDENCE/mailbox-tls-seed-status.txt"
+python3 - "$LAB_MAIL_ROOT/cert.pem" <<'PY' | tee "$EVIDENCE/mailbox-tls-reference.txt"
+import imaplib
+import poplib
+import ssl
+import sys
+
+context = ssl.create_default_context(cafile=sys.argv[1])
+with imaplib.IMAP4_SSL("localhost", 11993, ssl_context=context, timeout=5) as imap:
+    imap.login("labmail", "fixture-only-password")
+    status, count = imap.select("INBOX", readonly=True)
+    print("Independent TLS IMAP:", status, count)
+    assert status == "OK" and count == [b"1"]
+pop = poplib.POP3_SSL("localhost", 11995, context=context, timeout=5)
+try:
+    pop.user("labmail")
+    pop.pass_("fixture-only-password")
+    count, _ = pop.stat()
+    print("Independent TLS POP3 count:", count)
+    assert count == 1
+finally:
+    pop.quit()
+PY
 script="$GITHUB_WORKSPACE/qa/workloads/ecosystem.php"
 if [[ "$SCENARIO" == ecosystem-mailbox-tls ]]; then
   php "$script" mailbox-untrusted

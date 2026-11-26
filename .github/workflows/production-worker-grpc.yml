@@ -27,6 +27,15 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Validate mode and initialize evidence
+        shell: bash
+        env:
+          LAB_GRPC_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          case "$LAB_GRPC_MODE" in unary|streaming-tls) ;; *) exit 1 ;; esac
+          mkdir -p "$RUNNER_TEMP/grpc-evidence"
+          printf '%s\n' "$GITHUB_SHA" > "$RUNNER_TEMP/grpc-evidence/revision.txt"
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'

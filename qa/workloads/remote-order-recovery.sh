@@ -16,7 +16,9 @@ trap cleanup EXIT
 composer require league/flysystem-aws-s3-v3 php-amqplib/php-amqplib --no-interaction --prefer-dist --no-progress
 composer check-platform-reqs --no-dev
 composer show --format=json > "$EVIDENCE/packages.json"
-docker run -d --name lab-remote-orders-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" quay.io/minio/minio:latest server /data
+docker build -t lab-minio - < "$GITHUB_WORKSPACE/qa/workloads/Minio.Dockerfile"
+docker run --rm lab-minio --version | tee "$EVIDENCE/minio-version.txt"
+docker run -d --name lab-remote-orders-s3 -p 127.0.0.1:19000:9000 -e MINIO_ROOT_USER=experiment -e MINIO_ROOT_PASSWORD="$LAB_S3_SECRET" lab-minio server /data
 docker run -d --name lab-remote-orders-broker -p 127.0.0.1:15672:5672 -e RABBITMQ_DEFAULT_USER=experiment -e RABBITMQ_DEFAULT_PASS=fixture-only-password rabbitmq:4
 ready() {
   for attempt in {1..90}; do

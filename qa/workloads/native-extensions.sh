@@ -39,18 +39,27 @@ PY
     test "${#modules[@]}" = 1
     ldd "${modules[0]}" | tee "$EVIDENCE/cassandra-linkage.txt"
     if grep -q 'not found' "$EVIDENCE/cassandra-linkage.txt"; then exit 1; fi
-    php -d "extension=${modules[0]}" --ri cassandra > "$EVIDENCE/cassandra-probe.txt"
     sudo install -m 0644 "${modules[0]}" "$(php-config --extension-dir)/cassandra.so"
     printf 'extension=cassandra.so\n' | sudo tee /etc/php/8.5/mods-available/cassandra.ini >/dev/null
+    sudo chmod 0644 /etc/php/8.5/mods-available/cassandra.ini
     sudo phpenmod -v 8.5 cassandra
+    php --ini | tee "$EVIDENCE/cassandra-ini.txt"
+    php --ri cassandra 2>&1 | tee "$EVIDENCE/cassandra-probe.txt"
     ;;
   quic)
     sudo apt-get update
     sudo apt-get install -y build-essential pkg-config libssl-dev php8.5-dev
     pkg-config --atleast-version=3.5 openssl
     curl -fsSL --retry 3 https://github.com/php/pie/releases/latest/download/pie.phar -o "$root/pie.phar"
-    sudo php "$root/pie.phar" install --no-interaction mikepultz/php-quic
-    php --ri quic > "$EVIDENCE/quic-probe.txt"
+    sudo -H php "$root/pie.phar" install --no-interaction mikepultz/php-quic
+    test -f "$(php-config --extension-dir)/quic.so"
+    if ! php -r 'exit(extension_loaded("quic") ? 0 : 1);'; then
+      printf 'extension=quic.so\n' | sudo tee /etc/php/8.5/mods-available/quic.ini >/dev/null
+      sudo chmod 0644 /etc/php/8.5/mods-available/quic.ini
+      sudo phpenmod -v 8.5 quic
+    fi
+    php --ini | tee "$EVIDENCE/quic-ini.txt"
+    php --ri quic 2>&1 | tee "$EVIDENCE/quic-probe.txt"
     ;;
   *) echo "Unknown native extension: $mode" >&2; exit 1 ;;
 esac

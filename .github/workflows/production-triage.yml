@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
+      all_workers: ${{ steps.select.outputs.all_workers }}
       database: ${{ steps.select.outputs.database }}
       cache: ${{ steps.select.outputs.cache }}
       authentication: ${{ steps.select.outputs.authentication }}
@@ -87,10 +88,17 @@ jobs:
               else:
                   worker = "business"
               groups[worker].append(dict(scenario=scenario, backend=backend, host=host, matcher=matcher))
+          all_workers = not os.environ["REQUEST_JSON"]
+          if all_workers:
+              missing = sorted(worker for worker, entries in groups.items() if not entries)
+              if missing:
+                  raise SystemExit("Default qualification omitted workers: " + ", ".join(missing))
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("all_workers=" + str(all_workers).lower() + "\n")
               for worker, entries in groups.items():
                   output.write(worker + "=" + json.dumps(entries, separators=(",", ":")) + "\n")
           print(f"Selected {len(selected)} frozen PHP 8.5 tuples.")
+          print("Worker coverage:", {worker: len(entries) for worker, entries in groups.items()})
           PY
   dispatch-inventory:
     name: Direct ecosystem dispatch inventory
@@ -314,3 +322,13 @@ jobs:
       backend: ${{ matrix.backend }}
       host: ${{ matrix.host }}
       matcher: ${{ matrix.matcher }}
+  grpc:
+    needs: plan
+    if: needs.plan.outputs.all_workers == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [unary, streaming-tls]
+    uses: ./.github/workflows/production-worker-grpc.yml
+    with:
+      mode: ${{ matrix.mode }}

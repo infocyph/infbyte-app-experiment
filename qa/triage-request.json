@@ -70,5 +70,142 @@
   {
     "scenario": "ecosystem-runwire-negotiation-h2-strict",
     "backend": "pgsql"
+  },
+  {
+    "scenario": "db-composite-foreign",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "db-composite-foreign",
+    "backend": "mysql"
+  },
+  {
+    "scenario": "db-composite-foreign",
+    "backend": "mariadb"
+  },
+  {
+    "scenario": "db-composite-foreign",
+    "backend": "sqlite"
+  },
+  {
+    "scenario": "db-composite-foreign",
+    "backend": "mssql"
+  },
+  {
+    "scenario": "ecosystem-cache-atomic-redis",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-jwt-jws",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-crypto-algorithms",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-archive-security",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-amqp-tls",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-runwire-outbound-h1-get",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-route-attributes",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-config-reference",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-validation-granular-patterns",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-uid-provider-boundaries",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-di-contextual",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-grpc-inbound",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-mailbox-tls",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-mailbox-idle",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "orders",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "operations",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "ecosystem-route-attributes",
+    "backend": "pgsql",
+    "matcher": "sharded"
+  },
+  {
+    "scenario": "http",
+    "backend": "pgsql",
+    "host": "native",
+    "matcher": "sharded"
+  },
+  {
+    "scenario": "http",
+    "backend": "pgsql",
+    "host": "fpm",
+    "matcher": "sharded"
+  },
+  {
+    "scenario": "http",
+    "backend": "pgsql",
+    "host": "roadrunner",
+    "matcher": "sharded"
+  },
+  {
+    "scenario": "http",
+    "backend": "pgsql",
+    "host": "frankenphp",
+    "matcher": "sharded"
+  },
+  {
+    "scenario": "http",
+    "backend": "pgsql",
+    "host": "swoole",
+    "matcher": "sharded"
+  },
+  {
+    "scenario": "http",
+    "backend": "pgsql",
+    "host": "openswoole",
+    "matcher": "sharded"
+  },
+  {
+    "scenario": "db-replica-fault",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "db-primary-promotion",
+    "backend": "pgsql"
+  },
+  {
+    "scenario": "db-pgpool-failover",
+    "backend": "pgsql"
   }
 ]
