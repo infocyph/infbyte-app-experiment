@@ -42,7 +42,7 @@ function runwireOutboundContracts(string $protocol, string $contract): void
         '127.0.0.1', caFile: (string) getenv('LAB_RUNWIRE_OUTBOUND_CA'), alpnProtocols: [$alpn], handshakeTimeoutSeconds: 3.0,
     ));
     $policy = new ClientProtocolPolicy($version, [$version]);
-    $execute = static function (string $case) use ($base, $client, $loop, $dialer, $options, $policy, $alpn): array {
+    $execute = static function (string $case) use ($base, $client, $loop, $dialer, $numeric, $options, $policy, $alpn): array {
         $source = new CancellationSource();
         $method = $case === 'head' ? 'HEAD' : 'GET';
         $deadline = $case === 'deadline' ? RequestDeadline::afterSeconds(2.5, hrtime(true)) : null;
@@ -259,6 +259,14 @@ function runwireNegotiationContracts(string $protocol, string $contract): void
             }
             $loop->run();
             verify($completed === 1, 'Negotiated exchange did not settle exactly once.');
+            echo json_encode([
+                'case' => $case,
+                'statuses' => $statuses,
+                'body_bytes' => strlen($body),
+                'completed' => $completed,
+                'failure_type' => $failure === null ? null : $failure::class,
+                'failure_message' => $failure?->getMessage(),
+            ], JSON_THROW_ON_ERROR), PHP_EOL;
             return [$statuses, $body, $failure, $completed];
         } finally {
             $loop->cancel($watchdog);

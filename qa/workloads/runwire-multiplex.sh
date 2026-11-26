@@ -5,6 +5,9 @@ root="$(mktemp -d "$RUNNER_TEMP/runwire-multiplex.XXXXXXXX")"
 peer=""
 cleanup() {
   if [[ -n "$peer" ]]; then kill "$peer" 2>/dev/null || :; wait "$peer" 2>/dev/null || :; fi
+  if [[ -f "$root/events.jsonl" ]]; then
+    cp "$root/events.jsonl" "$EVIDENCE/runwire-multiplex-events.jsonl"
+  fi
   rm -rf "$root"
 }
 trap cleanup EXIT

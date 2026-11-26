@@ -121,6 +121,14 @@ function runwireMultiplexContracts(string $contract, int $count): void
             }, new DialOptions(connectTimeoutSeconds: 3.0, tls: new TlsClientOptions(
                 '127.0.0.1', caFile: (string) getenv('LAB_RUNWIRE_OUTBOUND_CA'), alpnProtocols: ['h2'])));
         $loop->run();
+        echo json_encode([
+            'contract' => $contract,
+            'ready' => $ready,
+            'recovered' => $recovered,
+            'settled_streams' => array_keys($settled),
+            'failure_type' => $failure === null ? null : $failure::class,
+            'failure_message' => $failure?->getMessage(),
+        ], JSON_THROW_ON_ERROR), PHP_EOL;
         verify($failure === null && $ready === 1 && $recovered && count($settled) === $count, 'Multiplex exchange did not complete and recover on the same socket.');
         for ($id = 1; $id <= $count; ++$id) {
             verify(($ids[$id] ?? null) === 2 * $id - 1 && count($settled[$id] ?? []) === 1, 'Stream identity or terminal count differs.');

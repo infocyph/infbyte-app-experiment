@@ -50,7 +50,7 @@ function amqpTlsSeed(): void
 
 function amqpTlsRecover(): void
 {
-    [, $serializer] = messagingSetup();
+    [, $serializer] = messagingSetup(false);
     $root = (string) getenv('LAB_AMQP_TLS_ROOT');
     $connection = labAmqpTls('localhost', $root . '/ca.crt');
     $channel = $connection->channel();

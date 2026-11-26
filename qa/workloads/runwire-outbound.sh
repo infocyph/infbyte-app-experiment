@@ -5,6 +5,9 @@ root="$(mktemp -d "$RUNNER_TEMP/runwire-outbound.XXXXXXXX")"
 peer=""
 cleanup() {
   if [[ -n "$peer" ]]; then kill "$peer" 2>/dev/null || :; wait "$peer" 2>/dev/null || :; fi
+  if [[ -f "$root/requests.jsonl" ]]; then
+    cp "$root/requests.jsonl" "$EVIDENCE/runwire-outbound-requests.jsonl"
+  fi
   rm -rf "$root"
 }
 trap cleanup EXIT

@@ -19,6 +19,12 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Set up isolated runner paths
+      shell: bash
+      run: |
+        mkdir -p "$RUNNER_TEMP/workload-evidence"
+        printf '%s\n' "$GITHUB_SHA" > "$RUNNER_TEMP/workload-evidence/revision.txt"
+        printf 'PROJECT=%s/production-app\nEVIDENCE=%s/workload-evidence\n' "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
     - name: Validate requested frozen workload entry
       shell: bash
       env:
@@ -73,6 +79,14 @@ runs:
         else:
             raise SystemExit(f"No frozen workload matches {requested!r}; check the matrix for valid combinations.")
         PY
+    - name: Provision Cassandra native build dependencies
+      if: contains(inputs.extensions, 'cassandra')
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo apt-get update
+        sudo apt-get install -y libuv1-dev
+        pkg-config --modversion libuv
     - uses: shivammathur/setup-php@v2
       with:
         php-version: '8.5'
@@ -94,16 +108,21 @@ runs:
           sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18
         fi
         odbcinst -q -d -n 'ODBC Driver 18 for SQL Server'
+    - name: Capture native runtime provisioning evidence
+      if: always()
+      shell: bash
+      run: |
+        if command -v php >/dev/null; then
+          php -v > "$EVIDENCE/php-setup.txt" 2>&1 || :
+          php -m > "$EVIDENCE/extensions-setup.txt" 2>&1 || :
+          php --ini > "$EVIDENCE/ini-setup.txt" 2>&1 || :
+        fi
     - name: Verify PHP 8.5 runtime and requested extensions
       shell: bash
       env:
         LAB_REQUIRED_EXTENSIONS: ${{ inputs.extensions }}
       run: |
         php -r 'if (PHP_MAJOR_VERSION !== 8 || PHP_MINOR_VERSION !== 5) exit(1); foreach (explode(",", getenv("LAB_REQUIRED_EXTENSIONS")) as $ext) { $ext=trim($ext); if ($ext !== "" && !extension_loaded($ext)) { fwrite(STDERR, "Missing required extension: ".$ext.PHP_EOL); exit(1); } }'
-    - name: Set up isolated runner paths
-      shell: bash
-      run: |
-        printf 'PROJECT=%s/production-app\nEVIDENCE=%s/workload-evidence\n' "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
     - name: Install real published production application
       shell: bash
       run: |

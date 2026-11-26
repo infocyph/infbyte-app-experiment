@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Infocyph\DBLayer\Connection\Connection;
+use Infocyph\DBLayer\Exceptions\MigrationException;
 use Infocyph\DBLayer\Migration\SeedContext;
 use Infocyph\DBLayer\Migration\SeedRunner;
 use Infocyph\DBLayer\Migration\Seeder;
@@ -171,7 +172,12 @@ function databaseCompositeForeignContracts(Connection $db): void
     $peer = new Connection(config());
     check((int) $peer->table('lab_comp_child')->where('id', '=', 1)->value('order_id') === 8
         && (int) $peer->table('lab_comp_child')->where('id', '=', 2)->value('order_id') === 7, 'Composite cascade crossed tenant.');
-    rejected(static fn() => $schema->dropAllTables(), 'Destructive schema operation admitted without authorization.');
+    try {
+        $schema->dropAllTables();
+        throw new LogicException('Destructive schema operation admitted without authorization.');
+    } catch (MigrationException $failure) {
+        check(str_contains($failure->getMessage(), 'drop-all-tables'), 'Unexpected migration guard failure.');
+    }
     check($db->table('lab_comp_parent')->where('tenant_id', '=', 1)->delete() === 1, 'Parent delete failed.');
     check($peer->table('lab_comp_child')->count() === 1 && (int) $peer->table('lab_comp_child')->value('id') === 2, 'Composite delete cascade crossed tenant.');
     echo "Composite primary/foreign key enforcement, native cascades and destructive guard passed\n";

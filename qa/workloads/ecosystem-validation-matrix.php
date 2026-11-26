@@ -23,10 +23,10 @@ enum LabValidationStatus: string
 function validationPair(string $name, string|array $rule, array $positive, array $negative): void
 {
     $builder = Validator::make(['v' => $rule]);
-    foreach ([$builder, new CompiledValidator($builder)] as $validator) {
-        verify($validator->validate($positive)->passes(), "Positive $name input rejected.");
-        verify($validator->validate($negative)->fails(), "Negative $name input accepted.");
-        verify($validator->validate($positive)->passes(), "Repeated $name input inherited failure.");
+    foreach (['mutable' => $builder, 'compiled' => new CompiledValidator($builder)] as $mode => $validator) {
+        verify($validator->validate($positive)->passes(), "Positive $name input rejected ($mode).");
+        verify($validator->validate($negative)->fails(), "Negative $name input accepted ($mode).");
+        verify($validator->validate($positive)->passes(), "Repeated $name input inherited failure ($mode).");
     }
 }
 

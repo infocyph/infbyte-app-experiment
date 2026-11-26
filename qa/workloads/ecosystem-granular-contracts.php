@@ -39,7 +39,8 @@ function granularValidationWorkload(string $family): void
         ],
         'patterns' => [
             [[new Regex('/^(?:order|receipt)-[0-9]+$/D')], 'order-42', 'order-42-x'],
-            [[new Regex('/^\p{L}+$/uD')], 'বাংলা', 'বাংলা1'],
+            [[new Regex('/^\p{L}+$/uD')], 'ব', 'বাংলা'],
+            [[new Regex('/^(?:\p{L}\p{M}*)+$/uD')], 'বাংলা', 'বাংলা1'],
             [[new NotRegex('/(?:root|admin)/i')], 'member', 'ADMIN'],
             ['alpha', 'AbZ', 'é'],
             ['alpha_dash', 'order_42-A', 'order/42'],
@@ -55,8 +56,8 @@ function granularValidationWorkload(string $family): void
         ],
         default => throw new InvalidArgumentException('Unknown granular validation family.'),
     };
-    foreach ($cases as [$rule, $good, $bad]) {
-        validationPair($family, $rule, ['v' => $good], ['v' => $bad]);
+    foreach ($cases as $index => [$rule, $good, $bad]) {
+        validationPair($family . ' case ' . $index, $rule, ['v' => $good], ['v' => $bad]);
     }
     if ($family === 'patterns') {
         foreach ([Regex::class, NotRegex::class] as $class) {
