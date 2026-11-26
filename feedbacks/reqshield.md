@@ -1,0 +1,21 @@
+# ReqShield — production feedback and upstream action plan
+
+Status: **open — initial investigation and release planning** · 2026-11-26
+
+Baseline: Exact installed specialist version pending inventory. Release target to be selected after root-cause isolation; no version bump authorized by this file.
+
+## Findings
+
+- [ ] **REQ-001 (P1 candidate):** [import wildcard cast](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376650621), [casts](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376720146) Wildcard normalization/cast or unknown-field isolation failed; [cast composition](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376719809). Compare documented wildcard behavior, mutable and compiled pipelines, nested typed output and unknown-field stripping; independent expected typed data, precise error paths. No manual coercion workaround in testbed.
+- [ ] **REQ-002 (P2 candidate):** [sanitizers](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376717610), [granular sizes](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376719844), [registry](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376721267). Isolate rule/sanitizer order, empty/zero/false and Unicode length/byte semantics, aliases/registry and error metadata; test compiled parity, uploads and DB-backed rules.
+- [ ] **REQ-003 (P2, corrected fixture + separate candidates):** [patterns](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376722328) Bengali letters-only pattern cannot include combining marks; fixture correction qualified; don't label legitimate rejection bug. [Unicode expression direct](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376886688), [Unicode expression compiled](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376887427) still require log/contract comparison; distinguish Unicode properties and safe regex behavior.
+- [ ] **REQ-004 (P1 security regression):** nested untrusted data, limits, cancellation, hostile expressions, schema composition, locale, JSON Schema/OpenAPI, database rules with native truth, Foundation validator integration; preserve validation before DB/side effects and no cross-tenant data leakage.
+
+## Batches
+A: wildcard normalization/cast; B: sanitizer/registry/size and expressions; C: complete direct/compiled, database and import regression. No confirmed source bug until exact pipeline traced.
+
+## Evidence and execution rules
+
+Baseline: [run 45661843498](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498) (PHP 8.5, c5c5efa; 1,505/2,179 jobs passed), [run 45756151480](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45756151480) (6f73868; 45/54 passed, all 14 worker types operational), [defect register](../qa/production-defect-register.md), [capability inventory](../qa/capability-coverage.md). All 22 full-run job-summary pages were screened, representative logs reviewed, and existing source-traced findings carried forward. Counts and scenario names are not root-cause counts. Exact installed versions not explicitly established below must be taken from each job's package inventory. This is an initial upstream handoff, not completed root-cause or release qualification. Do not treat an uninvestigated failure as a library defect, or absence of a confirmed finding as proof of defect-free behavior.
+
+Follow [PHPForge engineering principles](https://github.com/infocyph/PHPForge/blob/main/resources/engineering-principles.md); use GitHub-hosted workers, one logical batch per commit, update tracker with exact source/version/job evidence. No skips, vendor edits, weakened assertions, security overrides, dependency revision pins, or automatic merge. Keep frozen 2,177 routine tuples and two native gRPC modes; add only justified regression cases. Run published-package consumer tests on PHP 8.5 and supported upstream CI versions; final full matrix after upstream releases. Keep fixture/third-party fixes separate. No upstream implementation performed in this feedback batch.

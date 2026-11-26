@@ -1,0 +1,21 @@
+# Epicrypt — production feedback and upstream action plan
+
+Status: **open — initial investigation and release planning** · 2026-11-26
+
+Baseline: Exact installed specialist version pending package inventory. Release target to be selected after root-cause isolation; no version bump authorized by this file.
+
+## Findings
+
+- [ ] **EPC-001 (P1 security, confirmed lab boundary):** [DNS-rebinding fixture](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376674746) recorded rejected=false, dispatches=1, public_requests=0, private_requests=1, connected_peers=[127.0.0.2]. [src/Token/Jwt/Support/RemoteJoseResource.php](https://github.com/infocyph/Epicrypt/blob/main/src/Token/Jwt/Support/RemoteJoseResource.php) validates DNS then generic PSR-18 independently connects. Bind the approved resolved peer at transport layer or fail closed when impossible; preserve hostname/TLS trust, redirect checks and cancellation; no permissive fallback. Independently observe actual peer, deny before private dispatch, test mixed answers, redirects, expiry/rotation, cache and public positive. Coordinate [Runwire](runwire.md) and [TalkingBytes](talkingbytes.md); no claim of actual production compromise.
+- [ ] **EPC-002 (P2 candidate):** [PKI](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376665879) CertificateChainVerifier.php:52 throws certificate verification failed to execute. Capture native OpenSSL errors, CA/chain order, trust anchor, purpose, validity, PHP/OpenSSL return types. Distinguish fixture from wrapper. Validate positive, unknown CA, wrong chain, expiry and tamper, no private-key artifacts.
+- [ ] **EPC-003 (fixture candidate, not confirmed Epicrypt):** [detached crypto](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376666115) sodium_crypto_sign_seed_keypair receives false at workload line 106; check hex/base64 seed decoding/length before invoking native sodium; preserve signature/tamper assertions, then rerun.
+- [ ] **EPC-004 (P1 integration):** [consent invalid_scope](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376672925) and Foundation PAT 25P02; inspect OAuth contract and configured scopes. PAT transaction ownership currently Foundation; see [Foundation](foundation.md). Test JWT/JWE algorithm matrices, JOSE key selection, OIDC, DPoP/replay, token revocation, rotation and signed payloads on current graph; keep crypto positive controls.
+
+## Batches
+A: reproduce exact peer boundary and fix SSRF; B: PKI and detached fixture isolation; C: OAuth/integration and complete crypto/security regression, approved-peer tests and release consumer retest.
+
+## Evidence and execution rules
+
+Baseline: [run 45661843498](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498) (PHP 8.5, c5c5efa; 1,505/2,179 jobs passed), [run 45756151480](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45756151480) (6f73868; 45/54 passed, all 14 worker types operational), [defect register](../qa/production-defect-register.md), [capability inventory](../qa/capability-coverage.md). All 22 full-run job-summary pages were screened, representative logs reviewed, and existing source-traced findings carried forward. Counts and scenario names are not root-cause counts. Exact installed versions not explicitly established below must be taken from each job's package inventory. This is an initial upstream handoff, not completed root-cause or release qualification. Do not treat an uninvestigated failure as a library defect, or absence of a confirmed finding as proof of defect-free behavior.
+
+Follow [PHPForge engineering principles](https://github.com/infocyph/PHPForge/blob/main/resources/engineering-principles.md); use GitHub-hosted workers, one logical batch per commit, update tracker with exact source/version/job evidence. No skips, vendor edits, weakened assertions, security overrides, dependency revision pins, or automatic merge. Keep frozen 2,177 routine tuples and two native gRPC modes; add only justified regression cases. Run published-package consumer tests on PHP 8.5 and supported upstream CI versions; final full matrix after upstream releases. Keep fixture/third-party fixes separate. No upstream implementation performed in this feedback batch.

@@ -1,0 +1,21 @@
+# InterMix — production feedback and upstream action plan
+
+Status: **open — initial investigation and release planning** · 2026-11-26
+
+Baseline: 11.2.1 (full-run and targeted evidence). Release target to be selected after root-cause isolation; no version bump authorized by this file.
+
+## Findings
+
+- [ ] **IMX-001 (P1 contract candidate):** [contextual DI strict compile](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45756151480/job/139695177570) rejects contextual scalar limits in LabContextualCheckout/Report after missing playground dispatch restored. [Workload](../qa/workloads/ecosystem-utility-contracts.php) dynamically binds distinct limits (0 and 100). Determine documented strict compile support; implement safe static representation if contract promised, or explicit precise limitation if unsupported. Verify dynamic/compiled values, zero/false/null, contextual precedence, aliases/tags and isolation.
+- [ ] **IMX-002 (P1 candidate):** [factory recipes](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376685879) Compiled recipe artifact digest mismatch. Inspect deterministic artifact serialization and recipe metadata, compare digest algorithm and actual bytes, reject corruption; no trust bypass. Environment/preload/graph failure variants [hosted job](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376682730), [hosted job](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376692964), [hosted job](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376685403) need separate logs and supported API trace.
+- [ ] **IMX-003 (P2 fixture/API candidate):** [InterMix scope](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376719815) Cannot attach a scope context while carrier already active; workload attaches inside withinScope. Determine documented borrow/attach ownership; correct misuse if guard expected. Test independent fibers, nested scopes, context transfer, exceptional cleanup and no scope leaks; do not remove valid guard.
+- [ ] **IMX-004 (P1 integration):** Foundation readiness scoped RuntimeExecutionState and runtime ownership; [Foundation FND-003](foundation.md), [Runwire](runwire.md). No singleton workaround. Verify compiled/dynamic service lifecycle, scope disposal, invocation, cache process, generated artifact trust, signed closures, Fence/Remix and host parity.
+
+## Batches
+A: exact static compiler and artifact issues; B: scope ownership/graph/preload; C: Foundation/Runwire and direct utility regressions. Restore dispatch defects remain playground-only.
+
+## Evidence and execution rules
+
+Baseline: [run 45661843498](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498) (PHP 8.5, c5c5efa; 1,505/2,179 jobs passed), [run 45756151480](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45756151480) (6f73868; 45/54 passed, all 14 worker types operational), [defect register](../qa/production-defect-register.md), [capability inventory](../qa/capability-coverage.md). All 22 full-run job-summary pages were screened, representative logs reviewed, and existing source-traced findings carried forward. Counts and scenario names are not root-cause counts. Exact installed versions not explicitly established below must be taken from each job's package inventory. This is an initial upstream handoff, not completed root-cause or release qualification. Do not treat an uninvestigated failure as a library defect, or absence of a confirmed finding as proof of defect-free behavior.
+
+Follow [PHPForge engineering principles](https://github.com/infocyph/PHPForge/blob/main/resources/engineering-principles.md); use GitHub-hosted workers, one logical batch per commit, update tracker with exact source/version/job evidence. No skips, vendor edits, weakened assertions, security overrides, dependency revision pins, or automatic merge. Keep frozen 2,177 routine tuples and two native gRPC modes; add only justified regression cases. Run published-package consumer tests on PHP 8.5 and supported upstream CI versions; final full matrix after upstream releases. Keep fixture/third-party fixes separate. No upstream implementation performed in this feedback batch.
