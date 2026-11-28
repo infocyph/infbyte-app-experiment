@@ -48,7 +48,7 @@ function diFactoriesWorkload(): void
     verify($graph->definitionMetaFor('scoped')['lifetime'] === LifetimeEnum::Scoped, 'Graph metadata lost scope.');
     expectFailure(static fn() => $builder->value('tenant', 'beta'), ContainerException::class, 'Frozen graph was mutable.');
     $report = $builder->compile($path, strict: true);
-    verify(is_string($report['digest']) && hash_file('sha256', $path) === $report['digest'], 'Compiled recipe artifact digest mismatch.');
+    verify(is_string($report['digest']) && hash_file('xxh128', $path) === $report['digest'], 'Compiled recipe artifact digest mismatch.');
 
     foreach ([$builder->build(), $builder->production($path)] as $runtime) {
         $singleton = $runtime->get('singleton');
@@ -124,7 +124,7 @@ function diGraphFailuresWorkload(): void
     $stable = ContainerBuilder::create('stable-graph')->value('tenant', 'alpha');
     $report = $stable->compile($artifact, strict: true);
     $digest = $report['digest'];
-    verify(hash_file('sha256', $artifact) === $digest, 'Initial artifact digest mismatch.');
+    verify(hash_file('xxh128', $artifact) === $digest, 'Initial artifact digest mismatch.');
 
     $invalid = ContainerBuilder::create('invalid-graph')
         ->alias('dangling', 'missing-service')
@@ -138,7 +138,7 @@ function diGraphFailuresWorkload(): void
     expectFailure(static fn() => $invalid->validate(strict: true), ContainerException::class, 'Strict validation accepted malformed graph.');
     expectFailure(static fn() => $invalid->build(), ContainerException::class, 'Dynamic runtime accepted malformed graph.');
     expectFailure(static fn() => $invalid->compile($artifact, strict: true), ContainerException::class, 'Compiler accepted malformed graph.');
-    verify(hash_file('sha256', $artifact) === $digest && $stable->productionPrevalidated($artifact, $digest)->get('tenant') === 'alpha', 'Rejected build damaged the active artifact.');
+    verify(hash_file('xxh128', $artifact) === $digest && $stable->productionPrevalidated($artifact, $digest)->get('tenant') === 'alpha', 'Rejected build damaged the active artifact.');
 
     $invalid->value('missing-service', 'resolved')
         ->unbind('cycle-b')->value('cycle-b', 'cycle-resolved')
@@ -159,7 +159,7 @@ function diGraphFailuresWorkload(): void
     $captive = $graph(LifetimeEnum::Singleton);
     expectFailure(static fn() => $captive->build(), ContainerException::class, 'Transitive singleton-to-scoped dependency accepted.');
     expectFailure(static fn() => $captive->compile($artifact, strict: true), ContainerException::class, 'Captive graph was compiled.');
-    verify(hash_file('sha256', $artifact) === $digest, 'Captive graph damaged the active artifact.');
+    verify(hash_file('xxh128', $artifact) === $digest, 'Captive graph damaged the active artifact.');
     $safe = $graph(LifetimeEnum::Scoped);
     $safePath = $root . '/safe-scope-graph.php';
     $safe->compile($safePath, strict: true);
