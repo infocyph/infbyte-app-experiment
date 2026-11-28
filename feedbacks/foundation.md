@@ -8,7 +8,7 @@ Baseline: 4.0.1 (verified in full-run install evidence). Release target to be se
 
 | ID | Priority | Finding | State |
 | --- | --- | --- | --- |
-| FND-001 | P1 | Recovery factor identifier exceeds durable schema | Confirmed |
+| FND-001 | P1 | Recovery factor identifier exceeds durable schema | Confirmed — deferred to Foundation release |
 | FND-002 | P1 | PostgreSQL DISTINCT over JSON | Confirmed |
 | FND-004 | P1 | PAT duplicate insert poisons PostgreSQL transaction | Confirmed source/hosted boundary |
 | FND-003 | P1 | Auth readiness outside active scope | Reproduced integration; source owner trace pending |
@@ -17,6 +17,16 @@ Baseline: 4.0.1 (verified in full-run install evidence). Release target to be se
 - [ ] **FND-002:** [PostgreSQL authorization](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376653500) SQLSTATE 42883; [src/Auth/Adapter/DBLayer/DBLayerPermissionStore.php#L80-L92](https://github.com/infocyph/Foundation/blob/250456f49339331b9115e8e1874066f70b967bef/src/Auth/Adapter/DBLayer/DBLayerPermissionStore.php#L80-L92) selects DISTINCT p.* over JSON. Use correlated EXISTS/semi-join or identity-based deduplication, bound role IDs. Preserve metadata, empty-role behavior, revoke and tenant boundaries; native JSON test on PostgreSQL and all supported drivers.
 - [ ] **FND-004:** [PAT PostgreSQL](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376651584) SQLSTATE 25P02. [src/Auth/Adapter/DBLayer/DBLayerEpicryptPersonalAccessTokenStore.php#L237-L266](https://github.com/infocyph/Foundation/blob/4.0.1/src/Auth/Adapter/DBLayer/DBLayerEpicryptPersonalAccessTokenStore.php#L237-L266) catches insert error and queries poisoned transaction. Use dialect-safe conflict handling or scoped savepoint rollback, catch expected uniqueness conflict only. Test repeated issuance, concurrent create/revoke-all and unrelated SQL errors.
 - [ ] **FND-003:** [HTTP readiness](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376894784) scoped RuntimeExecutionState requires active scope; separate production auth-driver policy failures [transfer](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376788883) and [cleanup](https://github.com/infocyph/infbyte-app-experiment/actions/runs/45661843498/job/139376894678). Trace readiness command/provider scope ownership; use owned bounded scope or scope-independent diagnostics, not singleton request state or readiness bypass. Verify real auth readiness, missing schema negative, all six hosts and both matchers, replacement and no leaked context. Determine whether simple/collect/memory drivers reflect fixture config or upstream policy; never suppress valid production rejection.
+
+### FND-001 — OTP handoff and deferred release qualification (2026-11-28)
+
+Maintainer decision: do not implement the Foundation migration in the current OTP release. Keep FND-001 open in this register; it no longer blocks the standalone OTP release decision, but the affected Foundation enrollment/recovery deployment remains unqualified.
+
+- Preserve the entire 77-byte identifier (13-byte `otp-recovery-` prefix and 64-character SHA-256 digest). Do not truncate or shorten the digest to fit the schema.
+- Widen the durable factor ID column and all referencing columns to a consistent capacity (recommended 128 characters); audit primary/unique indexes, foreign keys, collation, migration ordering, and downgrade behavior on SQLite, MySQL/MariaDB and PostgreSQL. Existing IDs and ownership relationships must survive the migration unchanged.
+- Retest old and newly enrolled factors, owner isolation, replacement/rotation, exhaustion, four independent concurrent consumers with exactly one successful consumption, replay rejection and persisted state on the released Foundation package.
+- Direct OTP recovery tests with 77-byte identifiers are verified in [OTP PR #53](https://github.com/infocyph/OTP/pull/53), [hosted run 46024794058](https://github.com/infocyph/OTP/actions/runs/46024794058). This is evidence of the OTP boundary, not evidence of a repaired Foundation schema.
+- Requalify the published consumer scenarios and frozen full matrix after the Foundation patch is released; do not mark this finding closed or relax existing assertions before that evidence is available.
 
 ## Other investigation candidates
 
