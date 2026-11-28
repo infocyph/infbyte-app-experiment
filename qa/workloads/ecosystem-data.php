@@ -45,7 +45,17 @@ function intermixWorkload(): void
                 verify($active->get(LabSingleton::class) === $singleton, 'Singleton identity changed.');
                 verify($active->get(LabTransient::class) !== $active->get(LabTransient::class), 'Transient was cached.');
                 $context = $active->captureScopeContext();
-                verify($active->withinScopeContext($context, static fn($borrowed) => $borrowed->get(LabScopedService::class)) === $scoped, 'Borrowed scope identity mismatch.');
+                expectFailure(
+                    static fn() => $active->withinScopeContext($context, static fn($borrowed) => $borrowed->get(LabScopedService::class)),
+                    \Infocyph\InterMix\Exceptions\ContainerException::class,
+                    'Same-carrier scope replacement was accepted.',
+                );
+                $child = new Fiber(static fn() => $active->withinScopeContext(
+                    $context,
+                    static fn($borrowed) => $borrowed->get(LabScopedService::class),
+                ));
+                $child->start();
+                verify($child->getReturn() === $scoped, 'Borrowed scope identity mismatch.');
                 $active->withinScope('nested', static function ($nested) use ($id, $scoped): void {
                     $service = $nested->get(LabScopedService::class);
                     verify($service !== $scoped && $service->execution->id === -$id, 'Nested scope inherited owner input.');
